@@ -44,8 +44,9 @@ static void setServo(Speed speed) {
   uint32_t duty = us ? servoDuty(us, SERVO_LEDC_BITS) : kStopDuty;
   servoMoving = speed != Speed::Off;
   ledcWrite(SERVO_LEDC_CHANNEL, duty);
-  // The target BB may have landed while we were writing: its cut must win.
-  if (servoMoving && counter.count >= counter.stopAt) {
+  // The target BB may have landed while we were writing: its cut must win. Test the requested
+  // speed, not servoMoving, which the ISR has already cleared in exactly that case.
+  if (speed != Speed::Off && counter.count >= counter.stopAt) {
     ledcWrite(SERVO_LEDC_CHANNEL, kStopDuty);
     servoMoving = false;
     duty = kStopDuty;

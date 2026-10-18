@@ -118,7 +118,7 @@ encoder click ends it, and so does a BLE disconnect (a normal run carries on: it
 
 ## Battery
 
-The pack is read on GPIO 0 through the 100k/27k divider every 500 ms (16 ADC samples averaged,
+The pack is read on GPIO 0 through the 100k/20k divider every 500 ms (16 ADC samples averaged,
 then the median of the last three readings). Below `BATT_WARN_MV` the log shows a warning; below
 `BATT_REFUSE_MV` GO is refused and the state is LOW_BATT, which clears only 100 mV higher. During a
 run the voltage sags under load, so the run stops (LOW_BATT) only after 2 s below the refusal

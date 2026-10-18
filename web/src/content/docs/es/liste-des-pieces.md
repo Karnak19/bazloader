@@ -99,8 +99,8 @@ Estas piezas vienen del BULLOADER original y se reutilizan. **No las pidas.**
 | Cable de silicona grueso | **1 m** rojo + **1 m** negro | Cable de silicona flexible de **18 AWG** (unos 0,8 mm²). Búsqueda: «silicone wire 18AWG». | Silicona: flexible y no se derrite con el soldador. Lo bastante grueso para la **corriente del servo**, que se mide en amperios. | Batería, interruptor, servo (o BEC), entrada del convertidor. |
 | Cable fino para señales | **1 lote** (varios colores) | Cable de silicona de **26 o 28 AWG**, varios colores. Búsqueda: «silicone wire 26AWG 10 colors». | Varios colores para no confundirse (un color por función). La silicona se dobla bien en una caja estrecha. | LED IR, fototransistor, encoder, pantalla, botón GO, señal del servo. |
 | Conectores JST-XH de 2,54 mm | **1 kit** (2, 3, 4 y 5 pines) | Kit JST-XH de 2,54 mm: bases para soldar y clavijas. Lo más fácil: **cables ya crimpados**. Búsqueda: «JST XH 2.54 pre-crimped cable» o «JST XH connector kit». | Para poder **desconectar** cada pieza (pantalla, encoder, sensor IR, botón) y desmontar sin desoldar. Las clavijas para crimpar necesitan una crimpadora: los cables ya crimpados te la ahorran. Los Dupont también sirven, pero aguantan peor las vibraciones. **No para la corriente del servo**: para él, deja su conector original. | Conectar la electrónica a la placa. |
-| Tornillo M3 × 10 | **1 lote** (necesitas 1) | Tornillo **M3 × 10 mm**, cabeza cilíndrica con hexágono interior (Allen). Búsqueda: «M3 x 10 socket head screw». | Longitud de **10 mm**. Un surtido M3 de 6 a 20 mm también servirá para lo siguiente (soporte de la electrónica). | Cierra el collar IR alrededor del tubo. |
-| Tuerca M3 | **1 lote** (necesitas 1) | Tuerca hexagonal **M3** estándar (5,5 mm entre caras, 2,4 mm de grosor). Búsqueda: «M3 hex nut». | Tuerca hexagonal normal, ni con brida ni autoblocante de nailon: tiene que entrar en su alojamiento hexagonal del collar. | Alojada en el collar IR, frente al tornillo. |
+| Tornillo M3 × 10 | **1 lote** (necesitas 2) | Tornillo **M3 × 10 mm**, cabeza cilíndrica con hexágono interior (Allen). Búsqueda: «M3 x 10 socket head screw». | Longitud de **10 mm**. Un surtido M3 de 6 a 20 mm también servirá para lo siguiente (soporte de la electrónica). | Aprieta el collar IR sobre el tubo, un tornillo por mitad. |
+| Tuerca M3 | **1 lote** (necesitas 2) | Tuerca hexagonal **M3** estándar (5,5 mm entre caras, 2,4 mm de grosor). Búsqueda: «M3 hex nut». | Tuerca hexagonal normal, ni con brida ni autoblocante de nailon: tiene que entrar en su alojamiento hexagonal del collar. | Alojada en el collar IR, frente a cada tornillo. |
 | Funda termorretráctil negra | **1 surtido** | Funda termorretráctil **negra**, diámetros de 1,5 a 6 mm. Búsqueda: «heat shrink tube black assortment». | **Negra**: además de aislar las soldaduras, protege de la luz la parte trasera del fototransistor. | Aislar las soldaduras y tapar de la luz el fototransistor y sus patas. |
 
 ## Impresión
@@ -119,7 +119,7 @@ Los archivos para imprimir y cómo ajustarlos están en la carpeta
 | Multímetro | **Sí** | Ajustar el convertidor a 5,0 V antes de conectar el ESP32. Sin multímetro, no hay montaje. También sirve para calibrar la lectura de la batería. |
 | Soldador, estaño, flux | Sí | Todas las conexiones. Un soldador con temperatura regulable es mucho más cómodo. |
 | Pie de rey | Sí | Medir el diámetro del tubo de salida (*inner barrel*) y de los componentes IR, para ajustar el collar. Basta con uno digital barato. |
-| Broca de **1,5 mm** (con un portabrocas de mano o un taladro pequeño) | Sí, muy probablemente | El tubo de salida seguramente es de metal y, por tanto, opaco al infrarrojo: hay que hacerle **dos agujeros**, alineados con las ventanas del collar, para que pase el haz. El haz no pasa por el centro del tubo sino 2 mm al lado: taladra con el collar apretado en su sitio, de una ventana a la otra, que sirve de guía. |
+| **Cortatubos** (lo mejor) o sierra de arco en una caja de ingletes, y un **desbarbador** | Sí | El tubo de salida es de metal y, por tanto, opaco al infrarrojo. No se taladra: se corta en dos, el collar sujeta las dos mitades una frente a otra y el haz pasa por el hueco entre ellas. El cortatubos da un corte a escuadra sin esfuerzo. El desbarbador (o una broca avellanadora girada a mano) limpia los extremos cortados. Mira [más abajo](#cortar-el-tubo-y-montar-el-collar). |
 | Cable USB-C **de datos** | Sí | Flashear el ESP32. Muchos cables USB-C solo cargan: si la placa no aparece en el ordenador, prueba con otro cable. |
 | Pelacables, alicate de corte | Sí | Preparar los cables. |
 | Pistola de aire caliente o mechero | Práctico | Contraer la funda. |
@@ -141,5 +141,26 @@ Antes de soldar nada:
 5. **Imprime la pieza de prueba** (`fit_coupon`) para encontrar la holgura adecuada, como se explica
    en el [README de la carpeta `cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad#fit_coupon),
    antes de imprimir el collar.
+
+## Cortar el tubo y montar el collar
+
+El infrarrojo no atraviesa el tubo de salida de metal. En vez de hacerle agujeros, se corta en
+dos. El collar sujeta las dos mitades una frente a otra con un hueco de **6,5 mm** entre ellas, y
+el haz pasa por ese hueco, a través del anillo impreso que guía las bolas.
+
+1. **Marca** una franja de **6,5 mm** (`BARREL_GAP` en `params.py`) donde va a ir el collar. Es la
+   longitud de tubo que hay que quitar: el collar devuelve justo ese hueco, así que una vez montado
+   el tubo conserva su longitud original.
+2. **Corta a escuadra** a cada lado de la franja (o corta una vez y luego acorta una de las mitades
+   6,5 mm). Lo mejor es un **cortatubos**: corte recto y limpio, sin esfuerzo. Si no, una sierra de
+   arco en una caja de ingletes.
+3. **Desbarba** por dentro y por fuera. En el borde **interior** de cada extremo cortado, haz un
+   **chaflán ligero**, con un desbarbador o una broca avellanadora girada a mano. La guía impresa
+   mide 6,2 mm y el tubo 6,05 mm: sin ese chaflán, una bola puede engancharse en el pequeño escalón
+   al entrar en la mitad de salida.
+4. **Sopla** dentro de las dos mitades para sacar las virutas.
+5. **Mete** cada mitad en el collar hasta que haga tope en el anillo del centro. El anillo fija el
+   hueco y la alineación, no tú.
+6. **Aprieta** los dos tornillos M3, uno por mitad.
 
 Y después, al [cableado](/bulloader-plus/es/cablage/).

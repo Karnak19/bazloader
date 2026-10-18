@@ -1,8 +1,9 @@
 """Sanity checks on the IR collar, the encoder knob and the fit coupon.
 
 Run: uv run python check.py
-Probes points just inside and just outside each feature, so a wrong bore, a
-socket off its axis, two sockets that are not coaxial or a knob bore off its axis fail loudly.
+Probes points just inside and just outside each feature, so a wrong bore, a missing
+shoulder, a socket off its axis, two sockets that are not coaxial or a knob bore off
+its axis fail loudly.
 """
 
 import math
@@ -25,9 +26,9 @@ def solid_at(part, x: float, y: float, z: float) -> bool:
     return part.is_inside(Vector(x, y, z))
 
 
-def bore_x(k: dict, y: float) -> float:
-    """Where the collar bore surface sits along a beam parallel to X at height y."""
-    return math.sqrt(max(0.0, k["bore_r"] ** 2 - y**2))
+def guide_x(k: dict, y: float) -> float:
+    """Where the BB guide surface sits along a beam parallel to X at height y."""
+    return math.sqrt(max(0.0, k["guide_r"] ** 2 - y**2))
 
 
 def wall_thickness(part, x: float, y0: float, z0: float, r: float, c: float, s: float) -> float:
@@ -44,23 +45,58 @@ def check_collar(od: float) -> None:
     k = build.collar_layout()
     assert part.is_valid, "collar is not a valid solid"
     assert len(part.solids()) == 1, f"collar has {len(part.solids())} solids"
+    z_lo, z_hi, L = k["ring_z0"], k["ring_z1"], k["length"]
+    assert abs(L - (2 * p.GRIP_LENGTH + p.BARREL_GAP)) < 1e-9, "length is not two grips plus the gap"
+    assert abs(z_hi - z_lo - p.BARREL_GAP) < 1e-9, "ring length is not the barrel gap"
 
-    # Bore: hollow just inside its radius, solid just outside it, all round the
-    # tube, at a height away from the beam (the aperture) and away from the slot.
-    z = k["beam_z"] / 2
+    # Grip bores: hollow just inside their radius, solid just outside, all round, at mid-grip
+    # (away from the ring) except across the clamp slot.
     slot_half_angle = math.degrees(math.asin((p.CLAMP_SLOT / 2 + EPS) / k["bore_r"]))
+    for z in (z_lo / 2, (z_hi + L) / 2, 0.5, L - 0.5, z_lo - 0.5, z_hi + 0.5):
+        for deg in range(0, 360, 15):
+            if abs(deg - 90) <= slot_half_angle + 1:
+                continue
+            c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+            r_in, r_out = k["bore_r"] - EPS, k["bore_r"] + EPS
+            assert not solid_at(part, r_in * c, r_in * s, z), f"grip bore too small at {deg} deg, z={z:.1f}"
+            assert solid_at(part, r_out * c, r_out * s, z), f"grip bore too large at {deg} deg, z={z:.1f}"
+        assert not solid_at(part, 0, k["bore_r"] + EPS, z), f"clamp slot missing at z={z:.1f}"
+    # Grip long enough to hold a half straight: over one barrel diameter.
+    assert p.GRIP_LENGTH >= od, f"GRIP_LENGTH {p.GRIP_LENGTH} under the barrel OD {od}"
+
+    # BB guide: over the barrel bore (a BB never meets a step going in), under the barrel OD
+    # (so there is a shoulder), probed all round on its flat part, above and below the window.
+    assert p.BB_GUIDE_D > p.BARREL_ID, "BB guide narrower than the barrel bore"
+    assert p.BARREL_ID < od - 2 * 0.5, "barrel wall implausibly thin"
+    flat = p.BARREL_GAP / 2 - p.RING_CHAMFER  # Flat part of the guide, each side of the beam.
+    for z in (k["beam_z"] - flat + EPS, k["beam_z"] + flat - EPS):
+        for deg in range(0, 360, 15):
+            c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+            r_in, r_out = k["guide_r"] - EPS, k["guide_r"] + EPS
+            assert not solid_at(part, r_in * c, r_in * s, z), f"BB guide too small at {deg} deg"
+            assert solid_at(part, r_out * c, r_out * s, z), f"BB guide too large at {deg} deg"
+    # The ring is closed: the clamp slots stop at it, so the screws never squeeze the guide.
+    for y in (k["guide_r"] + EPS, k["bore_r"] + EPS, k["ear_y"] - EPS):
+        assert solid_at(part, 0, y, k["beam_z"]), f"ring cut by the clamp slot at y={y:.2f}"
+
+    # Shoulders, both sides: all round, solid just inside the ring, hollow just outside it,
+    # so each barrel half stops on a flat face, and the gap is set by the print.
+    shoulder = k["bore_r"] - k["guide_r"] - p.RING_CHAMFER  # Flat width each half butts on.
+    assert shoulder > 0.3, f"shoulder only {shoulder:.2f} wide"
+    r_sh = (k["guide_r"] + p.RING_CHAMFER + k["bore_r"]) / 2
     for deg in range(0, 360, 15):
-        if abs(deg - 90) <= slot_half_angle + 1:
-            continue
         c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
-        r_in, r_out = k["bore_r"] - EPS, k["bore_r"] + EPS
-        assert not solid_at(part, r_in * c, r_in * s, z), f"bore too small at {deg} deg"
-        assert solid_at(part, r_out * c, r_out * s, z), f"bore too large at {deg} deg"
-    assert not solid_at(part, 0, k["bore_r"] + EPS, z), "clamp slot missing"
+        x, y = r_sh * c, r_sh * s
+        assert solid_at(part, x, y, z_lo + EPS) and not solid_at(part, x, y, z_lo - EPS), f"no bottom shoulder at {deg}"
+        assert solid_at(part, x, y, z_hi - EPS) and not solid_at(part, x, y, z_hi + EPS), f"no top shoulder at {deg}"
+        # Chamfer: the guide edge is cut back at both faces.
+        rc = k["guide_r"] + p.RING_CHAMFER / 2
+        assert not solid_at(part, rc * c, rc * s, z_lo + EPS), f"no bottom chamfer at {deg}"
+        assert not solid_at(part, rc * c, rc * s, z_hi - EPS), f"no top chamfer at {deg}"
 
     # Sockets: each one is a cylinder along X on the beam line (y = beam_y, z = beam_z),
-    # i.e. both on one chord of the bore, BEAM_OFFSET off the axis.
-    y0 = k["beam_y"]
+    # i.e. both on one chord of the guide, BEAM_OFFSET off the axis.
+    y0, z0 = k["beam_y"], k["beam_z"]
     assert abs(abs(y0) - p.BEAM_OFFSET) < 1e-9, "beam not BEAM_OFFSET off the axis"
     sockets = [
         f
@@ -73,46 +109,73 @@ def check_collar(od: float) -> None:
     assert len(sockets) == 2, f"expected 2 socket faces, found {len(sockets)}"
     for f in sockets:
         axis = f.axis_of_rotation
-        assert abs(axis.position.Z - k["beam_z"]) < 1e-6, "socket axis not at beam height"
+        assert abs(axis.position.Z - z0) < 1e-6, "socket axis not at beam height"
         assert abs(axis.position.Y - y0) < 1e-6, "socket axis off the beam line"
     assert abs(sides[0] + sides[1]) < 1e-6, f"sockets not symmetric: {sides}"
 
-    # The window fits inside the barrel bore, so both drilled holes open fully into it.
-    assert p.BEAM_OFFSET + p.APERTURE_W / 2 < p.BARREL_ID / 2, "window pokes past the barrel bore"
-    assert p.BARREL_ID < od - 2 * 0.5, "barrel wall implausibly thin"
-    # Clamp slot and M3 screw stay clear of the beam line and its sockets.
+    # The window fits inside the BB guide, so the whole beam crosses the BB path.
+    assert p.BEAM_OFFSET + p.APERTURE_W / 2 < k["guide_r"], "window pokes past the BB guide"
+    # Ring wall above and below the window, measured at the guide edge (inside the chamfer).
+    window_wall = p.BARREL_GAP / 2 - p.APERTURE_D / 2 - p.RING_CHAMFER
+    assert window_wall >= p.MIN_WALL, f"ring wall around the window only {window_wall:.2f}"
+    x_w = guide_x(k, y0) + 0.3  # Just into the ring, on the beam line.
+    for side in (-1, 1):
+        for dz in (p.APERTURE_D / 2 + EPS, p.BARREL_GAP / 2 - p.RING_CHAMFER - EPS):
+            assert solid_at(part, side * x_w, y0, z0 + dz), f"ring wall missing above the window, dz={dz:.2f}"
+            assert solid_at(part, side * x_w, y0, z0 - dz), f"ring wall missing below the window, dz={dz:.2f}"
+    # Sockets inside the ring's height with SOCKET_WALL to spare, so none breaks into a grip bore.
+    socket_to_grip = p.BARREL_GAP / 2 - k["socket_r"]
+    assert socket_to_grip >= p.SOCKET_WALL - 1e-9, f"socket only {socket_to_grip:.2f} from a grip bore"
+    # Clamp slots, screws and nut traps stay on +Y, clear of the beam line and its sockets.
     assert y0 + k["socket_r"] < -EPS, "sockets reach the clamp slot side"
-    assert k["screw_y"] - (p.M3_CLEARANCE / 2 + k["nut_r"]) > y0 + k["socket_r"] + p.MIN_WALL, "screw hits a socket"
+    screw_low = k["screw_y"] - max(p.M3_CLEARANCE / 2, k["nut_r"])
+    assert screw_low - (y0 + k["bar_hw"]) >= p.MIN_WALL, "screw or nut trap hits the socket bar"
+    assert screw_low - k["bore_r"] >= p.MIN_WALL - 1e-9, "nut trap too close to the grip bore"
+    for zs, z_in in zip(k["screw_z"], (z_lo, z_hi)):
+        # Nut trap inside the collar with MIN_WALL to the end, screw hole entirely over its slot.
+        assert min(zs, L - zs) - k["nut_r"] >= p.MIN_WALL - 1e-9, "nut trap too close to the collar end"
+        assert abs(z_in - zs) - p.M3_CLEARANCE / 2 > 0, "screw reaches the ring, past its slot"
+        assert not solid_at(part, 0, k["screw_y"], zs), "screw hole missing"
+        assert not solid_at(part, k["ear_hx"] - EPS, k["screw_y"], zs), "nut trap missing"
+    # Wire grooves: on the back faces, -Y side, clear of the grip bore by MIN_WALL.
+    gx, gy = k["back_x"] - p.WIRE_CHANNEL_DEPTH, max(0.0, abs(y0) - p.WIRE_CHANNEL_W / 2)
+    groove_wall = math.hypot(gx, gy) - k["bore_r"]
+    assert groove_wall >= p.MIN_WALL - 1e-9, f"wire groove only {groove_wall:.2f} from the grip bore"
+    for side in (-1, 1):
+        x = side * (k["back_x"] - p.WIRE_CHANNEL_DEPTH / 2)
+        assert not solid_at(part, x, y0, 0.5), "wire groove missing at the bottom end"
+        assert not solid_at(part, x, y0, k["channel_top"] - EPS), "wire groove too short"
+        assert solid_at(part, x, y0, k["channel_top"] + EPS), "wire groove runs into the socket"
 
     # Probe both sockets the same way: hollow inside, solid outside, all round.
-    z0 = k["beam_z"]
     walls, shoulder_walls = [], []
     for side, r in ((-1, k["led_r"]), (1, k["photo_r"])):
-        x = side * (k["shoulder_x"] + p.SOCKET_DEPTH / 2)
-        for deg in range(0, 360, 30):
-            c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
-            assert not solid_at(part, x, y0 + (r - EPS) * c, z0 + (r - EPS) * s), "socket too small"
-            assert solid_at(part, x, y0 + (r + EPS) * c, z0 + (r + EPS) * s), "socket too large"
-            # Wall all round the socket: still solid MIN_WALL out from its surface.
-            w = r + p.MIN_WALL - EPS
-            assert solid_at(part, x, y0 + w * c, z0 + w * s), f"socket wall under MIN_WALL at {deg} deg"
-            walls.append(wall_thickness(part, x, y0, z0, r, c, s))
+        for x in (side * (k["shoulder_x"] + 0.2), side * (k["shoulder_x"] + p.SOCKET_DEPTH / 2)):
+            for deg in range(0, 360, 30):
+                c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+                assert not solid_at(part, x, y0 + (r - EPS) * c, z0 + (r - EPS) * s), "socket too small"
+                assert solid_at(part, x, y0 + (r + EPS) * c, z0 + (r + EPS) * s), "socket too large"
+                # Wall all round the socket: still solid MIN_WALL out from its surface.
+                w = r + p.MIN_WALL - EPS
+                assert solid_at(part, x, y0 + w * c, z0 + w * s), f"socket wall under MIN_WALL at {deg} deg"
+                walls.append(wall_thickness(part, x, y0, z0, r, c, s))
         # Stop shoulder: solid just in front of it (outside the aperture), hollow just behind.
         ring = (r + p.APERTURE_D / 2) / 2
-        assert solid_at(part, side * (k["shoulder_x"] - EPS), y0, z0 + ring), "no shoulder"
-        assert not solid_at(part, side * (k["shoulder_x"] + EPS), y0, z0 + ring), "shoulder misplaced"
+        assert solid_at(part, side * (k["shoulder_x"] - EPS), y0, z0 + ring), "no socket shoulder"
+        assert not solid_at(part, side * (k["shoulder_x"] + EPS), y0, z0 + ring), "socket shoulder misplaced"
         # Aperture: open on the beam line through the wall, closed just above it and just beside it.
-        x_ap = side * (bore_x(k, y0) + k["shoulder_x"]) / 2
+        x_ap = side * (guide_x(k, y0) + k["shoulder_x"]) / 2
         assert not solid_at(part, x_ap, y0, z0), "aperture blocked"
         assert solid_at(part, x_ap, y0, z0 + p.APERTURE_D / 2 + EPS), "aperture too tall"
         assert solid_at(part, x_ap, y0 + p.APERTURE_W / 2 + EPS, z0), "aperture too wide"
         # Window wall at least APERTURE_LEN long on its worst edge (the one nearest the axis),
         # and on the whole socket face.
         for y in (y0 + p.APERTURE_W / 2, y0 - p.APERTURE_W / 2, y0 + r, y0 - r):
-            wall = k["shoulder_x"] - bore_x(k, y)
+            wall = k["shoulder_x"] - guide_x(k, y)
             assert wall >= p.APERTURE_LEN - 1e-9, f"wall in front of the shoulder {wall:.2f} at y={y:.2f}"
             shoulder_walls.append(wall)
         # Socket closed above and below along the tube: the light shield.
+        x = side * (k["shoulder_x"] + p.SOCKET_DEPTH / 2)
         assert solid_at(part, x, y0, z0 + r + p.SOCKET_WALL / 2), "no wall above socket"
     # The beam line itself is clear from one shoulder to the other.
     for i in range(41):
@@ -120,12 +183,13 @@ def check_collar(od: float) -> None:
         assert not solid_at(part, x, y0, z0), f"beam blocked at x={x:.2f}"
 
     bb = part.bounding_box()
-    assert abs(bb.min.Z) < 1e-6 and abs(bb.max.Z - p.COLLAR_LENGTH) < 1e-6, "length wrong"
+    assert abs(bb.min.Z) < 1e-6 and abs(bb.max.Z - L) < 1e-6, "length wrong"
     print(
-        f"BARREL_OD {od}: collar OK  bore d={2 * k['bore_r']:.2f}  "
-        f"sockets at x={sides[0]:+.2f}/{sides[1]:+.2f} on y={y0:+.2f} z={z0:.1f}  "
-        f"shoulder x={k['shoulder_x']:.2f}  min socket wall {min(walls):.2f}  "
-        f"min window wall {min(shoulder_walls):.2f}  "
+        f"BARREL_OD {od}: collar OK  grip d={2 * k['bore_r']:.2f} x {p.GRIP_LENGTH:.1f}  "
+        f"guide d={2 * k['guide_r']:.2f} x {p.BARREL_GAP:.1f}  shoulder {shoulder:.2f}  "
+        f"sockets at x={sides[0]:+.2f}/{sides[1]:+.2f} on y={y0:+.2f} z={z0:.2f}  "
+        f"min socket wall {min(walls):.2f}  min window wall {min(shoulder_walls):.2f}  "
+        f"ring wall by window {window_wall:.2f}  groove wall {groove_wall:.2f}  "
         f"size {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f}  vol {part.volume:.0f} mm3"
     )
 
@@ -228,6 +292,9 @@ def check_coupon(od: float) -> None:
             if abs(f.axis_of_rotation.direction.Z) > 0.99 and abs(f.axis_of_rotation.position.Y - y) < 1e-3
         )
 
+    guides = row(k["guide_y"])
+    want_g = sorted(round(p.BB_GUIDE_D + o, 3) for o in p.COUPON_GUIDE_OFFSETS)
+    assert guides == want_g, f"coupon BB guide bores {guides} != {want_g}"
     dflat, press = row(k["dflat_y"]), row(k["press_y"])
     want_d = sorted(round(p.SHAFT_D + o, 3) for o in p.COUPON_SHAFT_OFFSETS)
     want_p = sorted(round(p.SHAFT_D + o, 3) for o in p.COUPON_PRESS_OFFSETS)
@@ -244,7 +311,10 @@ def check_coupon(od: float) -> None:
         assert solid_at(part, x - r - EPS, k["dflat_y"], z), f"D-flat {o} too large"
     bb = part.bounding_box()
     assert abs(bb.max.Z - max(p.COUPON_KNOB_THICKNESS, p.IR_LED_DIAMETER + max(p.COUPON_SOCKET_OFFSETS) + 2 * p.MIN_WALL)) < 1e-6
-    print(f"BARREL_OD {od}: coupon OK  bores {radii}  sockets {sockets}  D-flats {dflat}  round {press}")
+    print(
+        f"BARREL_OD {od}: coupon OK  bores {radii}  guides {guides}  sockets {sockets}  "
+        f"D-flats {dflat}  round {press}"
+    )
 
 
 if __name__ == "__main__":

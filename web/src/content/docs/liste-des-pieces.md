@@ -99,8 +99,8 @@ Ces pièces viennent du BULLOADER d'origine et sont réutilisées. **Ne les comm
 | Fil silicone épais | **1 m** de rouge + **1 m** de noir | Fil silicone souple **18 AWG** (environ 0,8 mm²). Recherche : « silicone wire 18AWG ». | Silicone : souple et ne fond pas au fer. Assez gros pour le **courant du servo**, qui se compte en ampères. | Batterie, interrupteur, servo (ou BEC), entrée du convertisseur. |
 | Fil fin pour les signaux | **1 lot** (plusieurs couleurs) | Fil silicone **26 ou 28 AWG**, plusieurs couleurs. Recherche : « silicone wire 26AWG 10 colors ». | Plusieurs couleurs pour ne pas se tromper (une couleur par fonction). Le silicone se plie bien dans un boîtier serré. | LED IR, phototransistor, encodeur, écran, bouton GO, signal du servo. |
 | Connecteurs JST-XH 2,54 mm | **1 kit** (2, 3, 4 et 5 broches) | Kit JST-XH 2,54 mm : embases à souder et fiches. Le plus simple : des **câbles déjà sertis**. Recherche : « JST XH 2.54 pre-crimped cable » ou « JST XH connector kit ». | De quoi **débrancher** chaque pièce (écran, encodeur, capteur IR, bouton) pour démonter sans dessouder. Avec des fiches à sertir, il faut une pince à sertir : les câbles pré-sertis l'évitent. Les Dupont font aussi l'affaire, mais tiennent moins bien aux vibrations. **Pas pour le courant du servo** : gardez pour lui sa prise d'origine. | Brancher l'électronique sur la plaque. |
-| Vis M3 × 10 | **1 lot** (il en faut 1) | Vis **M3 × 10 mm**, tête cylindrique à six pans creux (BTR). Recherche : « M3 x 10 socket head screw ». | Longueur **10 mm**. Un assortiment M3 de 6 à 20 mm sert aussi pour la suite (support de l'électronique). | Ferme le collier IR autour du tube. |
-| Écrou M3 | **1 lot** (il en faut 1) | Écrou hexagonal **M3** standard (5,5 mm sur plats, 2,4 mm d'épaisseur). Recherche : « M3 hex nut ». | Écrou hexagonal ordinaire, pas un écrou à embase ni un frein en nylon : il doit entrer dans son logement hexagonal du collier. | Logé dans le collier IR, en face de la vis. |
+| Vis M3 × 10 | **1 lot** (il en faut 2) | Vis **M3 × 10 mm**, tête cylindrique à six pans creux (BTR). Recherche : « M3 x 10 socket head screw ». | Longueur **10 mm**. Un assortiment M3 de 6 à 20 mm sert aussi pour la suite (support de l'électronique). | Serre le collier IR sur le tube, une vis par moitié. |
+| Écrou M3 | **1 lot** (il en faut 2) | Écrou hexagonal **M3** standard (5,5 mm sur plats, 2,4 mm d'épaisseur). Recherche : « M3 hex nut ». | Écrou hexagonal ordinaire, pas un écrou à embase ni un frein en nylon : il doit entrer dans son logement hexagonal du collier. | Logé dans le collier IR, en face de chaque vis. |
 | Gaine thermorétractable noire | **1 assortiment** | Gaine thermo **noire**, diamètres de 1,5 à 6 mm. Recherche : « heat shrink tube black assortment ». | **Noire** : en plus d'isoler les soudures, elle protège le dos du phototransistor de la lumière. | Isoler les soudures, et ombrer le phototransistor et ses pattes. |
 
 ## Impression
@@ -119,7 +119,7 @@ Les fichiers à imprimer et la façon de les régler sont dans le dossier
 | Multimètre | **Oui** | Régler le convertisseur à 5,0 V avant d'y brancher l'ESP32. Sans multimètre, pas de montage. Sert aussi à calibrer la mesure de la batterie. |
 | Fer à souder, étain, flux | Oui | Toutes les connexions. Un fer réglable en température est bien plus agréable. |
 | Pied à coulisse | Oui | Mesurer le diamètre du tube de sortie (*inner barrel*) et des composants IR, pour ajuster le collier. Un modèle numérique bon marché suffit. |
-| Foret de **1,5 mm** (avec un porte-foret à main ou une petite perceuse) | Oui, très probablement | Le tube de sortie est sans doute en métal, donc opaque à l'infrarouge : il faut y percer **deux trous**, alignés avec les fenêtres du collier, pour que le faisceau passe. Le faisceau ne passe pas par le centre du tube mais 2 mm à côté : percez avec le collier serré en place, d'une fenêtre à l'autre, il sert de guide. |
+| **Coupe-tube** (le mieux) ou scie à métaux dans une boîte à onglets, et un **ébavureur** | Oui | Le tube de sortie est en métal, donc opaque à l'infrarouge. On ne le perce pas : on le coupe en deux, le collier tient les deux moitiés bout à bout et le faisceau passe dans l'espace entre elles. Le coupe-tube donne une coupe d'équerre sans effort. L'ébavureur (ou une fraise conique tournée à la main) nettoie les bouts coupés. Voir [plus bas](#couper-le-tube-et-monter-le-collier). |
 | Câble USB-C **de données** | Oui | Flasher l'ESP32. Beaucoup de câbles USB-C ne font que charger : si la carte n'apparaît pas sur l'ordinateur, essayez un autre câble. |
 | Pince à dénuder, pince coupante | Oui | Préparer les fils. |
 | Pistolet à air chaud ou briquet | Pratique | Rétracter la gaine. |
@@ -141,5 +141,26 @@ Avant de souder quoi que ce soit :
 5. **Imprimer la pièce de test** (`fit_coupon`) pour trouver le bon jeu, comme expliqué dans le
    [README du dossier `cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad#fit_coupon),
    avant d'imprimer le collier.
+
+## Couper le tube et monter le collier
+
+L'infrarouge ne traverse pas le tube de sortie en métal. Plutôt que d'y percer des trous, on le
+coupe en deux. Le collier tient les deux moitiés bout à bout avec un espace de **6,5 mm** entre
+elles, et le faisceau passe dans cet espace, à travers l'anneau imprimé qui guide les billes.
+
+1. **Marquer** une bande de **6,5 mm** (`BARREL_GAP` dans `params.py`) à l'endroit prévu pour le
+   collier. C'est la longueur de tube à enlever : le collier rend exactement cet espace, donc une
+   fois remonté, le tube garde sa longueur d'origine.
+2. **Couper d'équerre** de part et d'autre de la bande (ou couper une fois, puis raccourcir une des
+   moitiés de 6,5 mm). Le mieux est un **coupe-tube** : coupe droite et propre, sans effort. Sinon,
+   une scie à métaux dans une boîte à onglets.
+3. **Ébavurer** dedans et dehors. Sur l'arête **intérieure** de chaque bout coupé, faire un **léger
+   chanfrein**, avec un ébavureur ou une fraise conique tournée à la main. Le guide imprimé fait
+   6,2 mm et le tube 6,05 mm : sans ce chanfrein, une bille peut accrocher la petite marche en
+   rentrant dans la moitié de sortie.
+4. **Souffler** dans les deux moitiés pour chasser les copeaux.
+5. **Enfoncer** chaque moitié dans le collier jusqu'à ce qu'elle bute sur l'anneau du milieu. C'est
+   l'anneau qui règle l'écart et l'alignement, pas vous.
+6. **Serrer** les deux vis M3, une par moitié.
 
 Ensuite, place au [câblage](/bulloader-plus/cablage/).

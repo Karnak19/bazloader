@@ -44,26 +44,40 @@ def test_ring() -> Part:
 def collar_layout() -> dict[str, float]:
     """Key positions of the IR collar, shared by ir_collar() and check.py.
 
-    Frame: the tube axis is Z, the collar sits on Z=0 (its print face), the beam
-    runs along X at mid-length, the clamp slot is on +Y. The beam is a chord of
-    the bore, BEAM_OFFSET off the axis on -Y, away from the slot and the screw.
+    Frame: the tube axis is Z, the collar sits on Z=0 (its print face). From Z=0 up:
+    the bottom grip bore, the ring (BB guide, beam at its mid-height), the top grip
+    bore. The beam runs along X, BEAM_OFFSET off the axis on -Y; the clamp slots and
+    screws are on +Y, away from it.
     """
-    bore_r = (p.BARREL_OD + p.FIT_TOLERANCE) / 2
+    bore_r = (p.BARREL_OD + p.FIT_TOLERANCE) / 2  # Grip bores, one per barrel half.
+    guide_r = p.BB_GUIDE_D / 2
     led_r = (p.IR_LED_DIAMETER + p.SOCKET_TOLERANCE) / 2
     photo_r = (p.PHOTOTRANSISTOR_DIAMETER + p.SOCKET_TOLERANCE) / 2
     socket_r = max(led_r, photo_r)
     beam_y = -p.BEAM_OFFSET
-    # Off-axis, the bore surface along the beam is at sqrt(bore_r^2 - y^2), furthest out where y is
+    # Off-axis, the guide surface along the beam is at sqrt(guide_r^2 - y^2), furthest out where y is
     # nearest the axis. Measured at the socket edge nearest the axis (wider than the window), the
     # wall in front of each shoulder is at least APERTURE_LEN everywhere.
     near_y = max(0.0, abs(beam_y) - socket_r)
-    shoulder_x = math.sqrt(bore_r**2 - near_y**2) + p.APERTURE_LEN  # Both stop shoulders sit at this |X|.
+    shoulder_x = math.sqrt(guide_r**2 - near_y**2) + p.APERTURE_LEN  # Both stop shoulders sit at this |X|.
+    # On a thick barrel, push the sockets out so the wire grooves on the back faces keep MIN_WALL
+    # to the grip bore (the window just gets longer).
+    groove_y = max(0.0, abs(beam_y) - p.WIRE_CHANNEL_W / 2)  # Groove edge nearest the axis.
+    groove_x = math.sqrt((bore_r + p.MIN_WALL) ** 2 - groove_y**2) + p.WIRE_CHANNEL_DEPTH
+    shoulder_x = max(shoulder_x, groove_x - p.SOCKET_DEPTH)
     nut_r = (p.M3_NUT_AF + p.NUT_TOLERANCE) / math.sqrt(3)  # Hexagon corner radius.
     screw_y = bore_r + p.MIN_WALL + nut_r  # Nut trap clears the bore by MIN_WALL.
+    ring_z0 = p.GRIP_LENGTH
+    ring_z1 = p.GRIP_LENGTH + p.BARREL_GAP
+    length = ring_z1 + p.GRIP_LENGTH
     return {
         "bore_r": bore_r,
+        "guide_r": guide_r,
         "outer_r": bore_r + p.COLLAR_WALL,
-        "beam_z": p.COLLAR_LENGTH / 2,
+        "length": length,
+        "ring_z0": ring_z0,  # Shoulder the bottom half stops on.
+        "ring_z1": ring_z1,  # Shoulder the top half stops on.
+        "beam_z": (ring_z0 + ring_z1) / 2,
         "beam_y": beam_y,
         "led_r": led_r,  # LED socket, on -X.
         "photo_r": photo_r,  # Phototransistor socket, on +X.
@@ -73,9 +87,10 @@ def collar_layout() -> dict[str, float]:
         "bar_hw": max(socket_r + p.SOCKET_WALL, p.WIRE_CHANNEL_W / 2 + p.MIN_WALL),
         "nut_r": nut_r,
         "screw_y": screw_y,
+        "screw_z": (p.GRIP_LENGTH / 2, length - p.GRIP_LENGTH / 2),  # One screw per grip, at mid-grip.
         "ear_y": screw_y + nut_r + p.MIN_WALL,  # Outer face of the clamp ears.
         "ear_hx": p.CLAMP_SLOT / 2 + p.M3_NUT_THICKNESS + p.NUT_TOLERANCE + p.MIN_WALL,
-        "channel_top": p.COLLAR_LENGTH / 2 - socket_r - p.MIN_WALL / 2,
+        "channel_top": (ring_z0 + ring_z1) / 2 - socket_r - p.MIN_WALL / 2,
     }
 
 
@@ -85,12 +100,16 @@ def _yz_plane(x: float, y: float, z: float, into: float) -> Plane:
 
 
 def ir_collar() -> Part:
-    """Clamp-on collar that holds the IR LED and phototransistor face to face across the barrel.
+    """Sleeve that joins the two halves of the cut barrel and holds the IR LED and phototransistor.
 
-    One piece, so both sockets come out of the same print layers and stay coaxial.
-    It is a C-clamp: a slot on +Y and one M3 screw through two ears, nut in a trap.
-    Print it standing on its end face (Z=0): every hole across the tube is then
-    horizontal and small, and the nut trap has a corner on top, so no supports.
+    Each end is a grip bore for one barrel half, closed by its own C-clamp (slot on +Y,
+    one M3 screw through two ears, nut in a trap). Between them, a closed ring: its faces
+    are the stops both halves butt against, its bore guides the BBs across the gap, and
+    the beam crosses it through the sockets' window. The slots stop at the ring, so the
+    screws never squeeze the BB guide. One piece, so both sockets come out of the same
+    print layers and stay coaxial. Print it standing on its end face (Z=0): every hole
+    across the tube is then horizontal and small, the nut traps have a corner on top,
+    and the ring overhang is short, so no supports.
     """
     assert p.SOCKET_DEPTH < p.IR_BODY_LENGTH, "the flange would hit the back before the shoulder"
     k = collar_layout()
@@ -98,8 +117,11 @@ def ir_collar() -> Part:
         "the aperture must be narrower than the component, or there is no shoulder to stop it"
     )
     assert k["channel_top"] > p.MIN_WALL, "collar too short for the wire channels"
-    assert p.BEAM_OFFSET + p.APERTURE_W / 2 < p.BARREL_ID / 2, "the window pokes past the barrel bore"
-    L, z0, y0 = p.COLLAR_LENGTH, k["beam_z"], k["beam_y"]
+    assert p.BEAM_OFFSET + p.APERTURE_W / 2 < k["guide_r"], "the window pokes past the BB guide"
+    assert p.BARREL_ID < p.BB_GUIDE_D < p.BARREL_OD, "BB guide must be over the barrel bore, under its OD"
+    assert k["guide_r"] + p.RING_CHAMFER < k["bore_r"], "chamfer eats the whole shoulder"
+    assert p.BARREL_GAP / 2 >= k["socket_r"] + p.SOCKET_WALL - 1e-9, "sockets break into the grip bores"
+    L, z0, y0 = k["length"], k["beam_z"], k["beam_y"]
 
     # Outer outline, seen from above: ring + bar holding the sockets (on the beam line) + clamp ears.
     outline = (
@@ -107,12 +129,24 @@ def ir_collar() -> Part:
         + Pos(0, y0) * Rectangle(2 * k["back_x"], 2 * k["bar_hw"])
         + Pos(0, k["ear_y"] / 2) * Rectangle(2 * k["ear_hx"], k["ear_y"])
     )
-    outline = fillet(outline.vertices(), p.EDGE_FILLET)
+    # Round the outer corners only: those where the ring meets the bar or the ears are concave,
+    # not sharp in the hand, and the short edges next to them make the 2D fillet fail.
+    corners = [v for v in outline.vertices() if abs(math.hypot(v.X, v.Y) - k["outer_r"]) > 1e-6]
+    outline = fillet(corners, p.EDGE_FILLET)
     body = extrude(outline, L)
 
-    # Bore and clamp slot.
-    body -= Cylinder(k["bore_r"], L, align=(Align.CENTER, Align.CENTER, Align.MIN))
-    body -= Pos(0, k["ear_y"] / 2, L / 2) * Box(p.CLAMP_SLOT, k["ear_y"] + 1, L + 1)
+    # BB guide through the whole length, then a grip bore and a clamp slot from each end up to
+    # the ring. The slots stop at the ring, so it stays a closed circle whatever the screws do.
+    body -= Pos(0, 0, -1) * Cylinder(k["guide_r"], L + 2, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    c = p.RING_CHAMFER
+    for z_start, z_ring, up in ((-1, k["ring_z0"], 1), (L + 1, k["ring_z1"], -1)):
+        grip = abs(z_ring - z_start)
+        z_mid = (z_start + z_ring) / 2
+        body -= Pos(0, 0, z_mid) * Cylinder(k["bore_r"], grip)
+        body -= Pos(0, k["ear_y"] / 2, z_mid) * Box(p.CLAMP_SLOT, k["ear_y"] + 1, grip)
+        # 45 deg chamfer on the guide edge: radius guide_r + c at the ring face, guide_r c into the ring.
+        cone = Cone(k["guide_r"] + c + 0.01, k["guide_r"] - 0.01, c + 0.02)
+        body -= Pos(0, 0, z_ring + up * (c / 2 + 0.005)) * (cone if up > 0 else Rot(180, 0, 0) * cone)
 
     # Sockets: LED on -X, phototransistor on +X, both on the beam line y0, open at the back.
     # Each ends on a flat shoulder at shoulder_x, the same on both sides.
@@ -121,8 +155,8 @@ def ir_collar() -> Part:
         x_mid = side * (k["shoulder_x"] + socket_len / 2)
         body -= Pos(x_mid, y0, z0) * Rot(0, 90, 0) * Cylinder(r, socket_len)
 
-    # Aperture: one window straight through both walls, so the two cannot drift apart. It is a
-    # chord of the bore, and the drilling guide for the two holes in a metal barrel.
+    # Aperture: one window straight through both sides of the ring, so the two cannot drift apart.
+    # It is a chord of the BB guide.
     if p.APERTURE_W > p.APERTURE_D:
         window = SlotOverall(p.APERTURE_W, p.APERTURE_D)
     else:
@@ -136,13 +170,14 @@ def ir_collar() -> Part:
         h = k["channel_top"] + 1
         body -= Pos(x, y0, h / 2 - 1) * Box(p.WIRE_CHANNEL_DEPTH + 0.01, p.WIRE_CHANNEL_W, h)
 
-    # M3 screw across the ears, head on -X, nut trapped in the +X ear.
+    # One M3 screw across the ears of each clamp, head on -X, nut trapped in the +X ear.
     ear_span = 2 * k["ear_hx"] + 2
-    body -= Pos(0, k["screw_y"], z0) * Rot(0, 90, 0) * Cylinder(p.M3_CLEARANCE / 2, ear_span)
     nut_depth = p.M3_NUT_THICKNESS + p.NUT_TOLERANCE
     # rotation=90 puts a hexagon corner on top (+Z), so the pocket roof prints without support.
     hexagon = RegularPolygon(k["nut_r"], 6, rotation=90)
-    body -= extrude(_yz_plane(k["ear_hx"] + 1, k["screw_y"], z0, -1) * hexagon, nut_depth + 1)
+    for zs in k["screw_z"]:
+        body -= Pos(0, k["screw_y"], zs) * Rot(0, 90, 0) * Cylinder(p.M3_CLEARANCE / 2, ear_span)
+        body -= extrude(_yz_plane(k["ear_hx"] + 1, k["screw_y"], zs, -1) * hexagon, nut_depth + 1)
     return body
 
 
@@ -236,15 +271,19 @@ def encoder_knob() -> Part:
 def coupon_layout() -> dict[str, float]:
     """Row positions of the fit coupon, shared by fit_coupon() and check.py.
 
-    From +Y to -Y: socket rib, socket labels, barrel bores, their labels, then a
-    thicker strip with the D-flat knob bores, their labels, the round ones, their labels.
+    From +Y to -Y: socket rib, socket labels, barrel bores, their labels, BB guide
+    bores, their labels, then a thicker strip with the D-flat knob bores, their labels,
+    the round ones, their labels.
     """
     gap, text = p.COUPON_GAP, p.COUPON_TEXT_SIZE
     bore_d = p.BARREL_OD + max(p.COUPON_BORE_OFFSETS)
     knob_d = p.SHAFT_D + max(p.COUPON_SHAFT_OFFSETS + p.COUPON_PRESS_OFFSETS)
     row = knob_d / 2 + gap / 2 + text / 2  # From a knob bore row to its label row.
     bore_label_y = -(bore_d / 2 + gap / 2 + text / 2)
-    strip_y = bore_label_y - text / 2 - gap / 2
+    guide_d = p.BB_GUIDE_D + max(p.COUPON_GUIDE_OFFSETS)
+    guide_y = bore_label_y - text / 2 - gap / 2 - guide_d / 2
+    guide_label_y = guide_y - guide_d / 2 - gap / 2 - text / 2
+    strip_y = guide_label_y - text / 2 - gap / 2
     dflat_y = strip_y - gap / 2 - knob_d / 2
     press_y = dflat_y - 2 * row  # Below the D-flat labels.
     socket_label_y = bore_d / 2 + gap / 2 + text / 2
@@ -254,6 +293,8 @@ def coupon_layout() -> dict[str, float]:
         "bore_d": bore_d,
         "bore_y": 0.0,
         "bore_label_y": bore_label_y,
+        "guide_y": guide_y,
+        "guide_label_y": guide_label_y,
         "socket_label_y": socket_label_y,
         "rib_y0": rib_y0,
         "strip_y": strip_y,  # The knob strip covers everything below this.
@@ -270,7 +311,8 @@ def fit_coupon() -> Part:
 
     Each hole is labelled with the offset it adds. Slide it on the barrel, push in the
     IR components and the encoder shaft, then copy the best offsets into FIT_TOLERANCE,
-    SOCKET_TOLERANCE, SHAFT_TOLERANCE and KNOB_PRESS_FIT.
+    SOCKET_TOLERANCE, SHAFT_TOLERANCE and KNOB_PRESS_FIT. Drop a BB through the BB
+    guide row: it must fall through the 0 hole freely, or BB_GUIDE_D goes up.
     The socket holes are horizontal, in a rib, like in the printed collar. The knob
     bores are vertical, in a thicker strip, like in the knob.
     """
@@ -299,6 +341,12 @@ def fit_coupon() -> Part:
         x = x0 + i * pitch
         part -= Pos(x, k["bore_y"], t / 2) * Cylinder((p.BARREL_OD + offset) / 2, t + 1)
         part -= engrave(label(offset), x, k["bore_label_y"])
+
+    # BB guide bores: vertical, like the ring in the collar printed standing.
+    for i, offset in enumerate(p.COUPON_GUIDE_OFFSETS):
+        x = -width / 2 + width / len(p.COUPON_GUIDE_OFFSETS) * (i + 0.5)
+        part -= Pos(x, k["guide_y"], t / 2) * Cylinder((p.BB_GUIDE_D + offset) / 2, t + 1)
+        part -= engrave(label(offset), x, k["guide_label_y"])
 
     s_pitch = width / len(sockets)
     for i, (d, offset) in enumerate(zip(sockets, p.COUPON_SOCKET_OFFSETS)):

@@ -95,8 +95,8 @@ These parts come from the original BULLOADER and are reused. **Don't order them.
 | Thick silicone wire | **1 m** red + **1 m** black | Soft **18 AWG** silicone wire (about 0.8 mm²). Search: "silicone wire 18AWG". | Silicone: flexible and doesn't melt under the iron. Thick enough for the **servo's current**, which is counted in amps. | Battery, switch, servo (or BEC), converter input. |
 | Thin wire for signals | **1 pack** (several colours) | **26 or 28 AWG** silicone wire, several colours. Search: "silicone wire 26AWG 10 colors". | Several colours so you don't mix things up (one colour per function). Silicone bends nicely in a tight case. | IR LED, phototransistor, encoder, screen, GO button, servo signal. |
 | 2.54 mm JST-XH connectors | **1 kit** (2, 3, 4 and 5 pins) | 2.54 mm JST-XH kit: solder-in headers and plugs. Easiest: **pre-crimped cables**. Search: "JST XH 2.54 pre-crimped cable" or "JST XH connector kit". | So you can **unplug** each part (screen, encoder, IR sensor, button) and take things apart without desoldering. Crimp plugs need a crimping tool: pre-crimped cables avoid that. Dupont connectors work too, but hold less well under vibration. **Not for the servo's current**: keep its original plug for that. | Connecting the electronics to the board. |
-| M3 × 10 screw | **1 pack** (you need 1) | **M3 × 10 mm** socket head cap screw (hex key). Search: "M3 x 10 socket head screw". | **10 mm** long. An M3 assortment from 6 to 20 mm will also be useful later (electronics holder). | Closes the IR collar around the tube. |
-| M3 nut | **1 pack** (you need 1) | Standard **M3** hex nut (5.5 mm across flats, 2.4 mm thick). Search: "M3 hex nut". | A plain hex nut, not a flanged or nylon lock nut: it has to fit the collar's hexagonal pocket. | Sits in the IR collar, opposite the screw. |
+| M3 × 10 screw | **1 pack** (you need 2) | **M3 × 10 mm** socket head cap screw (hex key). Search: "M3 x 10 socket head screw". | **10 mm** long. An M3 assortment from 6 to 20 mm will also be useful later (electronics holder). | Clamps the IR collar on the tube, one screw per half. |
+| M3 nut | **1 pack** (you need 2) | Standard **M3** hex nut (5.5 mm across flats, 2.4 mm thick). Search: "M3 hex nut". | A plain hex nut, not a flanged or nylon lock nut: it has to fit the collar's hexagonal pocket. | Sits in the IR collar, opposite each screw. |
 | Black heat-shrink tubing | **1 assortment** | **Black** heat-shrink, 1.5 to 6 mm diameters. Search: "heat shrink tube black assortment". | **Black**: on top of insulating the joints, it shields the back of the phototransistor from light. | Insulating the joints, and shading the phototransistor and its legs. |
 
 ## Printing
@@ -115,7 +115,7 @@ The files to print and how to tune them are in the repo's
 | Multimeter | **Yes** | Setting the converter to 5.0 V before connecting the ESP32. No multimeter, no build. Also used to calibrate the battery reading. |
 | Soldering iron, solder, flux | Yes | Every connection. An iron with temperature control is much nicer to use. |
 | Calipers | Yes | Measuring the outlet tube (*inner barrel*) and the IR parts, to fit the collar. A cheap digital one is enough. |
-| **1.5 mm** drill bit (with a hand pin vise or a small drill) | Yes, very likely | The outlet tube is probably metal, so infrared can't get through it: you need to drill **two holes**, lined up with the collar's windows, so the beam can pass. The beam does not go through the centre of the tube but 2 mm to the side: drill with the collar clamped in place, from one window to the other, it is the drilling guide. |
+| **Tube cutter** (best) or a hacksaw in a mitre box, and a **deburring tool** | Yes | The outlet tube is metal, so infrared can't get through it. You don't drill it: you cut it in two, the collar holds both halves end to end and the beam crosses the gap between them. A tube cutter gives a square cut with no effort. The deburring tool (or a countersink bit turned by hand) cleans up the cut ends. See [below](#cut-the-tube-and-fit-the-collar). |
 | USB-C **data** cable | Yes | Flashing the ESP32. Many USB-C cables only charge: if the board doesn't show up on the computer, try another cable. |
 | Wire strippers, flush cutters | Yes | Preparing the wires. |
 | Heat gun or lighter | Handy | Shrinking the tubing. |
@@ -137,5 +137,24 @@ Before soldering anything:
 5. **Print the test piece** (`fit_coupon`) to find the right clearance, as explained in the
    [`cad/` folder's README](https://github.com/Karnak19/bulloader-plus/tree/main/cad#fit_coupon),
    before printing the collar.
+
+## Cut the tube and fit the collar
+
+Infrared doesn't go through the metal outlet tube. Rather than drilling holes in it, you cut it in
+two. The collar holds both halves end to end with a **6.5 mm** gap between them, and the beam
+crosses that gap, through the printed ring that guides the BBs.
+
+1. **Mark** a **6.5 mm** band (`BARREL_GAP` in `params.py`) where the collar is meant to go. That's
+   the length of tube to remove: the collar puts back exactly that gap, so once reassembled the
+   tube keeps its original length.
+2. **Cut square** on each side of the band (or cut once, then shorten one half by 6.5 mm). A **tube
+   cutter** is best: straight, clean cut, no effort. Otherwise, a hacksaw in a mitre box.
+3. **Deburr** inside and out. On the **inner** edge of each cut end, put a **light chamfer**, with a
+   deburring tool or a countersink bit turned by hand. The printed guide is 6.2 mm and the tube
+   6.05 mm: without that chamfer, a BB can catch on the small step going into the outlet half.
+4. **Blow** through both halves to get the chips out.
+5. **Push** each half into the collar until it stops on the ring in the middle. The ring sets the
+   gap and the alignment, not you.
+6. **Tighten** both M3 screws, one per half.
 
 Then, on to the [wiring](/bulloader-plus/en/cablage/).

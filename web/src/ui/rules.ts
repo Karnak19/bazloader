@@ -31,6 +31,12 @@ export function canGo(state: State | null): boolean {
   return state !== null && !isRunning(state)
 }
 
+// Saving settings and test spins need the motor at rest: the firmware ignores config writes during
+// a run, and a test spin is a run of its own. JAM, LOW_BATT and DONE are fine, the motor is off.
+export function canEditSettings(state: State | null): boolean {
+  return state !== null && !isRunning(state) && state !== State.Testing
+}
+
 // Same words as the OLED.
 export const stateLabel: Record<State, string> = {
   [State.Idle]: 'Prêt',

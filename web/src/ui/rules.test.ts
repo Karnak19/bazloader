@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { State } from '../ble/protocol.ts'
-import { batteryLevel, batteryText, canGo, connectionErrorText, parseTarget, progress } from './rules.ts'
+import { batteryLevel, batteryText, canEditSettings, canGo, connectionErrorText, parseTarget, progress } from './rules.ts'
 
 describe('batteryLevel', () => {
   test('follows the firmware thresholds', () => {
@@ -28,6 +28,19 @@ describe('canGo', () => {
     expect(canGo(State.Running)).toBe(false)
     expect(canGo(State.Slowdown)).toBe(false)
     expect(canGo(null)).toBe(false)
+  })
+})
+
+describe('canEditSettings', () => {
+  test('only with the motor at rest', () => {
+    expect(canEditSettings(State.Idle)).toBe(true)
+    expect(canEditSettings(State.Done)).toBe(true)
+    expect(canEditSettings(State.Jam)).toBe(true)
+    expect(canEditSettings(State.LowBatt)).toBe(true)
+    expect(canEditSettings(State.Running)).toBe(false)
+    expect(canEditSettings(State.Slowdown)).toBe(false)
+    expect(canEditSettings(State.Testing)).toBe(false)
+    expect(canEditSettings(null)).toBe(false)
   })
 })
 

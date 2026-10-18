@@ -1,7 +1,7 @@
 # BULLOADER+ firmware
 
 ESP32-C3 SuperMini, PlatformIO + Arduino. Pins and defaults live in `src/config.h`; BLE constants
-in `src/ble_uuids.h` (must match `docs/ble-protocol.md`).
+in `src/ble_uuids.h` (must match `web/src/content/docs/protocole-ble.md`).
 
 ## Build
 

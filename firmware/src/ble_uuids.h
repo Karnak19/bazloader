@@ -1,5 +1,5 @@
 // BLE protocol constants.
-// Must match docs/ble-protocol.md and pwa/src/ble/protocol.ts
+// Must match web/src/content/docs/protocole-ble.md and web/src/ble/protocol.ts
 #pragma once
 
 #include <stdint.h>
@@ -45,4 +45,4 @@ struct __attribute__((packed)) ConfigV1 {
   uint8_t  slowdown_n;           // 8
   uint16_t jam_timeout_ms;       // 9
 };
-static_assert(sizeof(ConfigV1) == 11, "ConfigV1 must be 11 bytes, see docs/ble-protocol.md");
+static_assert(sizeof(ConfigV1) == 11, "ConfigV1 must be 11 bytes, see protocole-ble.md");

@@ -72,9 +72,8 @@ bulloader-plus/
 ├── CLAUDE.md              # conventions pour l'agent
 ├── BRIEF.md               # ce document
 ├── firmware/              # PlatformIO, framework Arduino
-├── pwa/                   # Vite + Preact + TypeScript
+├── web/                   # Astro: docs Starlight + PWA (/app/, îlot Preact)
 ├── cad/                   # build123d (Python)
-├── docs/                  # schéma de câblage, protocole BLE, notes de calibration
 └── .github/workflows/     # déploiement PWA sur GitHub Pages
 
 ```
@@ -146,7 +145,7 @@ L'ESP32 est la source de vérité. Toute modification (molette ou BLE) est notif
 
 ---
 
-## PWA (`pwa/`)
+## PWA (`web/`, page `/app/`)
 
 **Stack** : Vite + Preact + TypeScript, `vite-plugin-pwa` (manifest + service worker, cache hors ligne). Pas de framework UI lourd, CSS simple. **Cible** : Chrome Android uniquement. Afficher un message clair si `navigator.bluetooth` est absent. **Déploiement** : GitHub Pages via GitHub Action (penser au `base` Vite pour le sous-chemin du repo).
 

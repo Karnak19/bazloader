@@ -120,7 +120,7 @@ Die Druckdateien und wie man sie anpasst, liegen im Ordner
 | Multimeter | **Ja** | Den Wandler auf 5,0 V einstellen, bevor der ESP32 angeschlossen wird. Ohne Multimeter kein Aufbau. Dient auch zum Kalibrieren der Akkumessung. |
 | Lötkolben, Lötzinn, Flussmittel | Ja | Alle Verbindungen. Ein temperaturgeregelter Lötkolben ist viel angenehmer. |
 | Messschieber | Ja | Den Durchmesser des Auslaufrohrs (*Inner Barrel*) und der IR-Bauteile messen, um den Ring anzupassen. Ein günstiger digitaler reicht. |
-| **1,5-mm**-Bohrer (mit Handbohrer/Stiftenklöbchen oder einer kleinen Bohrmaschine) | Ja, sehr wahrscheinlich | Das Auslaufrohr ist vermutlich aus Metall und damit für Infrarot undurchlässig: Du musst **zwei gegenüberliegende Löcher** bohren, auf die Fenster des Rings ausgerichtet, damit der Strahl durchkommt. |
+| **1,5-mm**-Bohrer (mit Handbohrer/Stiftenklöbchen oder einer kleinen Bohrmaschine) | Ja, sehr wahrscheinlich | Das Auslaufrohr ist vermutlich aus Metall und damit für Infrarot undurchlässig: Du musst **zwei Löcher** bohren, auf die Fenster des Rings ausgerichtet, damit der Strahl durchkommt. Der Strahl geht nicht durch die Mitte des Rohrs, sondern 2 mm daneben: Bohre mit dem festgeschraubten Ring, von einem Fenster zum anderen, er dient als Bohrlehre. |
 | USB-C-**Datenkabel** | Ja | Den ESP32 flashen. Viele USB-C-Kabel können nur laden: Wenn das Board am Computer nicht auftaucht, probier ein anderes Kabel. |
 | Abisolierzange, Seitenschneider | Ja | Die Litzen vorbereiten. |
 | Heißluftföhn oder Feuerzeug | Praktisch | Den Schrumpfschlauch schrumpfen. |

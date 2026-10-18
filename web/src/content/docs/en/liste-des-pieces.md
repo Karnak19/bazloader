@@ -115,7 +115,7 @@ The files to print and how to tune them are in the repo's
 | Multimeter | **Yes** | Setting the converter to 5.0 V before connecting the ESP32. No multimeter, no build. Also used to calibrate the battery reading. |
 | Soldering iron, solder, flux | Yes | Every connection. An iron with temperature control is much nicer to use. |
 | Calipers | Yes | Measuring the outlet tube (*inner barrel*) and the IR parts, to fit the collar. A cheap digital one is enough. |
-| **1.5 mm** drill bit (with a hand pin vise or a small drill) | Yes, very likely | The outlet tube is probably metal, so infrared can't get through it: you need to drill **two holes facing each other**, lined up with the collar's windows, so the beam can pass. |
+| **1.5 mm** drill bit (with a hand pin vise or a small drill) | Yes, very likely | The outlet tube is probably metal, so infrared can't get through it: you need to drill **two holes**, lined up with the collar's windows, so the beam can pass. The beam does not go through the centre of the tube but 2 mm to the side: drill with the collar clamped in place, from one window to the other, it is the drilling guide. |
 | USB-C **data** cable | Yes | Flashing the ESP32. Many USB-C cables only charge: if the board doesn't show up on the computer, try another cable. |
 | Wire strippers, flush cutters | Yes | Preparing the wires. |
 | Heat gun or lighter | Handy | Shrinking the tubing. |

@@ -119,7 +119,7 @@ Les fichiers à imprimer et la façon de les régler sont dans le dossier
 | Multimètre | **Oui** | Régler le convertisseur à 5,0 V avant d'y brancher l'ESP32. Sans multimètre, pas de montage. Sert aussi à calibrer la mesure de la batterie. |
 | Fer à souder, étain, flux | Oui | Toutes les connexions. Un fer réglable en température est bien plus agréable. |
 | Pied à coulisse | Oui | Mesurer le diamètre du tube de sortie (*inner barrel*) et des composants IR, pour ajuster le collier. Un modèle numérique bon marché suffit. |
-| Foret de **1,5 mm** (avec un porte-foret à main ou une petite perceuse) | Oui, très probablement | Le tube de sortie est sans doute en métal, donc opaque à l'infrarouge : il faut y percer **deux trous face à face**, alignés avec les fenêtres du collier, pour que le faisceau passe. |
+| Foret de **1,5 mm** (avec un porte-foret à main ou une petite perceuse) | Oui, très probablement | Le tube de sortie est sans doute en métal, donc opaque à l'infrarouge : il faut y percer **deux trous**, alignés avec les fenêtres du collier, pour que le faisceau passe. Le faisceau ne passe pas par le centre du tube mais 2 mm à côté : percez avec le collier serré en place, d'une fenêtre à l'autre, il sert de guide. |
 | Câble USB-C **de données** | Oui | Flasher l'ESP32. Beaucoup de câbles USB-C ne font que charger : si la carte n'apparaît pas sur l'ordinateur, essayez un autre câble. |
 | Pince à dénuder, pince coupante | Oui | Préparer les fils. |
 | Pistolet à air chaud ou briquet | Pratique | Rétracter la gaine. |

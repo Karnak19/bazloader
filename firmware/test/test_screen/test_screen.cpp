@@ -97,9 +97,18 @@ static void test_model_changes_only_when_content_changes() {
                    screenModel(State::Idle, 50, 4, 7400, false, false));
 }
 
+static void test_testing_shows_test_and_the_target() {
+  ScreenModel m = screenModel(State::Testing, 50, 12, 7400, false, false);
+  TEST_ASSERT_EQUAL_STRING("Test moteur", m.status1);
+  TEST_ASSERT_EQUAL_STRING("", m.status2);
+  TEST_ASSERT_EQUAL_STRING("50", m.big);  // nothing is counted: the target, not a count
+  TEST_ASSERT_EQUAL_STRING("Cible", m.detail);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_idle_shows_target);
+  RUN_TEST(test_testing_shows_test_and_the_target);
   RUN_TEST(test_running_shows_count_over_target);
   RUN_TEST(test_slowdown);
   RUN_TEST(test_done_shows_final_count_with_overshoot);

@@ -64,17 +64,21 @@ class Run {
   State state() const { return state_; }
   uint16_t target() const { return target_; }
   Speed speed() const;
-  bool counting() const;  // whether BBs should still be counted
+  bool counting() const;  // whether BBs should still be counted. Never during a test spin.
 
   // Ignored during a run. Returns the target in use.
   uint16_t setTarget(int32_t target);
   // New slowdown N and jam timeout, from the runtime config. Refused (false) during a run.
   bool setTiming(uint8_t slowdownN, uint16_t jamTimeoutMs);
-  // Starts a run from any stopped state. Returns true if the servo should start.
+  // Starts a run from any stopped state (not from TESTING). Returns true if the servo should start.
   bool go(uint32_t nowMs, bool batteryOk);
+  // Test spin (calibration): TESTING at `speed` (Full or Slow) until stop. No counting, no jam.
+  // Accepted from the same states as GO, and from TESTING to switch speed; refused during a run.
+  // A low battery refuses it like GO does (LOW_BATT). Returns true if the servo should spin.
+  bool test(Speed speed, bool batteryOk);
   // Any state -> IDLE. The count stays wherever the caller keeps it.
   void stop() { state_ = State::Idle; }
-  // The battery stayed flat under load: a run ends in LOW_BATT. Ignored when not running.
+  // The battery stayed flat under load: a run or a test spin ends in LOW_BATT. Ignored otherwise.
   void lowBattery();
   // Drives the transitions from the current count and time.
   void update(uint32_t nowMs, uint32_t count);
@@ -86,6 +90,7 @@ class Run {
   uint32_t lastCount_ = 0;
   uint32_t lastBbMs_ = 0;  // time of the last new BB (or of GO)
   uint32_t doneMs_ = 0;
+  Speed testSpeed_ = Speed::Off;
 };
 
 // Servo pulse width for a speed. `reverse` flips the offset; Off returns 0 (no pulse).

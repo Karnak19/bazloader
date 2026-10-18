@@ -3,6 +3,7 @@
 #include <soc/ledc_struct.h>
 
 #include "battery.h"
+#include "ble.h"
 #include "ble_uuids.h"
 #include "config.h"
 #include "controls.h"
@@ -56,8 +57,9 @@ static void setServo(Speed speed) {
   servoMoving = speed != Speed::Off;
   ledcWrite(SERVO_LEDC_CHANNEL, duty);
   // The target BB may have landed while we were writing: its cut must win. Test the requested
-  // speed, not servoMoving, which the ISR has already cleared in exactly that case.
-  if (speed != Speed::Off && counter.count >= counter.stopAt) {
+  // speed, not servoMoving, which the ISR has already cleared in exactly that case. Only while
+  // counting: a test spin doesn't count, and the last run's count is already at its stopAt.
+  if (speed != Speed::Off && counter.enabled && counter.count >= counter.stopAt) {
     ledcWrite(SERVO_LEDC_CHANNEL, stopDuty);
     servoMoving = false;
     duty = stopDuty;
@@ -187,6 +189,22 @@ static void go() {
   syncState();
 }
 
+// Test spin (commands 2 and 3): the servo at full or slow speed until stop, nothing counted.
+static void startTest(Speed speed) {
+  bool switching = run.state() == State::Testing;
+  if (!run.test(speed, battery.ok())) {
+    if (run.state() == State::LowBatt) {
+      Serial.printf("  test refused: battery %u mV\n", battery.mv());
+    } else {
+      Serial.println("  test ignored: a run is in progress");
+    }
+    syncState();
+    return;
+  }
+  syncState();
+  if (switching) setServo(run.speed());  // already TESTING: syncState sees no change
+}
+
 static void stop() {
   run.stop();
   syncState();
@@ -304,6 +322,48 @@ bool setConfig(const ConfigV1& cfg) {
 
 bool setPresets(const Presets& presets) { return settings.setPresets(presets); }
 
+// ---- BLE ----
+
+static BleOutbox bleOutbox(COUNT_NOTIFY_THROTTLE_MS, BATTERY_NOTIFY_PERIOD_MS);
+
+static BleValues bleValues() {
+  return {run.target(), counter.count, run.state(), battery.mv(), settings.presets(),
+          settings.config()};
+}
+
+// What a BLE request can do: the same hooks as the controls and the serial commands.
+struct LoopActions : BleActions {
+  State state() override { return run.state(); }
+  uint16_t setTarget(uint16_t target) override { return run.setTarget(target); }
+  void go() override { ::go(); }
+  void stop() override { ::stop(); }
+  void test(Speed speed) override { startTest(speed); }
+  bool setConfig(const ConfigV1& cfg) override { return ::setConfig(cfg); }
+  bool setPresets(const Presets& presets) override { return ::setPresets(presets); }
+};
+
+// Applies the requests the NimBLE callbacks queued. Loop context: hooks, NVS and Serial are fine.
+static void handleBle() {
+  static LoopActions actions;
+  BleRequest r;
+  while (blePoll(&r)) {
+    if (r.kind == BleRequest::Disconnected) {
+      Serial.printf("[%lu ms] BLE disconnected%s\n", (unsigned long)millis(),
+                    run.state() == State::Testing ? ": test spin stopped" : "");
+    } else if (r.kind == BleRequest::RunCommand) {
+      Serial.printf("[%lu ms] BLE command %u\n", (unsigned long)millis(), (unsigned)r.command);
+    }
+    bleOutbox.force(applyBleRequest(r, actions));
+  }
+}
+
+// Sets and notifies whatever changed, whatever changed it (encoder, BLE, serial, the run itself).
+static void pushBle() {
+  BleValues v = bleValues();
+  uint8_t fields = bleOutbox.update(v, millis());
+  if (fields) blePush(fields, v);
+}
+
 static void printSettings() {
   const ConfigV1& c = settings.config();
   Serial.printf("  config v%u: neutral %u us, full %+d us, slow %+d us, reverse %u, slowdown %u,"
@@ -341,6 +401,7 @@ static void handleCommand(const char* line) {
     }
     case 'g': go(); break;
     case 's': stop(); break;
+    case 'T': startTest(line[1] == 's' ? Speed::Slow : Speed::Full); break;
 #ifdef SIMULATE_IR
     case 'p':
       simPairRequested = true;
@@ -381,9 +442,11 @@ static void handleCommand(const char* line) {
                     (unsigned long)counter.count, run.target());
       printBattery();
       printDisplay();
+      Serial.printf("  ble %s\n", bleConnected() ? "connected" : "advertising");
       break;
     default:
-      Serial.println("  commands: t<n> target, g go, s stop, ? status, c settings,"
+      Serial.println("  commands: t<n> target, g go, s stop, T test full, Ts test slow,"
+                     " ? status, c settings,"
                      " c<neutral>,<full>,<slow>,<rev>,<n>,<jam> set config,"
                      " P<a>,<b>,<c>,<d> set presets (sim: p close pulse pair)");
   }
@@ -442,15 +505,23 @@ void setup() {
   updateDisplay(true);
   printDisplay();
 
-  Serial.printf("target %u. commands: t<n>, g, s, ?, c, P\n", run.target());
+  // Last: every value is final, so the first BLE reads are right.
+  BleValues initial = bleValues();
+  bleOutbox.start(initial, millis());
+  bleBegin(initial);
+  Serial.printf("  ble advertising as %s\n", BLE_DEVICE_NAME);
+
+  Serial.printf("target %u. commands: t<n>, g, s, T, Ts, ?, c, P\n", run.target());
 }
 
 void loop() {
   readSerial();
   pollControls();
+  handleBle();
   run.update(millis(), counter.count);
   syncState();
   updateBattery(false);
   updateDisplay(false);
   settings.updateTarget(run.target(), millis());  // written 2 s after it stops changing
+  pushBle();
 }

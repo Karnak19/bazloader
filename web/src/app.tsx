@@ -370,7 +370,7 @@ function MainScreen(props: {
           </div>
           <div class="rule-ticks" aria-hidden="true">
             {TICKS.map((i) => (
-              <span key={i} />
+              <span key={i} class={ratio > 0 && i / 10 <= ratio ? 'on' : undefined} />
             ))}
           </div>
         </div>
@@ -437,7 +437,7 @@ function MainScreen(props: {
 const TICKS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 // The count, one span per digit. A digit's key is its place and its value, so only the digits
-// that changed are new elements, and only they play the tick (transform and opacity, in CSS).
+// that changed are new elements, and only they play the tick (a short transform, in CSS).
 function Digits({ value }: { value: number | null }) {
   if (value === null) return <span class="digits">—</span>
   const text = String(value)

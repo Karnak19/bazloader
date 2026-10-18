@@ -440,17 +440,17 @@ p {
   display: inline-flex;
 }
 
-/* A digit that changed drops into place, like a mechanical counter. Transform and opacity only:
-   the mono digits never change width, so nothing reflows at 10+ BBs a second. */
+/* A digit that changed drops into place, like a mechanical counter. Transform only, and short:
+   at 10+ BBs a second the units digit restarts it every ~100 ms and must still read solid. The mono
+   digits never change width, so nothing reflows. */
 .digit {
   display: inline-block;
-  animation: tick 140ms var(--ease);
+  animation: tick 90ms var(--ease);
 }
 
 @keyframes tick {
   from {
-    opacity: 0.25;
-    transform: translateY(-0.22em);
+    transform: translateY(-0.12em);
   }
 }
 
@@ -524,6 +524,22 @@ p {
 
 .rule-ticks span:nth-child(5n + 1) {
   height: 0.5rem;
+}
+
+/* The ticks the fill has passed take the state's colour. */
+.rule-ticks span.on {
+  background: var(--tone-ink);
+}
+
+/* Entering « Terminé »: the full green bar pulses once. */
+.tone-ok .rule-fill {
+  animation: done-pulse 700ms var(--ease);
+}
+
+@keyframes done-pulse {
+  40% {
+    box-shadow: 0 0 0.75rem 0.125rem color-mix(in oklab, var(--ok) 60%, transparent);
+  }
 }
 
 /* ---- Panels and fields ---- */
@@ -631,7 +647,6 @@ p {
 
 .btn.chip {
   padding: 0;
-  background: transparent;
   font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 500;
@@ -863,8 +878,8 @@ p {
   display: flex;
   align-items: flex-start;
   gap: 0.375rem;
-  /* Two lines kept: the longest messages wrap once at phone width. */
-  min-height: 2.6em;
+  /* One line kept: most messages fit it at phone width; a long one pushes by a line at most. */
+  min-height: 1.3em;
   color: var(--jam-ink);
   font-size: 0.875rem;
   font-weight: 600;
@@ -881,8 +896,10 @@ p {
 
 .target.row .field-error {
   grid-column: 1 / -1;
-  /* These messages fit on one line at phone width. */
-  min-height: 1.3em;
+}
+
+.panel > .field-error {
+  margin-top: -0.25rem;
 }
 
 .field-error .icon {

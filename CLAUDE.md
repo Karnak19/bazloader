@@ -17,7 +17,7 @@ full spec; read it before any non-trivial change.
 
 | Where       | Build / check                                                    |
 | ----------- | ---------------------------------------------------------------- |
-| `firmware/` | `pio run` (real IR), `pio run -e sim` (fake BBs, `SIMULATE_IR`)  |
+| `firmware/` | `pio run` (real IR), `pio run -e sim` (fake BBs), `pio test -e native` (logic tests) |
 | `web/`      | `bun install`, `bun run build`, `bun test`, `bun run dev`        |
 | `cad/`      | `uv run python build.py` (writes STL/STEP to `cad/out/`)         |
 

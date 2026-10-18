@@ -1,0 +1,34 @@
+---
+// The whole app is this one page: changing page in Astro is a full page load, which would drop
+// the Web Bluetooth connection. The island switches between screens itself.
+// client:only because navigator.bluetooth does not exist at build time.
+import { App } from '../app.tsx'
+import '../style.css'
+
+const base = import.meta.env.BASE_URL
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#111214" />
+    <meta name="description" content="Chargeur de billes BULLOADER+ piloté en Bluetooth" />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={`${base}apple-touch-icon-180x180.png`} />
+    <link rel="manifest" href={`${base}manifest.webmanifest`} />
+    <title>BULLOADER+</title>
+  </head>
+  <body>
+    <App client:only="preact" />
+    <script>
+      // sw.js lives at the site root but only controls /app/, so the docs always hit the network.
+      // The worker activates on install (autoUpdate), so the next load gets the new version.
+      if ('serviceWorker' in navigator) {
+        const base = import.meta.env.BASE_URL
+        navigator.serviceWorker.register(`${base}sw.js`, { scope: `${base}app/` })
+      }
+    </script>
+  </body>
+</html>

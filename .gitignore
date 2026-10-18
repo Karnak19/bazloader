@@ -4,10 +4,10 @@
 firmware/.pio/
 firmware/.vscode/
 
-# pwa
-pwa/node_modules/
-pwa/dist/
-pwa/dev-dist/
+# web
+web/node_modules/
+web/dist/
+web/.astro/
 
 # cad
 cad/.venv/

@@ -1,5 +1,5 @@
 // BLE protocol: UUIDs, enums and byte codecs.
-// Must match docs/ble-protocol.md and firmware/src/ble_uuids.h.
+// Must match web/src/content/docs/protocole-ble.md and firmware/src/ble_uuids.h.
 // All integers are little-endian.
 
 export const DEVICE_NAME = 'BULLOADER'

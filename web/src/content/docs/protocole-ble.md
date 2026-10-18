@@ -1,4 +1,7 @@
-# BLE protocol
+---
+title: BLE protocol
+description: UUIDs, types and byte layouts shared by the firmware and the web app.
+---
 
 The ESP32 is the source of truth. Every change, whether it comes from the encoder or from BLE, is
 notified so the OLED and the PWA stay in sync.
@@ -9,7 +12,7 @@ notified so the OLED and the PWA stay in sync.
   `8adb76XX-5374-47c7-9127-d9895246807a`.
 
 Any change here must land together with both constant files:
-`firmware/src/ble_uuids.h` and `pwa/src/ble/protocol.ts`.
+`firmware/src/ble_uuids.h` and `web/src/ble/protocol.ts`.
 
 ## Service
 

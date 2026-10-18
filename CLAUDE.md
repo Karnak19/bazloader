@@ -30,8 +30,10 @@ field conditions, principles) for any UI or docs work.
 - **The ESP32 owns the state.** The PWA only sends requests and renders what the device notifies.
 - **Works offline.** No network call at runtime, no backend, no Wi-Fi on the ESP32.
 - **Keep it simple.** Few dependencies, plain code, no abstractions until a second use exists.
-- Code, identifiers and comments in English. The app and the docs are in French and English
-  (French is the original; see `PRODUCT.md`). The OLED is French only for now.
+- Code, identifiers and comments in English. The docs and the README are in French, English,
+  Spanish and German; French is the source, and every docs or README change updates all four
+  (`web/src/content/docs/` root, `en/`, `es/`, `de/`, and `README*.md`). The app is in French and
+  English. The OLED is French only for now. See `PRODUCT.md`.
 - **License:** the original BULLOADER is under the MakerWorld Exclusive License. Never commit its
   files or the remixed control panel; they go in `cad/original/` and `cad/remix/`, which are
   gitignored. Parts designed from scratch (IR collar, electronics cradle) are fine to commit.

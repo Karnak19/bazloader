@@ -45,7 +45,7 @@ The project ships three things in one public repo: the firmware, the web app, an
   - Settings: presets, servo calibration with test spins, slowdown N, jam timeout.
   - Plus a disconnect banner with automatic reconnection.
 - **Device states:** idle, running, slowdown, done, jam (« bourrage / trémie vide »), low battery, testing. Target 1–9999, 4 presets (default 30 / 50 / 120 / 300).
-- **Languages: internationalised from the start.** French and English for the app and the docs. French is the original language. Code and identifiers stay in English.
+- **Languages: internationalised from the start.** French and English for the app; French, English, Spanish and German for the docs and the README. French is the original language. Code and identifiers stay in English.
   - *Open decision:* whether the device's OLED is also translated, or stays French only.
 - **Keep it simple:** few dependencies, plain CSS, no UI kit.
 - **Hardware unknowns** (still being measured): barrel diameter, servo rating, IR signal quality.
@@ -78,4 +78,4 @@ There are no photos of the physical build yet, and no field usage numbers, BB ac
 - **Outdoor legibility:** strong contrast in direct sunlight; dark theme by default.
 - **Touch targets:** at least 56 px, usable with gloves.
 - **Colour:** never rely on colour alone for state (battery level, errors). Text always accompanies it.
-- **Languages:** French and English.
+- **Languages:** docs and README in French, English, Spanish and German (French is the source); app in French and English; OLED in French.

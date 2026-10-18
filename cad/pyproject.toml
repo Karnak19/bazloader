@@ -1,0 +1,9 @@
+[project]
+name = "bulloader-cad"
+version = "0.1.0"
+description = "BULLOADER+ parts designed from scratch (IR collar, electronics cradle)"
+requires-python = ">=3.12,<3.13"
+dependencies = ["build123d"]
+
+[tool.uv]
+package = false

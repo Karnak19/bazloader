@@ -1,0 +1,20 @@
+.DS_Store
+
+# firmware
+firmware/.pio/
+firmware/.vscode/
+
+# pwa
+pwa/node_modules/
+pwa/dist/
+pwa/dev-dist/
+
+# cad
+cad/.venv/
+cad/out/
+__pycache__/
+
+# MakerWorld Exclusive License: the original BULLOADER files and any remix of them
+# (control panel) must never be committed to this public repo.
+cad/original/
+cad/remix/

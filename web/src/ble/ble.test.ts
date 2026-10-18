@@ -2,41 +2,10 @@ import { describe, expect, test } from 'bun:test'
 import { createBle } from './ble.ts'
 import type { CharacteristicName, DeviceLink } from './link.ts'
 import { mockOptionsFromUrl } from './link.ts'
-import { type Clock, MockDevice, type MockOptions } from './mock.ts'
+import { FakeClock } from './fake-clock.ts'
+import { MockDevice, type MockOptions } from './mock.ts'
 import { encodeConfig, encodePresets, encodeUint16, encodeUint8, State } from './protocol.ts'
 import { createQueue } from './queue.ts'
-
-// Timers that only move when the test says so.
-class FakeClock implements Clock {
-  private now = 0
-  private nextId = 0
-  private timers = new Map<number, { at: number; fn: () => void }>()
-
-  setTimeout(fn: () => void, ms: number): unknown {
-    const id = this.nextId++
-    this.timers.set(id, { at: this.now + ms, fn })
-    return id
-  }
-
-  clearTimeout(id: unknown): void {
-    this.timers.delete(id as number)
-  }
-
-  advance(ms: number): void {
-    const end = this.now + ms
-    for (;;) {
-      let next: [number, { at: number; fn: () => void }] | undefined
-      for (const entry of this.timers) {
-        if (entry[1].at <= end && (!next || entry[1].at < next[1].at)) next = entry
-      }
-      if (!next) break
-      this.timers.delete(next[0])
-      this.now = next[1].at
-      next[1].fn()
-    }
-    this.now = end
-  }
-}
 
 async function connectMock(options: MockOptions = {}) {
   const clock = new FakeClock()
@@ -197,6 +166,8 @@ describe('connect', () => {
     expect(mockOptionsFromUrl('?mock')).toEqual({})
     expect(mockOptionsFromUrl('?mock=jam')).toEqual({ jamAt: 7 })
     expect(mockOptionsFromUrl('?mock=v2')).toEqual({ configVersion: 2 })
+    expect(mockOptionsFromUrl('?mock=drop')).toEqual({ dropAfterMs: 4000, awayMs: 6000 })
+    expect(mockOptionsFromUrl('?mock=gone')?.awayMs).toBe(Number.POSITIVE_INFINITY)
   })
 })
 

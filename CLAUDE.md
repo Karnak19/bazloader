@@ -2,7 +2,8 @@
 
 Electric airsoft BB loader upgrade: load an exact number of BBs, counted by an IR beam, driven by an
 encoder + OLED on the device and by an Android PWA over Bluetooth Low Energy. `BRIEF.md` is the
-full spec; read it before any non-trivial change.
+full spec; read it before any non-trivial change. `PRODUCT.md` holds the product context (users,
+field conditions, principles) for any UI or docs work.
 
 ## Layout
 
@@ -29,7 +30,8 @@ full spec; read it before any non-trivial change.
 - **The ESP32 owns the state.** The PWA only sends requests and renders what the device notifies.
 - **Works offline.** No network call at runtime, no backend, no Wi-Fi on the ESP32.
 - **Keep it simple.** Few dependencies, plain code, no abstractions until a second use exists.
-- Code, identifiers and comments in English. User-facing text (OLED, PWA) in French.
+- Code, identifiers and comments in English. The app and the docs are in French and English
+  (French is the original; see `PRODUCT.md`). The OLED is French only for now.
 - **License:** the original BULLOADER is under the MakerWorld Exclusive License. Never commit its
   files or the remixed control panel; they go in `cad/original/` and `cad/remix/`, which are
   gitignored. Parts designed from scratch (IR collar, electronics cradle) are fine to commit.

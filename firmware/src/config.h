@@ -8,10 +8,16 @@
 constexpr uint8_t PIN_BATTERY_ADC = 0;  // LiPo voltage through the divider
 constexpr uint8_t PIN_IR_SENSOR   = 1;  // IR phototransistor, interrupt on beam break
 constexpr uint8_t PIN_SERVO       = 3;  // Servo PWM (LEDC)
-constexpr uint8_t PIN_GO_BUTTON   = 4;  // GO button, INPUT_PULLUP, dry contact to GND
-constexpr uint8_t PIN_ENC_A       = 5;
-constexpr uint8_t PIN_ENC_B       = 6;
-constexpr uint8_t PIN_ENC_SW      = 7;
+// GPIO 4-7 double as the C3's JTAG pins. Fine while we debug over USB (the built-in USB-JTAG
+// doesn't use them), but an external JTAG probe would fight the button and the encoder.
+// GO button: a dry contact between GPIO 4 and GND only, INPUT_PULLUP. The button was part of the
+// original 12 V circuit: disconnect it fully from the 12 V side first.
+constexpr uint8_t PIN_GO_BUTTON   = 4;
+// KY-040 encoder. Its module has its own pull-ups to its `+` pin: wire `+` to 3.3 V, NEVER 5 V,
+// or the C3's GPIOs get 5 V.
+constexpr uint8_t PIN_ENC_A       = 5;  // CLK
+constexpr uint8_t PIN_ENC_B       = 6;  // DT
+constexpr uint8_t PIN_ENC_SW      = 7;  // SW, INPUT_PULLUP, low when pressed
 constexpr uint8_t PIN_I2C_SDA     = 10; // OLED
 constexpr uint8_t PIN_I2C_SCL     = 20; // OLED (usable because Serial is on native USB)
 
@@ -42,7 +48,24 @@ constexpr uint32_t IR_MIN_INTERVAL_US = 5000;
 
 constexpr uint16_t TARGET_MIN = 1;
 constexpr uint16_t TARGET_MAX = 9999;
-constexpr uint16_t DEFAULT_PRESETS[4] = {30, 50, 120, 300};
+constexpr uint8_t  PRESET_COUNT = 4;  // matches the BLE `presets` characteristic (uint16[4])
+constexpr uint16_t DEFAULT_PRESETS[PRESET_COUNT] = {30, 50, 120, 300};
+
+// ---- Encoder and buttons ----
+// Valid quadrature transitions per detent: KY-040 modules come as 4 (most) or 2.
+// If it takes two clicks to move the target by 1, the module is a 2: set 2.
+constexpr uint8_t  ENCODER_STEPS_PER_DETENT = 4;
+constexpr bool     ENCODER_REVERSE   = false; // flip if turning clockwise lowers the target
+constexpr uint16_t ENCODER_FAST_MS   = 30;    // detents closer than this step by ENCODER_FAST_STEP
+constexpr uint8_t  ENCODER_FAST_STEP = 10;
+constexpr uint16_t BUTTON_DEBOUNCE_MS = 20;   // a level must hold this long to count
+constexpr uint16_t LONG_CLICK_MS      = 800;  // encoder click held this long: long click
+
+// ---- OLED (SSD1306 128x64, I2C) ----
+// 7-bit address. Most modules answer on 0x3C, some on 0x3D (the solder jumper on the back).
+constexpr uint8_t  OLED_I2C_ADDRESS = 0x3C;
+constexpr uint32_t OLED_I2C_HZ      = 400000;
+constexpr uint16_t OLED_MIN_REDRAW_MS = 100;  // at most ~10 Hz, and only when the screen changes
 
 // ---- Battery (2S LiPo) ----
 constexpr uint16_t BATT_WARN_MV   = 7000; // warn below this

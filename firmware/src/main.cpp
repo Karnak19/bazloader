@@ -1,10 +1,14 @@
 #include <Arduino.h>
+#include <soc/gpio_reg.h>
 #include <soc/ledc_struct.h>
 
 #include "battery.h"
 #include "ble_uuids.h"
 #include "config.h"
+#include "controls.h"
+#include "display.h"
 #include "run.h"
+#include "screen.h"
 
 #ifdef SIMULATE_IR
 constexpr bool kSimulateIr = true;
@@ -185,7 +189,95 @@ static void stop() {
   if (servoMoving) setServo(Speed::Off);
 }
 
-// ---- Serial commands (temporary, until the OLED and BLE exist) ----
+// ---- Encoder and buttons ----
+
+static Encoder encoder(ENCODER_STEPS_PER_DETENT, 3);  // KY-040 rests with A and B high
+static EncoderAccel encoderAccel(ENCODER_FAST_MS, ENCODER_FAST_STEP);
+static Button goButton(BUTTON_DEBOUNCE_MS, LONG_CLICK_MS);
+static Button encoderButton(BUTTON_DEBOUNCE_MS, LONG_CLICK_MS);
+static ClickHandler clicks;
+static Presets presets = defaultPresets();  // NVS (#4) will load them here
+
+// A/B pin change. Reads both pins at once from the GPIO input register (no flash code).
+static IRAM_ATTR void encoderEdge() {
+  uint32_t in = REG_READ(GPIO_IN_REG);
+  encoder.edge((in >> PIN_ENC_A) & 1, (in >> PIN_ENC_B) & 1);
+}
+
+static void applyAction(UiAction action, const char* source) {
+  switch (action) {
+    case UiAction::None: return;
+    case UiAction::Start:
+      Serial.printf("[%lu ms] %s: go\n", (unsigned long)millis(), source);
+      go();
+      return;
+    case UiAction::Stop:
+      Serial.printf("[%lu ms] %s: stop\n", (unsigned long)millis(), source);
+      stop();
+      return;
+    case UiAction::NextPreset:
+      Serial.printf("[%lu ms] %s: preset, target %u\n", (unsigned long)millis(), source,
+                    run.setTarget(nextPreset(presets, run.target())));
+      return;
+  }
+}
+
+// Polled every loop pass: encoder detents, then the two buttons (active low).
+static void pollControls() {
+  static int32_t seenPosition = 0;
+  uint32_t now = millis();
+  int32_t position = encoder.position;  // single word written by the ISR: atomic read
+  int32_t detents = position - seenPosition;
+  seenPosition = position;
+  if (ENCODER_REVERSE) detents = -detents;
+  int32_t change = encoderAccel.apply(detents, now);
+  if (change != 0) {
+    uint16_t before = run.target();
+    uint16_t after = run.setTarget(before + change);  // ignored during a run
+    if (after != before) Serial.printf("  target %u\n", after);
+  }
+  // GO acts on the press itself, not the release: a stop shouldn't wait for the thumb.
+  if (goButton.update(now, digitalRead(PIN_GO_BUTTON) == LOW) == ButtonEvent::Press) {
+    UiAction action = goAction(run.state(), battery.ok());
+    if (action == UiAction::None) Serial.printf("  GO ignored: battery %u mV\n", battery.mv());
+    applyAction(action, "GO");
+  }
+  applyAction(clicks.handle(encoderButton.update(now, digitalRead(PIN_ENC_SW) == LOW), run.state()),
+              "click");
+}
+
+// ---- OLED ----
+
+static bool displayFound = false;
+static uint32_t redrawLastUs = 0, redrawMaxUs = 0;
+
+// Redraws when the screen content changed, at most every OLED_MIN_REDRAW_MS. A redraw blocks the
+// loop for the I2C transfer, but not the stop: the count ISR cuts the servo on its own.
+static void updateDisplay(bool force) {
+  static ScreenModel shown;
+  static uint32_t lastDrawMs = 0;
+  if (!displayFound) return;
+  uint32_t now = millis();
+  if (!force && now - lastDrawMs < OLED_MIN_REDRAW_MS) return;
+  ScreenModel m = screenModel(run.state(), run.target(), counter.count, battery.mv(),
+                              battery.usb(), battery.warn());
+  if (!force && m == shown) return;
+  shown = m;
+  lastDrawMs = now;
+  redrawLastUs = displayDraw(m);
+  if (redrawLastUs > redrawMaxUs) redrawMaxUs = redrawLastUs;
+}
+
+static void printDisplay() {
+  if (!displayFound) {
+    Serial.printf("  oled not found at 0x%02X\n", OLED_I2C_ADDRESS);
+    return;
+  }
+  Serial.printf("  oled redraw %lu us (max %lu us)\n", (unsigned long)redrawLastUs,
+                (unsigned long)redrawMaxUs);
+}
+
+// ---- Serial commands (still the only way to drive it without the hardware) ----
 
 static void handleCommand(const char* line) {
   switch (line[0]) {
@@ -206,6 +298,7 @@ static void handleCommand(const char* line) {
       Serial.printf("  %s count=%lu target=%u\n", stateName(run.state()),
                     (unsigned long)counter.count, run.target());
       printBattery();
+      printDisplay();
       break;
     default:
       Serial.println("  commands: t<n> target, g go, s stop, ? status"
@@ -251,12 +344,28 @@ void setup() {
   analogSetPinAttenuation(PIN_BATTERY_ADC, ADC_11db);  // up to ~2.5 V calibrated on the C3
   updateBattery(true);  // GO must see a real reading straight away
 
+  pinMode(PIN_GO_BUTTON, INPUT_PULLUP);
+  pinMode(PIN_ENC_SW, INPUT_PULLUP);
+  // The KY-040 has its own pull-ups to its + pin (3.3 V); the internal ones only help when the
+  // encoder is unplugged, so the pins don't float.
+  pinMode(PIN_ENC_A, INPUT_PULLUP);
+  pinMode(PIN_ENC_B, INPUT_PULLUP);
+  encoder.ab = (digitalRead(PIN_ENC_A) ? 2 : 0) | (digitalRead(PIN_ENC_B) ? 1 : 0);
+  attachInterrupt(PIN_ENC_A, encoderEdge, CHANGE);
+  attachInterrupt(PIN_ENC_B, encoderEdge, CHANGE);
+
+  displayFound = displayBegin();
+  updateDisplay(true);
+  printDisplay();
+
   Serial.printf("target %u. commands: t<n>, g, s, ?\n", run.target());
 }
 
 void loop() {
   readSerial();
+  pollControls();
   run.update(millis(), counter.count);
   syncState();
   updateBattery(false);
+  updateDisplay(false);
 }

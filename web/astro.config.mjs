@@ -38,30 +38,42 @@ export default defineConfig({
   base,
   trailingSlash: 'always',
   // Starlight prefixes every sidebar link with the locale, so the English sidebar's « App » points
-  // to /en/app/. There is one app for both languages (it picks its own), so send that back to it.
-  // The destination needs the base; the source doesn't.
-  redirects: { '/en/app/': appScope },
+  // to /en/app/ (and likewise /es/app/, /de/app/). There is one app for every language (it picks
+  // its own, French or English), so send those back to it. The destination needs the base; the
+  // source doesn't.
+  redirects: { '/en/app/': appScope, '/es/app/': appScope, '/de/app/': appScope },
   integrations: [
     starlight({
       title: 'BULLOADER+',
       description: 'Chargeur de billes BULLOADER+ piloté en Bluetooth',
-      // French is the original and stays at the root, so its URLs don't change. English is under
-      // /en/, with the same file names: that is how the language picker pairs the pages.
+      // French is the original and stays at the root, so its URLs don't change. English, Spanish and
+      // German are under /en/, /es/ and /de/, with the same file names: that is how the language
+      // picker pairs the pages.
       defaultLocale: 'root',
       locales: {
         root: { label: 'Français', lang: 'fr' },
         en: { label: 'English', lang: 'en' },
+        es: { label: 'Español', lang: 'es' },
+        de: { label: 'Deutsch', lang: 'de' },
       },
       favicon: '/favicon.svg',
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/Karnak19/bulloader-plus' },
       ],
       sidebar: [
-        // The app is one page for both languages: it picks its own (see src/i18n/).
-        { label: 'Application', translations: { en: 'App' }, link: '/app/' },
-        { label: 'Protocole BLE', translations: { en: 'BLE protocol' }, slug: 'protocole-ble' },
-        { label: 'Liste des pièces', translations: { en: 'Parts list' }, slug: 'liste-des-pieces' },
-        { label: 'Câblage', translations: { en: 'Wiring' }, slug: 'cablage' },
+        // The app is one page for every language: it picks its own (see src/i18n/).
+        { label: 'Application', translations: { en: 'App', es: 'Aplicación', de: 'App' }, link: '/app/' },
+        {
+          label: 'Protocole BLE',
+          translations: { en: 'BLE protocol', es: 'Protocolo BLE', de: 'BLE-Protokoll' },
+          slug: 'protocole-ble',
+        },
+        {
+          label: 'Liste des pièces',
+          translations: { en: 'Parts list', es: 'Lista de piezas', de: 'Stückliste' },
+          slug: 'liste-des-pieces',
+        },
+        { label: 'Câblage', translations: { en: 'Wiring', es: 'Cableado', de: 'Verkabelung' }, slug: 'cablage' },
       ],
     }),
     preact(),

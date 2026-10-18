@@ -1,4 +1,4 @@
-[English](README.md) · **Français**
+[English](README.md) · **Français** · [Español](README.es.md) · [Deutsch](README.de.md)
 
 # BULLOADER+
 

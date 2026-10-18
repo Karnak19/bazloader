@@ -7,8 +7,10 @@
 #include "config.h"
 #include "controls.h"
 #include "display.h"
+#include "nvs_store.h"
 #include "run.h"
 #include "screen.h"
+#include "settings.h"
 
 #ifdef SIMULATE_IR
 constexpr bool kSimulateIr = true;
@@ -16,8 +18,13 @@ constexpr bool kSimulateIr = true;
 constexpr bool kSimulateIr = false;
 #endif
 
-constexpr uint32_t kStopDuty =
-    SERVO_STOP_NEUTRAL ? servoDuty(SERVO_NEUTRAL_US, SERVO_LEDC_BITS) : 0;
+// Settings from NVS: presets, last target and the servo/run config, applied at boot (setup()).
+static NvsStore nvs;
+static Settings settings(nvs, TARGET_SAVE_DELAY_MS);
+
+// LEDC duty of a stopped servo, from the runtime neutral. Precomputed in loop context whenever the
+// config changes (only when stopped), so the count ISR only reads one aligned word from DRAM.
+static volatile DRAM_ATTR uint32_t stopDuty = 0;
 
 static Counter counter(IR_MIN_INTERVAL_US);
 static Run run({SLOWDOWN_N, JAM_TIMEOUT_MS, FIRST_BB_TIMEOUT_MS, DONE_HOLD_MS});
@@ -37,24 +44,23 @@ static Battery battery(
 // header doesn't compile as C++). The C3 only has low-speed group 0.
 static IRAM_ATTR void cutServoFromIsr() {
   auto& ch = LEDC.channel_group[0].channel[SERVO_LEDC_CHANNEL];
-  ch.duty.duty = kStopDuty << 4;  // 4 fractional bits
+  ch.duty.duty = stopDuty << 4;  // 4 fractional bits
   ch.conf1.duty_start = 1;
   ch.conf0.low_speed_update = 1;  // latch at the next period
   servoMoving = false;
 }
 
 static void setServo(Speed speed) {
-  uint16_t us = servoPulseUs(speed, SERVO_NEUTRAL_US, SERVO_FULL_OFFSET_US, SERVO_SLOW_OFFSET_US,
-                             SERVO_REVERSE);
-  uint32_t duty = us ? servoDuty(us, SERVO_LEDC_BITS) : kStopDuty;
+  uint16_t us = servoPulseUs(speed, settings.config());
+  uint32_t duty = us ? servoDuty(us, SERVO_LEDC_BITS) : stopDuty;
   servoMoving = speed != Speed::Off;
   ledcWrite(SERVO_LEDC_CHANNEL, duty);
   // The target BB may have landed while we were writing: its cut must win. Test the requested
   // speed, not servoMoving, which the ISR has already cleared in exactly that case.
   if (speed != Speed::Off && counter.count >= counter.stopAt) {
-    ledcWrite(SERVO_LEDC_CHANNEL, kStopDuty);
+    ledcWrite(SERVO_LEDC_CHANNEL, stopDuty);
     servoMoving = false;
-    duty = kStopDuty;
+    duty = stopDuty;
     us = 0;
   }
   Serial.printf("  servo %u us, duty %lu/%u\n", us, (unsigned long)duty, 1u << SERVO_LEDC_BITS);
@@ -196,7 +202,6 @@ static EncoderAccel encoderAccel(ENCODER_FAST_MS, ENCODER_FAST_STEP);
 static Button goButton(BUTTON_DEBOUNCE_MS, LONG_CLICK_MS);
 static Button encoderButton(BUTTON_DEBOUNCE_MS, LONG_CLICK_MS);
 static ClickHandler clicks;
-static Presets presets = defaultPresets();  // NVS (#4) will load them here
 
 // A/B pin change. Reads both pins at once from the GPIO input register (no flash code).
 static IRAM_ATTR void encoderEdge() {
@@ -217,7 +222,7 @@ static void applyAction(UiAction action, const char* source) {
       return;
     case UiAction::NextPreset:
       Serial.printf("[%lu ms] %s: preset, target %u\n", (unsigned long)millis(), source,
-                    run.setTarget(nextPreset(presets, run.target())));
+                    run.setTarget(nextPreset(settings.presets(), run.target())));
       return;
   }
 }
@@ -277,6 +282,54 @@ static void printDisplay() {
                 (unsigned long)redrawMaxUs);
 }
 
+// ---- Settings ----
+
+// Pushes the runtime config to the run and the servo output. Only called while stopped.
+static void applyConfig() {
+  const ConfigV1& c = settings.config();
+  run.setTiming(c.slowdown_n, c.jam_timeout_ms);
+  stopDuty = servoStopDuty(c.servo_neutral_us);
+  if (!servoMoving) ledcWrite(SERVO_LEDC_CHANNEL, stopDuty);
+}
+
+static bool runActive() { return run.speed() != Speed::Off; }
+
+// Hooks for BLE (#6), called from loop() only: validate, apply live, persist if changed.
+// false: out of range, or (config only) a run is in progress.
+bool setConfig(const ConfigV1& cfg) {
+  if (!settings.setConfig(cfg, runActive())) return false;
+  applyConfig();
+  return true;
+}
+
+bool setPresets(const Presets& presets) { return settings.setPresets(presets); }
+
+static void printSettings() {
+  const ConfigV1& c = settings.config();
+  Serial.printf("  config v%u: neutral %u us, full %+d us, slow %+d us, reverse %u, slowdown %u,"
+                " jam %u ms\n",
+                c.version, c.servo_neutral_us, c.speed_full_offset_us, c.speed_slow_offset_us,
+                c.reverse, c.slowdown_n, c.jam_timeout_ms);
+  const Presets& p = settings.presets();
+  Serial.printf("  presets %u %u %u %u, saved target %u\n", p.values[0], p.values[1], p.values[2],
+                p.values[3], settings.target());
+}
+
+static void loadSettings() {
+  if (!nvs.begin("bulloader")) Serial.println("  nvs: can't open, using defaults");
+  LoadReport r = settings.load();
+  const char* names[] = {KEY_CONFIG, KEY_PRESETS, KEY_TARGET};
+  LoadResult results[] = {r.config, r.presets, r.target};
+  for (uint8_t i = 0; i < 3; i++) {
+    if (results[i] != LoadResult::Ok) {
+      Serial.printf("  nvs: %s %s, using defaults\n", names[i], loadResultName(results[i]));
+    }
+  }
+  applyConfig();
+  run.setTarget(settings.target());
+  printSettings();
+}
+
 // ---- Serial commands (still the only way to drive it without the hardware) ----
 
 static void handleCommand(const char* line) {
@@ -294,6 +347,35 @@ static void handleCommand(const char* line) {
       Serial.println("  next sim BB comes as a close pair");
       break;
 #endif
+    case 'c': {
+      // `c` alone dumps; `c<neutral>,<full>,<slow>,<reverse>,<slowdown>,<jam>` sets the config.
+      int v[6];
+      if (sscanf(line + 1, "%d,%d,%d,%d,%d,%d", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5]) == 6) {
+        ConfigV1 c = {CONFIG_VERSION, (uint16_t)v[0], (int16_t)v[1], (int16_t)v[2],
+                      (uint8_t)v[3], (uint8_t)v[4], (uint16_t)v[5]};
+        bool inRange = v[0] >= 0 && v[0] <= UINT16_MAX && v[1] >= INT16_MIN &&
+                       v[1] <= INT16_MAX && v[2] >= INT16_MIN && v[2] <= INT16_MAX &&
+                       v[3] >= 0 && v[3] <= UINT8_MAX && v[4] >= 0 && v[4] <= UINT8_MAX &&
+                       v[5] >= 0 && v[5] <= UINT16_MAX;
+        if (!inRange || !setConfig(c)) Serial.println("  config refused (range, or running)");
+      }
+      printSettings();
+      break;
+    }
+    case 'P': {
+      int v[PRESET_COUNT];
+      if (sscanf(line + 1, "%d,%d,%d,%d", &v[0], &v[1], &v[2], &v[3]) == PRESET_COUNT) {
+        Presets p;
+        bool inRange = true;
+        for (uint8_t i = 0; i < PRESET_COUNT; i++) {
+          inRange = inRange && v[i] >= 0 && v[i] <= UINT16_MAX;
+          p.values[i] = (uint16_t)v[i];
+        }
+        if (!inRange || !setPresets(p)) Serial.println("  presets refused (range)");
+      }
+      printSettings();
+      break;
+    }
     case '?':
       Serial.printf("  %s count=%lu target=%u\n", stateName(run.state()),
                     (unsigned long)counter.count, run.target());
@@ -301,13 +383,14 @@ static void handleCommand(const char* line) {
       printDisplay();
       break;
     default:
-      Serial.println("  commands: t<n> target, g go, s stop, ? status"
-                     " (sim: p close pulse pair)");
+      Serial.println("  commands: t<n> target, g go, s stop, ? status, c settings,"
+                     " c<neutral>,<full>,<slow>,<rev>,<n>,<jam> set config,"
+                     " P<a>,<b>,<c>,<d> set presets (sim: p close pulse pair)");
   }
 }
 
 static void readSerial() {
-  static char buf[16];
+  static char buf[48];
   static uint8_t len = 0;
   while (Serial.available()) {
     char c = Serial.read();
@@ -330,6 +413,7 @@ void setup() {
 
   ledcSetup(SERVO_LEDC_CHANNEL, 50, SERVO_LEDC_BITS);
   ledcAttachPin(PIN_SERVO, SERVO_LEDC_CHANNEL);
+  loadSettings();  // before the first servo write: the stop duty depends on the neutral
   setServo(Speed::Off);
 
 #ifdef SIMULATE_IR
@@ -358,7 +442,7 @@ void setup() {
   updateDisplay(true);
   printDisplay();
 
-  Serial.printf("target %u. commands: t<n>, g, s, ?\n", run.target());
+  Serial.printf("target %u. commands: t<n>, g, s, ?, c, P\n", run.target());
 }
 
 void loop() {
@@ -368,4 +452,5 @@ void loop() {
   syncState();
   updateBattery(false);
   updateDisplay(false);
+  settings.updateTarget(run.target(), millis());  // written 2 s after it stops changing
 }

@@ -31,10 +31,18 @@ constexpr bool     SERVO_REVERSE         = false;
 constexpr bool     SERVO_STOP_NEUTRAL    = false;
 constexpr uint8_t  SERVO_LEDC_CHANNEL    = 0;
 constexpr uint8_t  SERVO_LEDC_BITS       = 14; // C3 max at 50 Hz
+// Accepted range for a stored or BLE-written calibration. Keep identical to the web app's checks.
+constexpr uint16_t SERVO_NEUTRAL_MIN_US  = 1000;
+constexpr uint16_t SERVO_NEUTRAL_MAX_US  = 2000;
+constexpr int16_t  SERVO_OFFSET_MAX_US   = 500;  // full and slow offsets within +/- this
 
 // ---- Run logic ----
 constexpr uint8_t  SLOWDOWN_N     = 4;    // switch to slow speed when <= N BBs remain
 constexpr uint16_t JAM_TIMEOUT_MS = 1500; // no BB for this long -> jam
+// Accepted range for slowdown N (0-255) and the jam timeout, stored or written over BLE.
+constexpr uint8_t  SLOWDOWN_N_MAX     = 255;   // the whole uint8 range
+constexpr uint16_t JAM_TIMEOUT_MIN_MS = 300;
+constexpr uint16_t JAM_TIMEOUT_MAX_MS = 10000;
 // The first BB comes later: the mechanism spins up and the feed fills.
 constexpr uint16_t FIRST_BB_TIMEOUT_MS = 4000;
 constexpr uint16_t DONE_HOLD_MS   = 2000; // DONE stays shown this long, then IDLE
@@ -48,8 +56,15 @@ constexpr uint32_t IR_MIN_INTERVAL_US = 5000;
 
 constexpr uint16_t TARGET_MIN = 1;
 constexpr uint16_t TARGET_MAX = 9999;
+constexpr uint16_t DEFAULT_TARGET = 50;  // until a target has been saved
 constexpr uint8_t  PRESET_COUNT = 4;  // matches the BLE `presets` characteristic (uint16[4])
 constexpr uint16_t DEFAULT_PRESETS[PRESET_COUNT] = {30, 50, 120, 300};
+constexpr uint16_t PRESET_MIN = 1;     // each preset, like a target
+constexpr uint16_t PRESET_MAX = 9999;
+
+// ---- Persistence (NVS, `Preferences` namespace) ----
+// The last target is written this long after it stops changing: one write for a long encoder spin.
+constexpr uint16_t TARGET_SAVE_DELAY_MS = 2000;
 
 // ---- Encoder and buttons ----
 // Valid quadrature transitions per detent: KY-040 modules come as 4 (most) or 2.

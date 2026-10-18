@@ -83,7 +83,7 @@ class Button {
   uint32_t pressedAtMs_ = 0;
 };
 
-// Runtime copy of the presets. Defaults from config.h for now; NVS (#4) will load them here.
+// Runtime copy of the presets, loaded from NVS by Settings (defaults from config.h).
 struct Presets {
   uint16_t values[PRESET_COUNT];
 };

@@ -1,26 +1,36 @@
 // The whole app: one island, every screen in it. Changing page would drop the Bluetooth link.
 // Screens only read the store and call ble.*; the ESP32 owns the state.
 
-import type { ComponentChildren } from 'preact'
+import type { ComponentChildren, JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { createBle } from './ble/ble.ts'
 import { isMockRequested, requestLink } from './ble/link.ts'
 import { createReconnect, type Phase } from './ble/reconnect.ts'
-import { PRESET_COUNT, State } from './ble/protocol.ts'
-import { type DeviceState, useStore } from './ble/store.ts'
+import { PRESET_COUNT, State, TARGET_MAX, TARGET_MIN } from './ble/protocol.ts'
+import { createStore, type DeviceState, useStore } from './ble/store.ts'
 import { LANG_NAMES, LANGS, langStore, setLang, t } from './i18n/index.ts'
 import {
   batteryLevel,
   batteryText,
   canEditSettings,
   canGo,
+  canStep,
   clampTarget,
   connectionErrorText,
+  countIsCurrent,
+  goReloadsHint,
   isRunning,
-  parseTarget,
+  type LastRun,
+  lastRunText,
+  motorMayRun,
+  nextLastRun,
   progress,
+  readTarget,
   sendErrorText,
   stateLabel,
+  stateTone,
+  type TargetNote,
+  type Tone,
 } from './ui/rules.ts'
 import {
   draftFrom,
@@ -72,21 +82,64 @@ function stopSpinIfAny(): void {
   if (spinning()) stopSpin().catch(ignore)
 }
 
+// ---- What the app remembers about this session ----
+// lastRun: how the last run ended, worked out from the states the device notified (see
+// nextLastRun). pendingStop: a stop that couldn't be sent because the link was down, sent on
+// reconnect. 'spin' only stops a test spin; 'any' (STOP tapped while disconnected) also stops a run.
+type PendingStop = null | 'spin' | 'any'
+const session = createStore<{ lastRun: LastRun | null; pendingStop: PendingStop }>({
+  lastRun: null,
+  pendingStop: null,
+})
+
+// The state of the previous connected update. Reset while the link is down, so a jump seen
+// across a reconnect isn't taken for a transition we watched.
+let prevState: State | null = null
+ble.store.subscribe((s) => {
+  if (s.connection !== 'connected') {
+    prevState = null
+    return
+  }
+  const before = session.get().lastRun
+  const lastRun = nextLastRun(before, prevState, s)
+  if (lastRun !== before) session.set({ lastRun })
+  // A buzz on the two endings worth feeling with the phone in the pocket.
+  if (prevState !== null && s.state !== prevState) {
+    if (s.state === State.Done) buzz(150)
+    if (s.state === State.Jam) buzz([300, 150, 300])
+  }
+  prevState = s.state
+})
+
+function buzz(pattern: number | number[]): void {
+  try {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern)
+  } catch {
+    // No vibration motor, or the browser said no: the screen says it anyway.
+  }
+}
+
 // A link that drops during a test spin can't carry the stop. The firmware stops the motor on
 // disconnect, but in case it didn't: once reconnected, if the device still says TESTING, stop it.
-// Only then: any other state (a run started from the encoder meanwhile) is left alone.
-let stopSpinOnReconnect = false
+// Only then: any other state (a run started from the encoder meanwhile) is left alone, unless the
+// user tapped STOP while disconnected.
 reconnect.store.subscribe((r) => {
   if (r.phase === 'reconnecting' && spinning()) {
     spinRequested = false
-    stopSpinOnReconnect = true
+    if (session.get().pendingStop === null) session.set({ pendingStop: 'spin' })
   }
 })
 ble.store.subscribe((s) => {
-  if (s.connection !== 'connected' || !stopSpinOnReconnect) return
-  stopSpinOnReconnect = false
-  if (s.state === State.Testing) stopSpin().catch(ignore)
+  const pending = session.get().pendingStop
+  if (s.connection !== 'connected' || pending === null) return
+  session.set({ pendingStop: null })
+  if (s.state === State.Testing || (pending === 'any' && isRunning(s.state))) ble.stop().catch(ignore)
 })
+
+// STOP tapped while the link is down: nothing can be sent now, so it goes on reconnect.
+function queueStop(): void {
+  session.set({ pendingStop: 'any' })
+}
 
 // Disconnecting during a test spin stops it first. Bounded wait: a stuck GATT must not keep the
 // user from leaving.
@@ -95,6 +148,7 @@ async function disconnect(): Promise<void> {
     await Promise.race([stopSpin().catch(ignore), new Promise((resolve) => setTimeout(resolve, 1000))])
   }
   reconnect.disconnect()
+  session.set({ lastRun: null, pendingStop: null })
 }
 
 // The current language, for the pure functions that take it. Read during render: App subscribes to
@@ -152,7 +206,7 @@ export function App() {
 
   if (!inSession) return <ConnectScreen s={s} searching={phase === 'searching'} />
 
-  const banner = offline ? <LinkBanner phase={phase} /> : null
+  const banner = offline ? <LinkBanner phase={phase} state={s.state} /> : null
   if (screen === 'settings') {
     return <SettingsScreen s={s} offline={offline} banner={banner} onBack={() => setScreen('main')} />
   }
@@ -160,17 +214,28 @@ export function App() {
 }
 
 // Over the screen while the link is down. The values under it are the last ones the device sent.
-function LinkBanner({ phase }: { phase: Phase }) {
+// If the device was moving the motor, say it may still be, and how to stop it from the device.
+function LinkBanner({ phase, state }: { phase: Phase; state: State | null }) {
+  const { pendingStop } = useStore(session)
+  const moving = motorMayRun(state)
+  const notes = moving && (
+    <>
+      <p class="banner-note">{t('banner.motorMayRun')}</p>
+      {pendingStop === 'any' && <p class="banner-note">{t('banner.stopQueued')}</p>}
+    </>
+  )
   if (phase !== 'gaveup') {
     return (
-      <div class="banner" role="status">
-        {t('banner.reconnecting')}
+      <div class="banner" role={moving ? 'alert' : 'status'}>
+        <p>{t('banner.reconnecting')}</p>
+        {notes}
       </div>
     )
   }
   return (
     <div class="banner lost" role="alert">
       <p>{t('banner.lost')}</p>
+      {notes}
       <div class="banner-actions">
         <button class="btn" type="button" onClick={() => reconnect.retry()}>
           {t('banner.retry')}
@@ -225,10 +290,28 @@ function MainScreen(props: {
   onSettings: () => void
 }) {
   const { s, offline, onSettings } = props
+  const { lastRun, pendingStop } = useStore(session)
   // Nothing can be sent while the link is down: everything that writes is off.
   const locked = isRunning(s.state) || offline
-  const alarm = s.state === State.Jam || s.state === State.LowBatt
-  const ratio = progress(s.count, s.target)
+  // One main action at a time: STOP while the motor turns, GO otherwise.
+  const moving = motorMayRun(s.state)
+  const tone = stateTone(s.state)
+  const current = countIsCurrent(s.state, lastRun, s.target)
+  const ratio = current ? progress(s.count, s.target) : 0
+  const reload = offline ? null : goReloadsHint(lastRun, s.state, s.target)
+
+  // Under the state: what to do next after a jam or a flat pack, otherwise how the last run ended.
+  let sub: ComponentChildren = null
+  if (s.state === State.Jam) sub = t('next.jam')
+  else if (s.state === State.LowBatt) sub = t('next.lowBatt')
+  else if (s.state === State.Idle && lastRun) {
+    sub = (
+      <>
+        {lastRunText(lastRun, lang())}
+        {lastRun.end === 'done' && <Icon name="ok" />}
+      </>
+    )
+  }
 
   return (
     <main class={offline ? 'screen main stale' : 'screen main'}>
@@ -239,13 +322,20 @@ function MainScreen(props: {
           <span class={`battery ${batteryLevel(s.battery)}`}>{batteryText(s.battery, lang())}</span>
         )}
         <button class="btn icon" type="button" aria-label={t('main.settings')} onClick={onSettings}>
-          ⚙
+          <Icon name="settings" />
         </button>
       </header>
 
-      <section class="status" aria-live="polite">
-        <p class={alarm ? 'state alarm' : 'state'}>{s.state === null ? '—' : stateLabel(s.state, lang())}</p>
-        <p class="count">
+      <section class={`hero tone-${tone}`}>
+        {/* Only the state and its line are announced: the count would read out every BB. */}
+        <div class="state-block" role="status" aria-atomic="true">
+          <p class="state">
+            {s.state !== null && <Icon name={tone} />}
+            <span>{s.state === null ? '—' : stateLabel(s.state, lang())}</span>
+          </p>
+          <p class="state-sub">{sub}</p>
+        </div>
+        <p class={current ? 'count' : 'count old'}>
           <span>{s.count ?? '—'}</span>
           <span class="of"> / {s.target ?? '—'}</span>
         </p>
@@ -254,7 +344,7 @@ function MainScreen(props: {
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={s.target ?? 0}
-          aria-valuenow={s.count ?? 0}
+          aria-valuenow={current ? (s.count ?? 0) : 0}
         >
           <div class="fill" style={{ width: `${ratio * 100}%` }} />
         </div>
@@ -268,6 +358,7 @@ function MainScreen(props: {
             key={i}
             class={p === s.target ? 'btn chip current' : 'btn chip'}
             type="button"
+            aria-pressed={p === s.target}
             disabled={locked}
             onClick={() => ble.setTarget(p).catch(ignore)}
           >
@@ -276,31 +367,40 @@ function MainScreen(props: {
         ))}
       </div>
 
-      <div class="actions">
-        <button
-          class="btn go"
-          type="button"
-          disabled={offline || !canGo(s.state)}
-          onClick={() => ble.go().catch(ignore)}
-        >
-          GO
-        </button>
-        <button class="btn stop" type="button" disabled={offline} onClick={() => ble.stop().catch(ignore)}>
-          STOP
-        </button>
+      <div class="dock">
+        {reload !== null && <p class="dock-hint">{t('main.goReloads', { n: reload })}</p>}
+        {moving ? (
+          // Offline, STOP can't be sent: it is kept and sent on reconnect (see queueStop).
+          <button
+            class="btn stop"
+            type="button"
+            disabled={offline && pendingStop === 'any'}
+            onClick={() => (offline ? queueStop() : ble.stop().catch(ignore))}
+          >
+            STOP
+            {offline && pendingStop === 'any' && <span class="btn-sub">{t('main.stopQueued')}</span>}
+          </button>
+        ) : (
+          <button
+            class="btn go"
+            type="button"
+            disabled={offline || !canGo(s.state)}
+            onClick={() => ble.go().catch(ignore)}
+          >
+            GO
+          </button>
+        )}
       </div>
-
-      <button class="btn quiet" type="button" onClick={() => disconnect()}>
-        {t('main.disconnect')}
-      </button>
     </main>
   )
 }
 
 // The target with − / + and a field. The field shows the device's target; while it has focus it
 // holds what the user is typing, sent once on blur or Enter. Whatever the device answers replaces it.
+// A value that had to be changed (0 → 1, letters) says so on a line kept for it.
 function TargetField({ target, disabled }: { target: number | null; disabled: boolean }) {
   const [draft, setDraft] = useState<string | null>(null)
+  const [note, setNote] = useState<TargetNote | null>(null)
   // Escape blurs the field too; this tells the blur not to send.
   const cancelled = useRef(false)
 
@@ -310,15 +410,26 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
       cancelled.current = false
       return
     }
-    const n = parseTarget(text)
-    if (n !== null && n !== target) ble.setTarget(n).catch(ignore)
+    const read = readTarget(text)
+    setNote(read.note)
+    if (read.value !== null && read.value !== target) ble.setTarget(read.value).catch(ignore)
   }
 
   function step(delta: number) {
+    setNote(null)
     if (target === null) return
     const n = clampTarget(target + delta)
     if (n !== target) ble.setTarget(n).catch(ignore)
   }
+
+  const noteText =
+    note === 'min'
+      ? t('main.noteMin', { n: TARGET_MIN })
+      : note === 'max'
+        ? t('main.noteMax', { n: TARGET_MAX })
+        : note === 'notNumber'
+          ? t('main.noteNotNumber')
+          : ''
 
   return (
     <div class="target">
@@ -330,7 +441,7 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
           class="btn step"
           type="button"
           aria-label={t('main.minusOne')}
-          disabled={disabled || target === null}
+          disabled={disabled || !canStep(target, -1)}
           onClick={() => step(-1)}
         >
           −
@@ -343,9 +454,11 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
           pattern="[0-9]*"
           maxLength={4}
           autoComplete="off"
+          aria-describedby="target-note"
           disabled={disabled || target === null}
           value={draft ?? (target === null ? '' : String(target))}
           onFocus={(e) => {
+            setNote(null)
             setDraft(e.currentTarget.value)
             e.currentTarget.select()
           }}
@@ -363,13 +476,47 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
           class="btn step"
           type="button"
           aria-label={t('main.plusOne')}
-          disabled={disabled || target === null}
+          disabled={disabled || !canStep(target, 1)}
           onClick={() => step(1)}
         >
           +
         </button>
       </div>
+      <p id="target-note" class="note" role="status">
+        {noteText}
+      </p>
     </div>
+  )
+}
+
+// Drawn icons, one stroke weight. Each sits next to a word: never the only carrier of meaning.
+type IconName = Tone | 'settings' | 'back'
+const iconPaths: Record<IconName, JSX.Element> = {
+  idle: <circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none" />,
+  run: <path d="M4.5 5.5 11 12l-6.5 6.5M12.5 5.5 19 12l-6.5 6.5" />,
+  slow: <path d="M9 5.5 15.5 12 9 18.5" />,
+  ok: <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />,
+  alarm: <path d="M12 3.5 2.5 20h19L12 3.5ZM12 10v4.5M12 17.25v.25" />,
+  warn: <path d="M3 8h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 17 16H3a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 3 8ZM21.5 10.5v3M5 11v2" />,
+  test: <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4h-4" />,
+  settings: <path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 4.5v5M9 14.5v5" />,
+  back: <path d="M19.5 12h-15M11 5.5 4.5 12l6.5 6.5" />,
+}
+
+function Icon({ name }: { name: IconName }) {
+  return (
+    <svg
+      class="icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      {iconPaths[name]}
+    </svg>
   )
 }
 
@@ -399,6 +546,8 @@ function SettingsScreen(props: {
   // Kept as a function so it follows a language switch while it is on screen.
   const [notice, setNotice] = useState<{ text: () => string } | null>(null)
   const mounted = useRef(true)
+  // « ← » with unsaved changes asks first, in the app (no browser dialog).
+  const confirm = useRef<HTMLDialogElement>(null)
 
   // Leaving this screen (Retour, or giving up on a lost link) stops a spin. A drop alone keeps the
   // screen and the draft; the spin is then stopped on reconnect if the device still runs it.
@@ -469,12 +618,72 @@ function SettingsScreen(props: {
     }
   }
 
+  function leave(): void {
+    if (dirty) confirm.current?.showModal()
+    else onBack()
+  }
+
+  async function saveAndLeave(): Promise<void> {
+    confirm.current?.close()
+    setBusy('save')
+    try {
+      await save()
+      onBack()
+    } catch (error) {
+      if (mounted.current) {
+        const reason = message(error)
+        setNotice({ text: () => sendErrorText(reason, lang()) })
+      }
+    } finally {
+      if (mounted.current) setBusy(null)
+    }
+  }
+
+  // Why « Enregistrer » can't be used right now, if it can't.
+  const cantSave = !validation.ok
+    ? t('settings.unsavedInvalid')
+    : offline
+      ? t('error.notConnected')
+      : !atRest
+        ? t('settings.motorRunning')
+        : null
+
+  const presetError = PRESET_INDEXES.map((i) => {
+    const error = errors[`preset${i}`]
+    return error ? t('settings.presetError', { n: i + 1, error }) : null
+  }).find((e) => e !== null)
+
   return (
     <main class={offline ? 'screen settings stale' : 'screen settings'}>
       {props.banner}
+      <dialog ref={confirm} class="confirm" aria-labelledby="unsaved-title">
+        <h2 id="unsaved-title" class="confirm-title">
+          {t('settings.unsavedTitle')}
+        </h2>
+        <p>{t('settings.unsavedBody')}</p>
+        {cantSave && <p class="hint">{cantSave}</p>}
+        <div class="confirm-actions">
+          <button class="btn primary" type="button" disabled={!canAct} onClick={() => void saveAndLeave()}>
+            {t('settings.save')}
+          </button>
+          <button
+            class="btn"
+            type="button"
+            onClick={() => {
+              confirm.current?.close()
+              onBack()
+            }}
+          >
+            {t('settings.discard')}
+          </button>
+          <button class="btn quiet" type="button" onClick={() => confirm.current?.close()}>
+            {t('settings.stay')}
+          </button>
+        </div>
+      </dialog>
       <header class="bar">
-        <button class="btn icon" type="button" aria-label={t('settings.back')} onClick={onBack}>
-          ←
+        <button class="btn icon" type="button" aria-label={t('settings.back')} onClick={leave}>
+          <Icon name="back" />
         </button>
         <h1 class="bar-title">{t('settings.title')}</h1>
         <span class={testing ? 'pill active' : 'pill'}>{s.state === null ? '—' : stateLabel(s.state, lang())}</span>
@@ -500,6 +709,7 @@ function SettingsScreen(props: {
               autoComplete="off"
               aria-label={t('settings.preset', { n: i + 1 })}
               aria-invalid={!!errors[`preset${i}`]}
+              aria-describedby="preset-error"
               disabled={incompatible}
               value={values.presets[i]}
               onInput={(e) => {
@@ -510,16 +720,7 @@ function SettingsScreen(props: {
             />
           ))}
         </div>
-        {PRESET_INDEXES.map((i) => {
-          const error = errors[`preset${i}`]
-          return (
-            error && (
-              <p key={i} class="field-error">
-                {t('settings.presetError', { n: i + 1, error })}
-              </p>
-            )
-          )
-        })}
+        <FieldError id="preset-error" error={presetError} />
       </section>
 
       <section class="group">
@@ -567,6 +768,7 @@ function SettingsScreen(props: {
               maxLength={4}
               autoComplete="off"
               aria-invalid={!!errors.servoNeutralUs}
+              aria-describedby="neutral-error"
               disabled={incompatible}
               value={values.servoNeutralUs}
               onInput={(e) => edit({ servoNeutralUs: e.currentTarget.value })}
@@ -581,7 +783,7 @@ function SettingsScreen(props: {
               +{NEUTRAL_STEP_US}
             </button>
           </div>
-          {errors.servoNeutralUs && <p class="field-error">{errors.servoNeutralUs}</p>}
+          <FieldError id="neutral-error" error={errors.servoNeutralUs} />
         </div>
         <NumberField
           id="full"
@@ -615,11 +817,14 @@ function SettingsScreen(props: {
       </section>
 
       <section class="group">
-        {!validation.ok && !incompatible && (
-          <p class="field-error" role="alert">
-            {t('settings.fixErrors')}
-          </p>
-        )}
+        <p class="field-error" role="status">
+          {!validation.ok && !incompatible && (
+            <>
+              <Icon name="alarm" />
+              {t('settings.fixErrors')}
+            </>
+          )}
+        </p>
         {!offline && !atRest && !testing && !incompatible && <p class="hint">{t('settings.motorRunning')}</p>}
         {notice && (
           <p class="hint" role="status">
@@ -660,6 +865,14 @@ function SettingsScreen(props: {
       <section class="group">
         <h2 class="group-title">{t('lang.title')}</h2>
         <LanguageSwitch />
+      </section>
+
+      <section class="group">
+        <h2 class="group-title">{t('settings.device')}</h2>
+        <p class="device-name">{s.deviceName}</p>
+        <button class="btn" type="button" onClick={() => void disconnect()}>
+          {t('banner.changeDevice')}
+        </button>
       </section>
     </main>
   )
@@ -711,12 +924,28 @@ function NumberField(props: {
         maxLength={5}
         autoComplete="off"
         aria-invalid={!!props.error}
+        aria-describedby={`${props.id}-error`}
         disabled={props.disabled}
         value={props.value}
         onInput={(e) => props.onInput(e.currentTarget.value)}
       />
-      {props.error && <p class="field-error">{props.error}</p>}
+      <FieldError id={`${props.id}-error`} error={props.error} />
     </div>
   )
 }
 
+
+// A field's error, on a line that is always there: an error showing up doesn't push the form down.
+// The glyph and the words carry it, the red border only repeats it.
+function FieldError({ id, error }: { id: string; error: string | null | undefined }) {
+  return (
+    <p id={id} class="field-error">
+      {error && (
+        <>
+          <Icon name="alarm" />
+          {error}
+        </>
+      )}
+    </p>
+  )
+}

@@ -1,7 +1,7 @@
 // A fake device that speaks the same bytes as the firmware, for the tests and for `?mock`.
 // It mirrors firmware/src/run.cpp: Go starts a run (slow straight away if the target is within
 // slowdown_n), one BB per tick, slowdown when ≤ slowdown_n remain, DONE held a while then IDLE,
-// JAM when no BB comes for jam_timeout_ms. Test spins (commands 2 and 3) hold TESTING until stop;
+// JAM when no BB comes for jam_timeout_ms, LOW_BATT on GO with a flat pack. Test spins (commands 2 and 3) hold TESTING until stop;
 // presets and config writes are ignored during a run. A dropped link stops a test spin but not a
 // run, and simulateDisconnect() can keep the device out of reach for a while to test reconnection.
 
@@ -57,6 +57,8 @@ export type MockOptions = {
 const FIRST_BB_TIMEOUT_MS = 4000
 const DONE_HOLD_MS = 2000
 const BATTERY_PERIOD_MS = 5000
+// BATT_REFUSE_MV: below it, GO and test spins go to LOW_BATT instead of starting.
+const BATTERY_REFUSE_MV = 6600
 
 const defaultConfig: DeviceConfig = {
   servoNeutralUs: 1500,
@@ -218,6 +220,7 @@ export class MockDevice implements DeviceLink {
       case Command.TestSlow:
         if (this.isRunning()) return
         this.cancel('run')
+        if (this.battery < BATTERY_REFUSE_MV) return this.setState(State.LowBatt)
         return this.setState(State.Testing)
       default:
       // Unknown commands are ignored.
@@ -227,6 +230,7 @@ export class MockDevice implements DeviceLink {
   private go(): void {
     if (this.isRunning()) return
     this.cancel('run')
+    if (this.battery < BATTERY_REFUSE_MV) return this.setState(State.LowBatt)
     this.count = 0
     this.notify('count')
     this.setState(this.target <= this.config.slowdownN ? State.Slowdown : State.Running)

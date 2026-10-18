@@ -6,7 +6,15 @@ import {
   canEditSettings,
   canGo,
   connectionErrorText,
-  parseTarget,
+  canStep,
+  countIsCurrent,
+  goReloadsHint,
+  type LastRun,
+  lastRunText,
+  motorMayRun,
+  nextLastRun,
+  readTarget,
+  stateTone,
   progress,
   sendErrorText,
   stateLabel,
@@ -57,19 +65,125 @@ describe('canEditSettings', () => {
   })
 })
 
-describe('parseTarget', () => {
-  test('reads digits and clamps to 1..9999', () => {
-    expect(parseTarget('50')).toBe(50)
-    expect(parseTarget(' 120 ')).toBe(120)
-    expect(parseTarget('0')).toBe(1)
-    expect(parseTarget('12000')).toBe(9999)
+describe('readTarget', () => {
+  test('a number in range goes through as is', () => {
+    expect(readTarget('50')).toEqual({ value: 50, note: null })
+    expect(readTarget(' 120 ')).toEqual({ value: 120, note: null })
   })
 
-  test('refuses anything else', () => {
-    expect(parseTarget('')).toBeNull()
-    expect(parseTarget('-3')).toBeNull()
-    expect(parseTarget('4.5')).toBeNull()
-    expect(parseTarget('abc')).toBeNull()
+  test('out of range is clamped, and says so', () => {
+    expect(readTarget('0')).toEqual({ value: 1, note: 'min' })
+    expect(readTarget('12000')).toEqual({ value: 9999, note: 'max' })
+  })
+
+  test('anything but digits sends nothing, and says so; empty says nothing', () => {
+    expect(readTarget('')).toEqual({ value: null, note: null })
+    expect(readTarget('-3')).toEqual({ value: null, note: 'notNumber' })
+    expect(readTarget('4.5')).toEqual({ value: null, note: 'notNumber' })
+    expect(readTarget('abc')).toEqual({ value: null, note: 'notNumber' })
+  })
+})
+
+describe('canStep', () => {
+  test('off at the ends of the range and with no target', () => {
+    expect(canStep(1, -1)).toBe(false)
+    expect(canStep(1, 1)).toBe(true)
+    expect(canStep(9999, 1)).toBe(false)
+    expect(canStep(9999, -1)).toBe(true)
+    expect(canStep(null, 1)).toBe(false)
+  })
+})
+
+describe('nextLastRun', () => {
+  const at = (state: State, count: number, target = 50) => ({ state, count, target })
+
+  test('a run that reaches DONE is a full mag, and keeps counting the overshoot', () => {
+    let last = nextLastRun(null, State.Running, at(State.Done, 50))
+    expect(last).toEqual({ end: 'done', count: 50, target: 50 })
+    last = nextLastRun(last, State.Done, at(State.Done, 51))
+    expect(last).toEqual({ end: 'done', count: 51, target: 50 })
+    // Back to IDLE by itself: the result stays.
+    expect(nextLastRun(last, State.Done, at(State.Idle, 51))).toEqual(last)
+  })
+
+  test('STOP, jam and a flat pack each end the run their own way', () => {
+    expect(nextLastRun(null, State.Running, at(State.Idle, 13))).toEqual({ end: 'stopped', count: 13, target: 50 })
+    expect(nextLastRun(null, State.Slowdown, at(State.Jam, 7))).toEqual({ end: 'jam', count: 7, target: 50 })
+    expect(nextLastRun(null, State.Running, at(State.LowBatt, 20))).toEqual({
+      end: 'lowBatt',
+      count: 20,
+      target: 50,
+    })
+    // Reached the target but the DONE notification was missed.
+    expect(nextLastRun(null, State.Slowdown, at(State.Idle, 50))?.end).toBe('done')
+  })
+
+  test('a new run clears it; a stop from JAM keeps it', () => {
+    const jam: LastRun = { end: 'jam', count: 7, target: 50 }
+    expect(nextLastRun(jam, State.Idle, at(State.Running, 0))).toBeNull()
+    expect(nextLastRun(jam, State.Jam, at(State.Idle, 7))).toEqual(jam)
+  })
+
+  test('no transition right after (re)connecting, and nothing from a test spin', () => {
+    expect(nextLastRun(null, null, at(State.Idle, 13))).toBeNull()
+    expect(nextLastRun(null, State.Testing, at(State.Idle, 0))).toBeNull()
+  })
+})
+
+describe('goReloadsHint', () => {
+  const stopped: LastRun = { end: 'stopped', count: 13, target: 50 }
+
+  test('after a run cut short, GO loads the full target again', () => {
+    expect(goReloadsHint(stopped, State.Idle, 50)).toBe(50)
+    expect(goReloadsHint({ end: 'jam', count: 7, target: 50 }, State.Jam, 50)).toBe(50)
+  })
+
+  test('nothing after a full mag, during a run, or once the target changed', () => {
+    expect(goReloadsHint({ end: 'done', count: 50, target: 50 }, State.Idle, 50)).toBeNull()
+    expect(goReloadsHint(stopped, State.Running, 50)).toBeNull()
+    expect(goReloadsHint(stopped, State.Idle, 30)).toBeNull()
+    expect(goReloadsHint(null, State.Idle, 50)).toBeNull()
+  })
+})
+
+describe('countIsCurrent', () => {
+  test('live during a run and on DONE', () => {
+    expect(countIsCurrent(State.Running, null, 50)).toBe(true)
+    expect(countIsCurrent(State.Done, null, 50)).toBe(true)
+  })
+
+  test('at rest, only while the target is the one of the last run', () => {
+    const last: LastRun = { end: 'stopped', count: 13, target: 50 }
+    expect(countIsCurrent(State.Idle, last, 50)).toBe(true)
+    expect(countIsCurrent(State.Idle, last, 1)).toBe(false)
+    expect(countIsCurrent(State.Idle, null, 50)).toBe(false)
+    expect(countIsCurrent(null, last, 50)).toBe(false)
+  })
+})
+
+describe('motorMayRun / stateTone', () => {
+  test('the motor turns in a run and in a test spin', () => {
+    expect(motorMayRun(State.Running)).toBe(true)
+    expect(motorMayRun(State.Slowdown)).toBe(true)
+    expect(motorMayRun(State.Testing)).toBe(true)
+    expect(motorMayRun(State.Idle)).toBe(false)
+    expect(motorMayRun(State.Jam)).toBe(false)
+    expect(motorMayRun(null)).toBe(false)
+  })
+
+  test('running and slowing down look different', () => {
+    expect(stateTone(State.Running)).not.toBe(stateTone(State.Slowdown))
+    expect(stateTone(State.Done)).toBe('ok')
+    expect(stateTone(State.Jam)).toBe('alarm')
+    expect(stateTone(null)).toBe('idle')
+  })
+})
+
+describe('lastRunText', () => {
+  test('says how the last run ended, in each language', () => {
+    expect(lastRunText({ end: 'done', count: 50, target: 50 }, 'en')).toContain('50 / 50')
+    expect(lastRunText({ end: 'stopped', count: 13, target: 50 }, 'fr')).toContain('13 / 50')
+    expect(lastRunText({ end: 'jam', count: 7, target: 50 }, 'en')).toContain('7 / 50')
   })
 })
 

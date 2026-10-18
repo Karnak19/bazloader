@@ -10,6 +10,8 @@ static QueueHandle_t requests = nullptr;
 static NimBLEServer* server = nullptr;
 static NimBLECharacteristic* chars[6] = {};  // indexed like the BleField bits
 
+static volatile bool disconnected = false;  // set by the NimBLE task, cleared by blePoll()
+
 static void queue(const BleRequest& r) { xQueueSend(requests, &r, 0); }
 
 // NimBLE host task. No Serial, no NVS, no state machine: decode and queue only.
@@ -29,9 +31,8 @@ class WriteCallbacks : public NimBLECharacteristicCallbacks {
 // NimBLE host task too.
 class ServerCallbacks : public NimBLEServerCallbacks {
   void onDisconnect(NimBLEServer*, NimBLEConnInfo&, int) override {
-    BleRequest r;
-    r.kind = BleRequest::Disconnected;
-    queue(r);
+    // A flag, not the queue: a full queue drops requests, and this one stops a test spin.
+    disconnected = true;
     // advertiseOnDisconnect() restarts advertising; one connection at a time
     // (CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1, and advertising stops when a client connects).
   }
@@ -110,6 +111,12 @@ void bleBegin(const BleValues& initial) {
 }
 
 bool blePoll(BleRequest* out) {
+  if (disconnected) {
+    disconnected = false;
+    *out = BleRequest();
+    out->kind = BleRequest::Disconnected;
+    return true;
+  }
   return requests != nullptr && xQueueReceive(requests, out, 0) == pdTRUE;
 }
 

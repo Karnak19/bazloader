@@ -24,6 +24,13 @@ uint16_t Run::setTarget(int32_t target) {
   return target_;
 }
 
+bool Run::setTiming(uint8_t slowdownN, uint16_t jamTimeoutMs) {
+  if (isRunning(state_)) return false;
+  cfg_.slowdownN = slowdownN;
+  cfg_.jamTimeoutMs = jamTimeoutMs;
+  return true;
+}
+
 bool Run::go(uint32_t nowMs, bool batteryOk) {
   if (isRunning(state_)) return false;
   if (!batteryOk) {
@@ -72,6 +79,15 @@ uint16_t servoPulseUs(Speed speed, uint16_t neutralUs, int16_t fullOffsetUs,
   int32_t offset = speed == Speed::Full ? fullOffsetUs : slowOffsetUs;
   if (reverse) offset = -offset;
   return static_cast<uint16_t>(neutralUs + offset);
+}
+
+uint16_t servoPulseUs(Speed speed, const ConfigV1& cfg) {
+  return servoPulseUs(speed, cfg.servo_neutral_us, cfg.speed_full_offset_us,
+                      cfg.speed_slow_offset_us, cfg.reverse != 0);
+}
+
+uint32_t servoStopDuty(uint16_t neutralUs) {
+  return SERVO_STOP_NEUTRAL ? servoDuty(neutralUs, SERVO_LEDC_BITS) : 0;
 }
 
 const char* stateName(State state) {

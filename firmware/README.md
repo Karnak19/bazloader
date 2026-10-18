@@ -13,10 +13,11 @@ pio test -e native   # run logic tests on this computer, no board needed
 
 The logic lives in files with no Arduino include, so the `native` env compiles them alone with the
 tests in `test/`: the run (state machine, BB counter, servo pulse maths) in `src/run.cpp`, the
-battery guard in `src/battery.cpp`, the encoder, buttons, presets and what GO or a click does in
+battery guard in `src/battery.cpp`, the saved settings (validation, defaults, delayed target save)
+in `src/settings.cpp`, the encoder, buttons, presets and what GO or a click does in
 `src/controls.cpp`, and what the OLED shows in `src/screen.cpp`. `main.cpp` is the thin Arduino
-layer (IR and encoder interrupts, LEDC servo output, battery ADC, simulator, serial commands), and
-`display.cpp` draws the screen with U8g2.
+layer (IR and encoder interrupts, LEDC servo output, battery ADC, simulator, serial commands),
+`display.cpp` draws the screen with U8g2, and `nvs_store.cpp` reads and writes NVS.
 
 The first build downloads the toolchain and takes a few minutes.
 
@@ -65,6 +66,9 @@ try `OLED_I2C_ADDRESS = 0x3D`.
 | `g`     | start a run                                                   |
 | `s`     | stop, from any state; the count stays                         |
 | `?`     | print state, count, target, battery (`USB` when no pack) and OLED redraw time |
+| `c`     | print the settings: servo/run config, presets, saved target    |
+| `c<neutral>,<full>,<slow>,<rev>,<n>,<jam>` | set the config, e.g. `c1500,300,100,0,4,1500` (refused during a run or out of range) |
+| `P<a>,<b>,<c>,<d>` | set the four presets, each 1–9999                  |
 | `p`     | sim only: the next fake BB comes as two pulses 1 ms apart, which must count once |
 
 Every state change is logged with the count, the servo pulse width and LEDC duty. On DONE the log
@@ -81,6 +85,22 @@ then the median of the last three readings). Below `BATT_WARN_MV` the log shows 
 run the voltage sags under load, so the run stops (LOW_BATT) only after 2 s below the refusal
 threshold. Anything under 3000 mV means USB power with no pack: it reads 0 mV (`USB`) and the
 guard is off. Set `BATT_CALIBRATION` after comparing with a multimeter.
+
+## Saved settings (NVS)
+
+The presets, the last target and the config (servo neutral, full and slow offsets, reverse,
+slowdown N, jam timeout: the BLE `ConfigV1` blob, version byte included) live in the `bulloader`
+`Preferences` namespace and are loaded at boot. Anything missing, of the wrong length or version,
+or out of range falls back to the defaults in `config.h`, with a `nvs:` log line. Accepted ranges:
+neutral 1000–2000 µs, offsets ±500 µs, reverse 0/1, slowdown N 0–255, jam timeout 300–10000 ms,
+presets and target 1–9999.
+
+Presets and config are written only when they change. The target is written 2 s after it stops
+changing, so a long encoder spin costs one write. Every write is logged. `pio run -t erase` wipes
+it all back to the defaults.
+
+If `CONFIG_VERSION` ever changes, the old blob reads as the wrong version and the defaults apply:
+that change must say whether it migrates the old blob or accepts the reset.
 
 ## Power
 

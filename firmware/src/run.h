@@ -68,6 +68,8 @@ class Run {
 
   // Ignored during a run. Returns the target in use.
   uint16_t setTarget(int32_t target);
+  // New slowdown N and jam timeout, from the runtime config. Refused (false) during a run.
+  bool setTiming(uint8_t slowdownN, uint16_t jamTimeoutMs);
   // Starts a run from any stopped state. Returns true if the servo should start.
   bool go(uint32_t nowMs, bool batteryOk);
   // Any state -> IDLE. The count stays wherever the caller keeps it.
@@ -89,9 +91,14 @@ class Run {
 // Servo pulse width for a speed. `reverse` flips the offset; Off returns 0 (no pulse).
 uint16_t servoPulseUs(Speed speed, uint16_t neutralUs, int16_t fullOffsetUs,
                       int16_t slowOffsetUs, bool reverse);
+// Same, from the runtime config (neutral, offsets, reverse).
+uint16_t servoPulseUs(Speed speed, const ConfigV1& cfg);
 // LEDC duty for a pulse width at 50 Hz (20 ms period), rounded.
 constexpr uint32_t servoDuty(uint16_t pulseUs, uint8_t resolutionBits) {
   return ((static_cast<uint32_t>(pulseUs) << resolutionBits) + 10000) / 20000;
 }
+
+// LEDC duty for a stopped servo: 0 (no pulse), or the neutral pulse if SERVO_STOP_NEUTRAL.
+uint32_t servoStopDuty(uint16_t neutralUs);
 
 const char* stateName(State state);

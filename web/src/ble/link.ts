@@ -52,7 +52,7 @@ export class WebBluetoothLink implements DeviceLink {
 
   async connect(): Promise<void> {
     const gatt = this.device.gatt
-    if (!gatt) throw new Error('GATT indisponible sur cet appareil')
+    if (!gatt) throw new Error('GATT not available on this device')
     this.removeHandlers()
     const server = await gatt.connect()
     const service = await server.getPrimaryService(SERVICE_UUID)
@@ -110,7 +110,7 @@ export class WebBluetoothLink implements DeviceLink {
 
   private characteristic(name: CharacteristicName): BluetoothRemoteGATTCharacteristic {
     const characteristic = this.characteristics.get(name)
-    if (!characteristic) throw new Error(`Caractéristique ${name} introuvable, pas connecté ?`)
+    if (!characteristic) throw new Error(`Characteristic ${name} not found: not connected?`)
     return characteristic
   }
 }

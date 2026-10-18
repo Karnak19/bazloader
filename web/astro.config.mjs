@@ -37,21 +37,31 @@ export default defineConfig({
   site: 'https://karnak19.github.io',
   base,
   trailingSlash: 'always',
+  // Starlight prefixes every sidebar link with the locale, so the English sidebar's « App » points
+  // to /en/app/. There is one app for both languages (it picks its own), so send that back to it.
+  // The destination needs the base; the source doesn't.
+  redirects: { '/en/app/': appScope },
   integrations: [
     starlight({
       title: 'BULLOADER+',
       description: 'Chargeur de billes BULLOADER+ piloté en Bluetooth',
+      // French is the original and stays at the root, so its URLs don't change. English is under
+      // /en/, with the same file names: that is how the language picker pairs the pages.
       defaultLocale: 'root',
-      locales: { root: { label: 'Français', lang: 'fr' } },
+      locales: {
+        root: { label: 'Français', lang: 'fr' },
+        en: { label: 'English', lang: 'en' },
+      },
       favicon: '/favicon.svg',
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/Karnak19/bulloader-plus' },
       ],
       sidebar: [
-        { label: 'Application', link: '/app/' },
-        { label: 'Protocole BLE', slug: 'protocole-ble' },
-        { label: 'Liste des pièces', slug: 'liste-des-pieces' },
-        { label: 'Câblage', slug: 'cablage' },
+        // The app is one page for both languages: it picks its own (see src/i18n/).
+        { label: 'Application', translations: { en: 'App' }, link: '/app/' },
+        { label: 'Protocole BLE', translations: { en: 'BLE protocol' }, slug: 'protocole-ble' },
+        { label: 'Liste des pièces', translations: { en: 'Parts list' }, slug: 'liste-des-pieces' },
+        { label: 'Câblage', translations: { en: 'Wiring' }, slug: 'cablage' },
       ],
     }),
     preact(),

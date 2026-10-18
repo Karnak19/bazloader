@@ -191,7 +191,7 @@ export class MockDevice implements DeviceLink {
         return
       }
       default:
-        throw new Error(`${name} n'est pas inscriptible`)
+        throw new Error(`${name} is not writable`)
     }
   }
 
@@ -311,11 +311,11 @@ export class MockDevice implements DeviceLink {
         return buf
       }
       case 'command':
-        throw new Error("command n'est pas lisible")
+        throw new Error('command is not readable')
     }
   }
 
   private ensureConnected(): void {
-    if (!this.connected) throw new Error('Mock déconnecté')
+    if (!this.connected) throw new Error('Mock disconnected')
   }
 }

@@ -1,6 +1,7 @@
 // Pure rules behind the screens, kept apart so they can be tested without a browser.
 
 import { State, TARGET_MAX, TARGET_MIN } from '../ble/protocol.ts'
+import { formatNumber, type Key, type Lang, translate } from '../i18n/index.ts'
 
 // Same thresholds as BATT_WARN_MV and BATT_REFUSE_MV in firmware/src/config.h. Keep them in sync.
 export const BATT_WARN_MV = 7000
@@ -16,9 +17,10 @@ export function batteryLevel(mv: number): BatteryLevel {
   return 'low'
 }
 
-export function batteryText(mv: number): string {
+// « 7,90 V » in French, "7.90 V" in English. A non-breaking space keeps the unit with the number.
+export function batteryText(mv: number, lang: Lang): string {
   if (mv === 0) return 'USB'
-  return `${(mv / 1000).toFixed(2).replace('.', ',')} V`
+  return `${formatNumber(lang, mv / 1000, 2)}\u00a0V`
 }
 
 export function isRunning(state: State | null): boolean {
@@ -37,15 +39,19 @@ export function canEditSettings(state: State | null): boolean {
   return state !== null && !isRunning(state) && state !== State.Testing
 }
 
-// Same words as the OLED.
-export const stateLabel: Record<State, string> = {
-  [State.Idle]: 'Prêt',
-  [State.Running]: 'Chargement',
-  [State.Slowdown]: 'Ralenti',
-  [State.Done]: 'Terminé',
-  [State.Jam]: 'Bourrage / trémie vide',
-  [State.LowBatt]: 'Batterie faible',
-  [State.Testing]: 'Test',
+// In French, the same words as the OLED (firmware/src/screen.cpp).
+const stateKey: Record<State, Key> = {
+  [State.Idle]: 'state.idle',
+  [State.Running]: 'state.running',
+  [State.Slowdown]: 'state.slowdown',
+  [State.Done]: 'state.done',
+  [State.Jam]: 'state.jam',
+  [State.LowBatt]: 'state.lowBatt',
+  [State.Testing]: 'state.testing',
+}
+
+export function stateLabel(state: State, lang: Lang): string {
+  return translate(lang, stateKey[state])
 }
 
 export function clampTarget(n: number): number {
@@ -65,12 +71,19 @@ export function progress(count: number | null, target: number | null): number {
   return Math.min(1, count / target)
 }
 
-// Connection errors come from the browser in English; say the common ones in French.
-export function connectionErrorText(error: string): string {
-  if (/cancel/i.test(error)) return 'Aucun appareil choisi.'
-  if (/firmware incompatible/i.test(error)) return error
+// Errors come from the browser or the BLE layer, in English and technical. Say the common ones in
+// plain words; the rest are shown as they are.
+export function connectionErrorText(error: string, lang: Lang): string {
+  if (/cancel/i.test(error)) return translate(lang, 'error.cancelled')
+  if (/incompatible firmware/i.test(error)) return translate(lang, 'connect.incompatible')
   if (/adapter not available|bluetooth is (turned )?off/i.test(error)) {
-    return 'Le Bluetooth du téléphone est désactivé.'
+    return translate(lang, 'error.bluetoothOff')
   }
-  return `Connexion impossible : ${error}`
+  return translate(lang, 'error.connect', { error })
+}
+
+// A write that failed, for the settings screen.
+export function sendErrorText(error: string, lang: Lang): string {
+  const reason = /^not connected$/i.test(error) ? translate(lang, 'error.notConnected') : error
+  return translate(lang, 'error.send', { error: reason })
 }

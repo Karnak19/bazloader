@@ -2,6 +2,8 @@
 // The whole app is this one page: changing page in Astro is a full page load, which would drop
 // the Web Bluetooth connection. The island switches between screens itself.
 // client:only because navigator.bluetooth does not exist at build time.
+// The page is built with lang="fr"; src/i18n/index.ts sets it to the language shown once the
+// island starts, and again on every switch.
 import { App } from '../app.tsx'
 import '../style.css'
 

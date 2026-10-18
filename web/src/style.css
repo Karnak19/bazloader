@@ -428,3 +428,26 @@ p {
   font-size: 1.25rem;
   font-weight: 700;
 }
+
+/* ---- Language ---- */
+
+.langs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.center .langs {
+  max-width: 20rem;
+}
+
+.btn.lang {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.btn.lang.current {
+  border-color: var(--accent);
+  color: var(--accent);
+}

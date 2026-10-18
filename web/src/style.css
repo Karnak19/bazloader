@@ -285,6 +285,56 @@ p {
   color: #111214;
 }
 
+/* ---- Lost link ---- */
+
+/* Stays on top while the settings screen scrolls; the shadow hides what scrolls past around it. */
+.banner {
+  position: sticky;
+  top: max(0.75rem, env(safe-area-inset-top));
+  box-shadow: 0 0 0 0.75rem var(--bg);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  background: var(--warn);
+  color: #111214;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.banner.lost {
+  background: var(--danger);
+}
+
+.banner-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.banner .btn {
+  border-color: #111214;
+  background: #111214;
+  color: var(--fg);
+  font-size: 1.125rem;
+}
+
+.banner .btn.ghost {
+  background: transparent;
+  color: #111214;
+}
+
+/* The last values the device sent, kept on screen but clearly not live. */
+.stale .battery,
+.stale .status,
+.stale .pill {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
 /* ---- Settings screen ---- */
 
 .bar-title {

@@ -1,9 +1,11 @@
 // The whole app: one island, every screen in it. Changing page would drop the Bluetooth link.
 // Screens only read the store and call ble.*; the ESP32 owns the state.
 
+import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { createBle } from './ble/ble.ts'
 import { isMockRequested, requestLink } from './ble/link.ts'
+import { createReconnect, type Phase } from './ble/reconnect.ts'
 import { PRESET_COUNT, State } from './ble/protocol.ts'
 import { type DeviceState, useStore } from './ble/store.ts'
 import {
@@ -33,6 +35,7 @@ const hasBluetooth = typeof navigator !== 'undefined' && 'bluetooth' in navigato
 const mock = isMockRequested()
 
 const ble = createBle({ request: requestLink })
+const reconnect = createReconnect({ ble })
 
 type Screen = 'main' | 'settings'
 
@@ -67,18 +70,41 @@ function stopSpinIfAny(): void {
   if (spinning()) stopSpin().catch(ignore)
 }
 
+// A link that drops during a test spin can't carry the stop. The firmware stops the motor on
+// disconnect, but in case it didn't: once reconnected, if the device still says TESTING, stop it.
+// Only then: any other state (a run started from the encoder meanwhile) is left alone.
+let stopSpinOnReconnect = false
+reconnect.store.subscribe((r) => {
+  if (r.phase === 'reconnecting' && spinning()) {
+    spinRequested = false
+    stopSpinOnReconnect = true
+  }
+})
+ble.store.subscribe((s) => {
+  if (s.connection !== 'connected' || !stopSpinOnReconnect) return
+  stopSpinOnReconnect = false
+  if (s.state === State.Testing) stopSpin().catch(ignore)
+})
+
 // Disconnecting during a test spin stops it first. Bounded wait: a stuck GATT must not keep the
 // user from leaving.
 async function disconnect(): Promise<void> {
   if (spinning()) {
     await Promise.race([stopSpin().catch(ignore), new Promise((resolve) => setTimeout(resolve, 1000))])
   }
-  ble.disconnect()
+  reconnect.disconnect()
 }
 
 export function App() {
   const s = useStore(ble.store)
+  const { phase } = useStore(reconnect.store)
   const [screen, setScreen] = useState<Screen>('main')
+
+  // On start, connect to a device used before if the browser lets us find it (no picker).
+  useEffect(() => {
+    if (!mock && hasBluetooth) void reconnect.start()
+    return () => reconnect.stopSearch()
+  }, [])
 
   // Hiding the page (switching app, locking the phone, closing the tab) stops a test spin.
   useEffect(() => {
@@ -93,10 +119,16 @@ export function App() {
     }
   }, [])
 
-  // After a drop, come back to the main screen once reconnected.
+  // A dropped link keeps the session: the screen stays, greyed, with a banner, while it reconnects
+  // or waits for « Reconnecter ». Only leaving for the connect screen ends it.
+  const offline = s.connection !== 'connected'
+  const lost = phase === 'reconnecting' || phase === 'gaveup'
+  const inSession = !offline || lost
+
+  // Back on the connect screen, the next session starts on the main screen.
   useEffect(() => {
-    if (s.connection !== 'connected') setScreen('main')
-  }, [s.connection])
+    if (!inSession) setScreen('main')
+  }, [inSession])
 
   if (!hasBluetooth && !mock) {
     return (
@@ -109,22 +141,57 @@ export function App() {
     )
   }
 
-  // TODO(#10): when the link drops mid-session, show a "Connexion perdue" banner over the main
-  // screen and reconnect, instead of falling back to the connect screen.
-  if (s.connection !== 'connected') return <ConnectScreen s={s} />
+  if (!inSession) return <ConnectScreen s={s} searching={phase === 'searching'} />
 
-  if (screen === 'settings') return <SettingsScreen s={s} onBack={() => setScreen('main')} />
-  return <MainScreen s={s} onSettings={() => setScreen('settings')} />
+  const banner = offline ? <LinkBanner phase={phase} /> : null
+  if (screen === 'settings') {
+    return <SettingsScreen s={s} offline={offline} banner={banner} onBack={() => setScreen('main')} />
+  }
+  return <MainScreen s={s} offline={offline} banner={banner} onSettings={() => setScreen('settings')} />
 }
 
-function ConnectScreen({ s }: { s: DeviceState }) {
+// Over the screen while the link is down. The values under it are the last ones the device sent.
+function LinkBanner({ phase }: { phase: Phase }) {
+  if (phase !== 'gaveup') {
+    return (
+      <div class="banner" role="status">
+        Déconnecté — reconnexion…
+      </div>
+    )
+  }
+  return (
+    <div class="banner lost" role="alert">
+      <p>Connexion perdue. Rallume le BULLOADER ou rapproche-toi.</p>
+      <div class="banner-actions">
+        <button class="btn" type="button" onClick={() => reconnect.retry()}>
+          Reconnecter
+        </button>
+        <button class="btn ghost" type="button" onClick={() => disconnect()}>
+          Changer d'appareil
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ConnectScreen({ s, searching }: { s: DeviceState; searching: boolean }) {
   const busy = s.connection === 'connecting'
   return (
     <main class="screen center">
       <h1 class="title">BULLOADER+</h1>
-      <button class="btn primary wide" type="button" disabled={busy} onClick={() => ble.connect()}>
+      <button
+        class="btn primary wide"
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          // The picker needs the click's user gesture: no await before ble.connect().
+          reconnect.stopSearch()
+          void ble.connect()
+        }}
+      >
         {busy ? 'Connexion…' : 'Connecter'}
       </button>
+      {searching && !busy && <p class="hint">Recherche du BULLOADER déjà utilisé…</p>}
       {s.connection === 'incompatible' ? (
         <p class="error" role="alert">
           Firmware incompatible : mets à jour l'app ou le BULLOADER.
@@ -141,13 +208,21 @@ function ConnectScreen({ s }: { s: DeviceState }) {
   )
 }
 
-function MainScreen({ s, onSettings }: { s: DeviceState; onSettings: () => void }) {
-  const running = isRunning(s.state)
+function MainScreen(props: {
+  s: DeviceState
+  offline: boolean
+  banner: ComponentChildren
+  onSettings: () => void
+}) {
+  const { s, offline, onSettings } = props
+  // Nothing can be sent while the link is down: everything that writes is off.
+  const locked = isRunning(s.state) || offline
   const alarm = s.state === State.Jam || s.state === State.LowBatt
   const ratio = progress(s.count, s.target)
 
   return (
-    <main class="screen main">
+    <main class={offline ? 'screen main stale' : 'screen main'}>
+      {props.banner}
       <header class="bar">
         <span class="device">{s.deviceName}</span>
         {s.battery !== null && (
@@ -175,7 +250,7 @@ function MainScreen({ s, onSettings }: { s: DeviceState; onSettings: () => void 
         </div>
       </section>
 
-      <TargetField target={s.target} disabled={running} />
+      <TargetField target={s.target} disabled={locked} />
 
       <div class="presets">
         {(s.presets ?? []).slice(0, PRESET_COUNT).map((p, i) => (
@@ -183,7 +258,7 @@ function MainScreen({ s, onSettings }: { s: DeviceState; onSettings: () => void 
             key={i}
             class={p === s.target ? 'btn chip current' : 'btn chip'}
             type="button"
-            disabled={running}
+            disabled={locked}
             onClick={() => ble.setTarget(p).catch(ignore)}
           >
             {p}
@@ -192,10 +267,15 @@ function MainScreen({ s, onSettings }: { s: DeviceState; onSettings: () => void 
       </div>
 
       <div class="actions">
-        <button class="btn go" type="button" disabled={!canGo(s.state)} onClick={() => ble.go().catch(ignore)}>
+        <button
+          class="btn go"
+          type="button"
+          disabled={offline || !canGo(s.state)}
+          onClick={() => ble.go().catch(ignore)}
+        >
           GO
         </button>
-        <button class="btn stop" type="button" onClick={() => ble.stop().catch(ignore)}>
+        <button class="btn stop" type="button" disabled={offline} onClick={() => ble.stop().catch(ignore)}>
           STOP
         </button>
       </div>
@@ -297,13 +377,20 @@ const emptyDraft: SettingsDraft = {
 
 type Busy = null | 'save' | 'full' | 'slow'
 
-function SettingsScreen({ s, onBack }: { s: DeviceState; onBack: () => void }) {
+function SettingsScreen(props: {
+  s: DeviceState
+  offline: boolean
+  banner: ComponentChildren
+  onBack: () => void
+}) {
+  const { s, offline, onBack } = props
   const [draft, setDraft] = useState<SettingsDraft | null>(null)
   const [busy, setBusy] = useState<Busy>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const mounted = useRef(true)
 
-  // Leaving this screen (Retour, or the link dropping back to the connect screen) stops a spin.
+  // Leaving this screen (Retour, or giving up on a lost link) stops a spin. A drop alone keeps the
+  // screen and the draft; the spin is then stopped on reconnect if the device still runs it.
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -320,8 +407,9 @@ function SettingsScreen({ s, onBack }: { s: DeviceState; onBack: () => void }) {
   const validation = validateSettings(values)
   const errors: Partial<Record<DraftField, string>> = validation.ok ? {} : validation.errors
   const atRest = canEditSettings(s.state)
-  const canAct = !incompatible && atRest && busy === null && validation.ok
-  const testing = s.state === State.Testing
+  const canAct = !offline && !incompatible && atRest && busy === null && validation.ok
+  // Offline, the last state is only a memory: the firmware stops a test spin when the link goes.
+  const testing = !offline && s.state === State.Testing
 
   const edit = (patch: Partial<SettingsDraft>) => {
     setNotice(null)
@@ -368,7 +456,8 @@ function SettingsScreen({ s, onBack }: { s: DeviceState; onBack: () => void }) {
   }
 
   return (
-    <main class="screen settings">
+    <main class={offline ? 'screen settings stale' : 'screen settings'}>
+      {props.banner}
       <header class="bar">
         <button class="btn icon" type="button" aria-label="Retour" onClick={onBack}>
           ←
@@ -517,7 +606,7 @@ function SettingsScreen({ s, onBack }: { s: DeviceState; onBack: () => void }) {
             Corrige les valeurs en rouge pour enregistrer.
           </p>
         )}
-        {!atRest && !testing && !incompatible && <p class="hint">Moteur en marche : arrête-le pour enregistrer ou tester.</p>}
+        {!offline && !atRest && !testing && !incompatible && <p class="hint">Moteur en marche : arrête-le pour enregistrer ou tester.</p>}
         {notice && (
           <p class="hint" role="status">
             {notice}
@@ -530,7 +619,9 @@ function SettingsScreen({ s, onBack }: { s: DeviceState; onBack: () => void }) {
 
       <section class="group">
         <h2 class="group-title">Test du moteur</h2>
-        {testing ? (
+        {offline ? (
+          <p class="hint">Connexion perdue : le BULLOADER arrête le moteur de lui-même.</p>
+        ) : testing ? (
           <p class="spin-live" aria-live="polite">
             Test en cours : le moteur tourne.
           </p>
@@ -547,7 +638,7 @@ function SettingsScreen({ s, onBack }: { s: DeviceState; onBack: () => void }) {
             {busy === 'slow' ? '…' : 'Tester lent'}
           </button>
         </div>
-        <button class="btn stop" type="button" onClick={() => stopSpin().catch(ignore)}>
+        <button class="btn stop" type="button" disabled={offline} onClick={() => stopSpin().catch(ignore)}>
           STOP
         </button>
       </section>

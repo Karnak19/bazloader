@@ -37,6 +37,10 @@ bool Run::go(uint32_t nowMs, bool batteryOk) {
   return true;
 }
 
+void Run::lowBattery() {
+  if (isRunning(state_)) state_ = State::LowBatt;
+}
+
 void Run::update(uint32_t nowMs, uint32_t count) {
   if (state_ == State::Done) {
     if (nowMs - doneMs_ >= cfg_.doneHoldMs) state_ = State::Idle;

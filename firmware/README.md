@@ -11,9 +11,10 @@ pio run -e sim       # SIMULATE_IR: fake BB pulses, no mechanism needed
 pio test -e native   # run logic tests on this computer, no board needed
 ```
 
-The run logic (state machine, BB counter, servo pulse maths) lives in `src/run.cpp` with no
-Arduino include, so the `native` env compiles it alone with the tests in `test/`. `main.cpp` is the
-thin Arduino layer: IR interrupt, LEDC servo output, simulator, serial commands.
+The run logic (state machine, BB counter, servo pulse maths) lives in `src/run.cpp` and the
+battery guard in `src/battery.cpp`, both with no Arduino include, so the `native` env compiles them
+alone with the tests in `test/`. `main.cpp` is the thin Arduino layer: IR interrupt, LEDC servo
+output, battery ADC, simulator, serial commands.
 
 The first build downloads the toolchain and takes a few minutes.
 
@@ -38,7 +39,7 @@ upload again. Press RESET after the upload to run it.
 | `t<n>`  | set the target (clamped to 1–9999, ignored during a run)       |
 | `g`     | start a run                                                   |
 | `s`     | stop, from any state; the count stays                         |
-| `?`     | print state, count and target                                 |
+| `?`     | print state, count, target and battery (`USB` when no pack)   |
 | `p`     | sim only: the next fake BB comes as two pulses 1 ms apart, which must count once |
 
 Every state change is logged with the count, the servo pulse width and LEDC duty. On DONE the log
@@ -46,6 +47,15 @@ gives the stop latency (target BB to servo cut), and on the way back to IDLE the
 
 In the sim, fake BBs arrive at `SIM_BB_PER_SECOND` only while the servo is commanded to turn, from
 a hopper of `SIM_HOPPER_CAPACITY` refilled at each `g`. A target above it ends in JAM.
+
+## Battery
+
+The pack is read on GPIO 0 through the 100k/27k divider every 500 ms (16 ADC samples averaged,
+then the median of the last three readings). Below `BATT_WARN_MV` the log shows a warning; below
+`BATT_REFUSE_MV` GO is refused and the state is LOW_BATT, which clears only 100 mV higher. During a
+run the voltage sags under load, so the run stops (LOW_BATT) only after 2 s below the refusal
+threshold. Anything under 3000 mV means USB power with no pack: it reads 0 mV (`USB`) and the
+guard is off. Set `BATT_CALIBRATION` after comparing with a multimeter.
 
 ## Power
 

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <soc/ledc_struct.h>
 
+#include "battery.h"
 #include "ble_uuids.h"
 #include "config.h"
 #include "run.h"
@@ -21,8 +22,8 @@ static volatile bool servoMoving = false;  // what the servo is commanded to do
 static volatile uint32_t targetHitUs = 0;  // when the target BB was counted
 static volatile uint32_t servoCutUs = 0;   // when the ISR cut the servo after it
 
-// Battery check is #2. Until then, always OK.
-static bool batteryOk() { return true; }
+static Battery battery(
+    {BATT_WARN_MV, BATT_REFUSE_MV, BATT_HYSTERESIS_MV, BATT_USB_BELOW_MV, BATT_SAG_MS});
 
 // ---- Servo ----
 
@@ -112,9 +113,60 @@ static void syncState() {
   setServo(run.speed());
 }
 
+// ---- Battery ----
+
+// One reading: the average of BATT_ADC_SAMPLES calibrated ADC reads, scaled to the pack.
+// About a millisecond in all, so loop() isn't held up.
+static uint32_t readBatteryMv() {
+  uint32_t sum = 0;
+  for (uint8_t i = 0; i < BATT_ADC_SAMPLES; i++) sum += analogReadMilliVolts(PIN_BATTERY_ADC);
+  return batteryMvFromAdc(sum / BATT_ADC_SAMPLES, BATT_DIVIDER_RATIO, BATT_CALIBRATION);
+}
+
+static void printBattery() {
+  if (battery.usb()) {
+    Serial.println("  battery USB");
+    return;
+  }
+  Serial.printf("  battery %u mV%s%s\n", battery.mv(), battery.ok() ? "" : ", low",
+                battery.warn() ? ", warning" : "");
+}
+
+// Reads the battery every BATT_READ_PERIOD_MS, stops a run on a flat pack, logs level changes.
+static void updateBattery(bool force) {
+  static uint32_t lastReadMs = 0;
+  static bool shownUsb = false, shownWarn = false, shownOk = true;
+  uint32_t now = millis();
+  if (!force && now - lastReadMs < BATT_READ_PERIOD_MS) return;
+  lastReadMs = now;
+  bool running = run.speed() != Speed::Off;
+  battery.update(now, readBatteryMv(), running);
+  if (running && battery.sagged()) {
+    run.lowBattery();
+    Serial.printf("[%lu ms] battery below %u mV for %u ms\n", (unsigned long)now, BATT_REFUSE_MV,
+                  BATT_SAG_MS);
+    syncState();
+  }
+  if (!force && battery.usb() == shownUsb && battery.warn() == shownWarn &&
+      battery.ok() == shownOk) {
+    return;
+  }
+  shownUsb = battery.usb();
+  shownWarn = battery.warn();
+  shownOk = battery.ok();
+  Serial.printf("[%lu ms]", (unsigned long)now);
+  printBattery();
+}
+
+// ---- Run commands ----
+
 static void go() {
-  if (!run.go(millis(), batteryOk())) {
-    if (run.state() != State::LowBatt) Serial.println("  go ignored: already running");
+  if (!run.go(millis(), battery.ok())) {
+    if (run.state() == State::LowBatt) {
+      Serial.printf("  go refused: battery %u mV\n", battery.mv());
+    } else {
+      Serial.println("  go ignored: already running");
+    }
     syncState();
     return;
   }
@@ -153,6 +205,7 @@ static void handleCommand(const char* line) {
     case '?':
       Serial.printf("  %s count=%lu target=%u\n", stateName(run.state()),
                     (unsigned long)counter.count, run.target());
+      printBattery();
       break;
     default:
       Serial.println("  commands: t<n> target, g go, s stop, ? status"
@@ -195,6 +248,9 @@ void setup() {
   pinMode(PIN_IR_SENSOR, INPUT_PULLUP);
   attachInterrupt(PIN_IR_SENSOR, countBb, IR_BREAK_RISING ? RISING : FALLING);
 #endif
+  analogSetPinAttenuation(PIN_BATTERY_ADC, ADC_11db);  // up to ~2.5 V calibrated on the C3
+  updateBattery(true);  // GO must see a real reading straight away
+
   Serial.printf("target %u. commands: t<n>, g, s, ?\n", run.target());
 }
 
@@ -202,4 +258,5 @@ void loop() {
   readSerial();
   run.update(millis(), counter.count);
   syncState();
+  updateBattery(false);
 }

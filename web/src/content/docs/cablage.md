@@ -15,7 +15,7 @@ disent pas la même chose, c'est `config.h` qui fait foi.**
 
 | GPIO | Fonction                              | À savoir                                                                                   |
 | ---- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 0    | Tension batterie (entrée analogique)  | À travers un pont diviseur 100 kΩ / 27 kΩ, avec un condensateur de 100 nF vers la masse.    |
+| 0    | Tension batterie (entrée analogique)  | À travers un pont diviseur 100 kΩ / 20 kΩ, avec un condensateur de 100 nF vers la masse.    |
 | 1    | Phototransistor IR                    | Résistance de tirage 10 kΩ vers 3,3 V. Le signal monte quand une bille coupe le faisceau.  |
 | 3    | Signal du servo (PWM)                 | Seulement le fil de commande : le servo est alimenté directement par la batterie.          |
 | 4    | Bouton GO                             | Contact sec entre GPIO 4 et GND, rien d'autre. Débranché entièrement de l'ancien circuit 12 V. |
@@ -43,7 +43,7 @@ Tous les symboles de masse sont reliés entre eux.
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
 <title id="wiring-title">Schéma de câblage du BULLOADER+</title>
-<desc id="wiring-desc">La batterie LiPo passe par l'interrupteur, puis alimente directement le servo (avec un condensateur de 470 µF à côté), le convertisseur 5 V qui alimente la broche 5V de l'ESP32, et le pont diviseur 100 kΩ / 27 kΩ vers GPIO 0 avec 100 nF vers la masse. Le servo reçoit son signal sur GPIO 3. En 3,3 V : la LED IR avec 220 Ω, le phototransistor avec une résistance de tirage de 10 kΩ vers GPIO 1, l'encodeur KY-040 (CLK 5, DT 6, SW 7) et l'OLED (SDA 10, SCL 20). Le bouton GO relie GPIO 4 à la masse. Masse commune.</desc>
+<desc id="wiring-desc">La batterie LiPo passe par l'interrupteur, puis alimente directement le servo (avec un condensateur de 470 µF à côté), le convertisseur 5 V qui alimente la broche 5V de l'ESP32, et le pont diviseur 100 kΩ / 20 kΩ vers GPIO 0 avec 100 nF vers la masse. Le servo reçoit son signal sur GPIO 3. En 3,3 V : la LED IR avec 220 Ω, le phototransistor avec une résistance de tirage de 10 kΩ vers GPIO 1, l'encodeur KY-040 (CLK 5, DT 6, SW 7) et l'OLED (SDA 10, SCL 20). Le bouton GO relie GPIO 4 à la masse. Masse commune.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
 :root[data-theme='light'] .wiring { --vbat: #c92a2a; --v5: #c2410c; --v33: #2b8a3e; --warn: #c92a2a; }
@@ -110,7 +110,7 @@ Tous les symboles de masse sont reliés entre eux.
 <path class="w vbat" d="M260 270H285"/>
 <rect class="box" x="285" y="240" width="105" height="60" rx="6"/>
 <text class="b m" x="337" y="264">Buck</text>
-<text class="s m" x="337" y="284">réglé à 5,0 V</text>
+<text class="s m" x="337" y="284">sortie 5,0 V</text>
 <path class="w v5" d="M390 270H430"/>
 <text class="s v5 m" x="410" y="262">5 V</text>
 <path class="w" d="M337 300V318"/>
@@ -126,13 +126,13 @@ Tous les symboles de masse sont reliés entre eux.
 <path class="w" d="M260 420H430"/>
 <circle class="dot" cx="335" cy="420" r="4"/>
 <rect class="part" x="252" y="435" width="16" height="45"/>
-<text class="s" x="276" y="463">27 kΩ</text>
+<text class="s" x="276" y="463">20 kΩ</text>
 <path class="w" d="M260 480V498"/>
 <use href="#gnd" x="260" y="500"/>
 <path class="w" d="M335 420V448M321 448H349M321 456H349M335 456V498"/>
 <use href="#gnd" x="335" y="500"/>
 <text class="s" x="355" y="457">100 nF</text>
-<text class="s m" x="370" y="410">≈ 1,8 V max</text>
+<text class="s m" x="370" y="410">≈ 1,4 V max</text>
 <!-- ESP32 -->
 <rect class="box" x="430" y="230" width="160" height="460" rx="8"/>
 <text class="b m" x="495" y="580">ESP32-C3</text>
@@ -233,8 +233,8 @@ Tous les symboles de masse sont reliés entre eux.
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Batterie LiPo 2S              | `+` vers l'interrupteur général, `−` vers la masse commune.                                                                           |
 | Servo                         | `+` sur la batterie après l'interrupteur (pas sur le 5 V), `−` à la masse, signal sur GPIO 3. Condensateur 470 µF 16 V entre `+` et masse, au plus près du servo, patte `+` côté batterie. |
-| Convertisseur 5 V (MP1584)    | Entrée sur la batterie après l'interrupteur, sortie réglée à 5,0 V vers la broche **5V** de l'ESP32, masse commune.                  |
-| Pont diviseur batterie        | Batterie → 100 kΩ → GPIO 0 → 27 kΩ → masse. Condensateur 100 nF entre GPIO 0 et la masse. À 8,4 V, la broche voit environ 1,8 V.     |
+| Convertisseur 5 V (MP1584)    | Entrée sur la batterie après l'interrupteur, sortie à 5,0 V (vérifiée au multimètre) vers la broche **5V** de l'ESP32, masse commune. |
+| Pont diviseur batterie        | Batterie → 100 kΩ → GPIO 0 → 20 kΩ → masse. Condensateur 100 nF entre GPIO 0 et la masse. À 8,4 V, la broche voit 8,4 × 20 / 120 = 1,40 V. Pas de 47 kΩ à la place : la broche verrait environ 2,7 V, trop haut pour que l'ADC du C3 mesure bien. |
 | LED IR 940 nm                 | 3,3 V → 220 Ω → anode de la LED, cathode à la masse. Elle reste allumée en permanence (environ 10 mA).                                |
 | Phototransistor 940 nm        | Collecteur sur GPIO 1, avec une résistance de 10 kΩ de GPIO 1 vers 3,3 V. Émetteur à la masse. Face à la LED, de l'autre côté du tube. |
 | Encodeur KY-040               | `CLK` → GPIO 5, `DT` → GPIO 6, `SW` → GPIO 7, `+` → **3,3 V**, `GND` → masse.                                                         |
@@ -246,9 +246,10 @@ Tous les symboles de masse sont reliés entre eux.
 À faire dans cet ordre, avant de brancher quoi que ce soit d'autre. Notez chaque valeur mesurée dans
 le [tableau des mesures](#mesures-relevées) plus bas.
 
-1. **Régler le convertisseur à 5,0 V au multimètre, ESP32 débranché.** Un MP1584 sort souvent
-   d'usine à une tension quelconque, parfois proche de celle de la batterie, ce qui détruirait
-   l'ESP32.
+1. **Mesurer (et si réglable, régler) la sortie du convertisseur à 5,0 V au multimètre, ESP32
+   débranché.** Une version à 5 V fixe n'a rien à régler, mais on mesure quand même. Une version
+   réglable sort souvent d'usine à une tension quelconque, parfois proche de celle de la batterie,
+   ce qui détruirait l'ESP32.
 2. **Vérifier la tension maximale du servo face aux 8,4 V de la batterie pleine.** Il est branché
    en direct sur la batterie : beaucoup de servos « 35 kg » s'arrêtent à 6,8 V et meurent au-delà.
    S'il est donné pour moins de 8,4 V, il lui faut son propre régulateur (un BEC ou un second

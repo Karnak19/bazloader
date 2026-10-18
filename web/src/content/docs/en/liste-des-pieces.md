@@ -57,7 +57,7 @@ These parts come from the original BULLOADER and are reused. **Don't order them.
 | Part | Quantity to order | Exact spec | What matters when picking | Used for |
 | ---- | ----------------- | ---------- | ------------------------- | -------- |
 | ESP32-C3 SuperMini | **3** (1 used + 2 spares) | ESP32-**C3** "SuperMini" board, USB-C, about 22 × 18 mm. Search: "ESP32-C3 SuperMini". | Make sure it's a **C3**: there are "SuperMini" boards with an S3, C6 or H2, which don't run this firmware or match this pinout. Some batches have a weak antenna (poor Bluetooth range): buying several lets you keep the best one. They're cheap. The pin headers usually come loose, not soldered. | The brain: counts the BBs, drives the servo, the screen and Bluetooth. |
-| MP1584 buck converter | **2** (1 + 1 spare) | **Adjustable** MP1584**EN** module (small trimmer screw), about 22 × 17 mm, input up to ~28 V, ~3 A peak. Search: "MP1584EN step down adjustable". | Get the **adjustable** version, not a fixed-output one or another module (the "Mini-360" uses a different chip). It leaves the factory at some random voltage, sometimes close to the battery's: you **must** set it to 5.0 V with a multimeter before connecting the ESP32. | Makes the ESP32's 5 V from the battery. Not for the servo. |
+| MP1584 buck converter | **2** (1 + 1 spare) | MP1584**EN** module, about 22 × 17 mm, input up to ~28 V, ~3 A peak. Preferably the **fixed 5 V output** version; otherwise the **adjustable** one (small trimmer screw). Search: "MP1584EN 5V fixed output" or "MP1584EN step down adjustable". | The **fixed 5 V** version is the safest: there's nothing to set, so no trimmer to get wrong. An adjustable one works too, but it leaves the factory at some random voltage, sometimes close to the battery's: you **must** set it to 5.0 V with a multimeter. Either way, **measure the output with a multimeter before connecting the ESP32**. Don't take another module instead: the "Mini-360" uses a different chip. | Makes the ESP32's 5 V from the battery. Not for the servo. |
 
 ## Infrared sensor
 
@@ -83,8 +83,8 @@ These parts come from the original BULLOADER and are reused. **Don't order them.
 | 220 Ω resistor | in the kit (you need 1) | 220 Ω, 1/4 W. | | In series with the IR LED (about 10 mA). |
 | 10 kΩ resistor | in the kit (you need 1) | 10 kΩ, 1/4 W. | | Pull-up from the phototransistor to 3.3 V. |
 | 100 kΩ resistor | in the kit (you need 1) | 100 kΩ, 1/4 W. | | Battery voltage divider, battery side. |
-| 27 kΩ resistor | in the kit (you need 1) | 27 kΩ, 1/4 W. | **27 kΩ** exactly, not 22 kΩ or 33 kΩ: the firmware works out the battery voltage from 100 kΩ / 27 kΩ. If your kit has no 27 kΩ, check before ordering, or buy some separately. | Battery voltage divider, ground side. |
-| Resistor kit | **1** | Assortment of 1/4 W, 1 % metal film resistors, including **220 Ω, 10 kΩ, 27 kΩ and 100 kΩ**. Search: "metal film resistor kit 1/4W 1%". | The easy way: one kit covers all four values and will come in handy later. Check that **27 kΩ** is in the kit's list of values (most kits with 30 to 60 values have it). | All the resistors above. |
+| 20 kΩ resistor | in the kit (you need 1) | 20 kΩ, 1/4 W. | **20 kΩ** exactly: the firmware works out the battery voltage from 100 kΩ / 20 kΩ. At 8.4 V the ESP32's pin then sees 1.40 V. | Battery voltage divider, ground side. |
+| Resistor kit | **1** | Assortment of 1/4 W, 1 % metal film resistors, including **220 Ω, 10 kΩ, 20 kΩ and 100 kΩ**. Search: "metal film resistor kit 1/4W 1%". | The easy way: one kit covers all four values and will come in handy later. Check that **20 kΩ** is in the kit's list of values (common 30-value kits have it). A **1 MΩ** in the kit also comes in handy if the IR receiver turns out to be a photodiode rather than a phototransistor. | All the resistors above. |
 
 ## Wiring and hardware
 

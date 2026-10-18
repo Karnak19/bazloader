@@ -15,7 +15,7 @@ disagree, `config.h` wins.**
 
 | GPIO | Function                              | Good to know                                                                               |
 | ---- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 0    | Battery voltage (analog input)        | Through a 100 kΩ / 27 kΩ voltage divider, with a 100 nF capacitor to ground.               |
+| 0    | Battery voltage (analog input)        | Through a 100 kΩ / 20 kΩ voltage divider, with a 100 nF capacitor to ground.               |
 | 1    | IR phototransistor                    | 10 kΩ pull-up resistor to 3.3 V. The signal goes high when a BB breaks the beam.           |
 | 3    | Servo signal (PWM)                    | Only the control wire: the servo is powered straight from the battery.                     |
 | 4    | GO button                             | A plain contact between GPIO 4 and GND, nothing else. Fully disconnected from the old 12 V circuit. |
@@ -43,7 +43,7 @@ connected together.
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
 <title id="wiring-title">BULLOADER+ wiring diagram</title>
-<desc id="wiring-desc">The LiPo battery goes through the switch, then powers the servo directly (with a 470 µF capacitor next to it), the 5 V buck converter that feeds the ESP32's 5V pin, and the 100 kΩ / 27 kΩ divider into GPIO 0 with 100 nF to ground. The servo gets its signal on GPIO 3. On 3.3 V: the IR LED with 220 Ω, the phototransistor with a 10 kΩ pull-up to GPIO 1, the KY-040 encoder (CLK 5, DT 6, SW 7) and the OLED (SDA 10, SCL 20). The GO button connects GPIO 4 to ground. Common ground.</desc>
+<desc id="wiring-desc">The LiPo battery goes through the switch, then powers the servo directly (with a 470 µF capacitor next to it), the 5 V buck converter that feeds the ESP32's 5V pin, and the 100 kΩ / 20 kΩ divider into GPIO 0 with 100 nF to ground. The servo gets its signal on GPIO 3. On 3.3 V: the IR LED with 220 Ω, the phototransistor with a 10 kΩ pull-up to GPIO 1, the KY-040 encoder (CLK 5, DT 6, SW 7) and the OLED (SDA 10, SCL 20). The GO button connects GPIO 4 to ground. Common ground.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
 :root[data-theme='light'] .wiring { --vbat: #c92a2a; --v5: #c2410c; --v33: #2b8a3e; --warn: #c92a2a; }
@@ -110,7 +110,7 @@ connected together.
 <path class="w vbat" d="M260 270H285"/>
 <rect class="box" x="285" y="240" width="105" height="60" rx="6"/>
 <text class="b m" x="337" y="264">Buck</text>
-<text class="s m" x="337" y="284">set to 5.0 V</text>
+<text class="s m" x="337" y="284">5.0 V out</text>
 <path class="w v5" d="M390 270H430"/>
 <text class="s v5 m" x="410" y="262">5 V</text>
 <path class="w" d="M337 300V318"/>
@@ -126,13 +126,13 @@ connected together.
 <path class="w" d="M260 420H430"/>
 <circle class="dot" cx="335" cy="420" r="4"/>
 <rect class="part" x="252" y="435" width="16" height="45"/>
-<text class="s" x="276" y="463">27 kΩ</text>
+<text class="s" x="276" y="463">20 kΩ</text>
 <path class="w" d="M260 480V498"/>
 <use href="#gnd" x="260" y="500"/>
 <path class="w" d="M335 420V448M321 448H349M321 456H349M335 456V498"/>
 <use href="#gnd" x="335" y="500"/>
 <text class="s" x="355" y="457">100 nF</text>
-<text class="s m" x="370" y="410">≈ 1.8 V max</text>
+<text class="s m" x="370" y="410">≈ 1.4 V max</text>
 <!-- ESP32 -->
 <rect class="box" x="430" y="230" width="160" height="460" rx="8"/>
 <text class="b m" x="495" y="580">ESP32-C3</text>
@@ -233,8 +233,8 @@ connected together.
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | 2S LiPo battery               | `+` to the main switch, `−` to the common ground.                                                                                    |
 | Servo                         | `+` on the battery after the switch (not on the 5 V), `−` to ground, signal on GPIO 3. A 470 µF 16 V capacitor between `+` and ground, as close to the servo as you can, with its `+` leg on the battery side. |
-| 5 V converter (MP1584)        | Input on the battery after the switch, output set to 5.0 V into the ESP32's **5V** pin, common ground.                               |
-| Battery voltage divider       | Battery → 100 kΩ → GPIO 0 → 27 kΩ → ground. A 100 nF capacitor between GPIO 0 and ground. At 8.4 V the pin sees about 1.8 V.         |
+| 5 V converter (MP1584)        | Input on the battery after the switch, 5.0 V output (checked with a multimeter) into the ESP32's **5V** pin, common ground.          |
+| Battery voltage divider       | Battery → 100 kΩ → GPIO 0 → 20 kΩ → ground. A 100 nF capacitor between GPIO 0 and ground. At 8.4 V the pin sees 8.4 × 20 / 120 = 1.40 V. Don't swap in a 47 kΩ: the pin would see about 2.7 V, too high for the C3's ADC to measure well. |
 | 940 nm IR LED                 | 3.3 V → 220 Ω → LED anode, cathode to ground. It stays on all the time (about 10 mA).                                                |
 | 940 nm phototransistor        | Collector on GPIO 1, with a 10 kΩ resistor from GPIO 1 to 3.3 V. Emitter to ground. Facing the LED, across the tube.                 |
 | KY-040 encoder                | `CLK` → GPIO 5, `DT` → GPIO 6, `SW` → GPIO 7, `+` → **3.3 V**, `GND` → ground.                                                        |
@@ -246,9 +246,10 @@ connected together.
 Do these in order, before connecting anything else. Write down every value you measure in the
 [measurements table](#measurements) below.
 
-1. **Set the converter to 5.0 V with a multimeter, ESP32 unplugged.** An MP1584 often comes out of
-   the factory at some random voltage, sometimes close to the battery's, which would kill the
-   ESP32.
+1. **Measure (and if it's adjustable, set) the converter's output to 5.0 V with a multimeter, ESP32
+   unplugged.** A fixed 5 V version has nothing to set, but measure it anyway. An adjustable one
+   often comes out of the factory at some random voltage, sometimes close to the battery's, which
+   would kill the ESP32.
 2. **Check the servo's maximum voltage against the 8.4 V of a full battery.** It's wired straight
    to the battery, and many "35 kg" servos top out at 6.8 V and die above that. If it's rated for
    less than 8.4 V, it needs its own regulator (a BEC or a second converter) that can supply its

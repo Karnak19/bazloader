@@ -72,7 +72,7 @@ export function createBle(options: {
   }
 
   function requireLink(): DeviceLink {
-    if (!active || store.get().connection !== 'connected') throw new Error('Pas connecté')
+    if (!active || store.get().connection !== 'connected') throw new Error('Not connected')
     return active
   }
 
@@ -114,7 +114,7 @@ export function createBle(options: {
         config = decodeConfig(configBytes)
       } catch (error) {
         if (active === l) {
-          drop('incompatible', `Firmware incompatible avec cette version de l'app (${message(error)})`)
+          drop('incompatible', `Incompatible firmware for this version of the app (${message(error)})`)
         }
         return
       }

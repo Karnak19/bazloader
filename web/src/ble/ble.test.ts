@@ -125,7 +125,7 @@ describe('connect', () => {
     const { store, ble } = await connectMock({ configVersion: 2 })
     const s = store.get()
     expect(s.connection).toBe('incompatible')
-    expect(s.error).toContain('Firmware incompatible')
+    expect(s.error).toContain('Incompatible firmware')
     expect(s.config).toBeNull()
     await expect(ble.go()).rejects.toThrow()
   })
@@ -157,7 +157,7 @@ describe('connect', () => {
     ble.disconnect()
     expect(store.get().connection).toBe('disconnected')
     expect(store.get().error).toBeNull()
-    await expect(ble.setTarget(10)).rejects.toThrow('Pas connecté')
+    await expect(ble.setTarget(10)).rejects.toThrow('Not connected')
   })
 
   test('?mock in the URL picks the mock, with its variants', () => {

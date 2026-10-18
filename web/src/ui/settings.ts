@@ -2,6 +2,7 @@
 // into values safe to write. Kept apart from the screen so it can be tested without a browser.
 
 import { type DeviceConfig, PRESET_COUNT, type Presets, TARGET_MAX, TARGET_MIN } from '../ble/protocol.ts'
+import { type Lang, translate } from '../i18n/index.ts'
 
 // Servo pulse range. With the offsets below the pulse stays within 500–2500 µs, the usual range
 // a hobby servo accepts.
@@ -65,18 +66,21 @@ function check(
   min: number,
   max: number,
   unit: string,
+  lang: Lang,
 ): { value: number; error?: undefined } | { value?: undefined; error: string } {
   const n = parseInteger(text)
-  const range = `entre ${min} et ${max}${unit}`
-  if (n === null) return { error: `Nombre entier attendu, ${range}.` }
-  if (n < min || n > max) return { error: `Doit être ${range}.` }
+  // Numbers as the user types them (no thousands separator), the unit kept with the number.
+  const vars = { min, max, unit: unit ? `\u00a0${unit}` : '' }
+  if (n === null) return { error: translate(lang, 'validation.integer', vars) }
+  if (n < min || n > max) return { error: translate(lang, 'validation.range', vars) }
   return { value: n }
 }
 
-export function validateSettings(draft: SettingsDraft): Validation {
+// The error messages are in `lang`; everything else is the same in both languages.
+export function validateSettings(draft: SettingsDraft, lang: Lang): Validation {
   const errors: Partial<Record<DraftField, string>> = {}
   const take = (field: DraftField, text: string, min: number, max: number, unit = ''): number => {
-    const r = check(text, min, max, unit)
+    const r = check(text, min, max, unit, lang)
     if (r.error !== undefined) errors[field] = r.error
     return r.value ?? 0
   }
@@ -85,12 +89,12 @@ export function validateSettings(draft: SettingsDraft): Validation {
     take(`preset${i as 0 | 1 | 2 | 3}`, p, TARGET_MIN, TARGET_MAX),
   ) as Presets
   const config: DeviceConfig = {
-    servoNeutralUs: take('servoNeutralUs', draft.servoNeutralUs, NEUTRAL_MIN_US, NEUTRAL_MAX_US, ' µs'),
-    speedFullOffsetUs: take('speedFullOffsetUs', draft.speedFullOffsetUs, -OFFSET_MAX_US, OFFSET_MAX_US, ' µs'),
-    speedSlowOffsetUs: take('speedSlowOffsetUs', draft.speedSlowOffsetUs, -OFFSET_MAX_US, OFFSET_MAX_US, ' µs'),
+    servoNeutralUs: take('servoNeutralUs', draft.servoNeutralUs, NEUTRAL_MIN_US, NEUTRAL_MAX_US, 'µs'),
+    speedFullOffsetUs: take('speedFullOffsetUs', draft.speedFullOffsetUs, -OFFSET_MAX_US, OFFSET_MAX_US, 'µs'),
+    speedSlowOffsetUs: take('speedSlowOffsetUs', draft.speedSlowOffsetUs, -OFFSET_MAX_US, OFFSET_MAX_US, 'µs'),
     reverse: draft.reverse,
     slowdownN: take('slowdownN', draft.slowdownN, SLOWDOWN_MIN, SLOWDOWN_MAX),
-    jamTimeoutMs: take('jamTimeoutMs', draft.jamTimeoutMs, JAM_TIMEOUT_MIN_MS, JAM_TIMEOUT_MAX_MS, ' ms'),
+    jamTimeoutMs: take('jamTimeoutMs', draft.jamTimeoutMs, JAM_TIMEOUT_MIN_MS, JAM_TIMEOUT_MAX_MS, 'ms'),
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }

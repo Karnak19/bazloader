@@ -1,6 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 import { State } from '../ble/protocol.ts'
-import { batteryLevel, batteryText, canEditSettings, canGo, connectionErrorText, parseTarget, progress } from './rules.ts'
+import {
+  batteryLevel,
+  batteryText,
+  canEditSettings,
+  canGo,
+  connectionErrorText,
+  parseTarget,
+  progress,
+  sendErrorText,
+  stateLabel,
+} from './rules.ts'
 
 describe('batteryLevel', () => {
   test('follows the firmware thresholds', () => {
@@ -12,9 +22,12 @@ describe('batteryLevel', () => {
     expect(batteryLevel(0)).toBe('usb')
   })
 
-  test('formats volts the French way, USB for 0', () => {
-    expect(batteryText(7412)).toBe('7,41 V')
-    expect(batteryText(0)).toBe('USB')
+  test('formats volts in each language, USB for 0', () => {
+    expect(batteryText(7412, 'fr')).toBe('7,41\u00a0V')
+    expect(batteryText(7900, 'fr')).toBe('7,90\u00a0V')
+    expect(batteryText(7900, 'en')).toBe('7.90\u00a0V')
+    expect(batteryText(0, 'fr')).toBe('USB')
+    expect(batteryText(0, 'en')).toBe('USB')
   })
 })
 
@@ -69,8 +82,45 @@ describe('progress', () => {
   })
 })
 
+describe('stateLabel', () => {
+  // The French labels are the OLED's (firmware/src/screen.cpp), so the phone and the device match.
+  test('French matches the OLED', () => {
+    expect(stateLabel(State.Idle, 'fr')).toBe('Prêt')
+    expect(stateLabel(State.Running, 'fr')).toBe('Chargement')
+    expect(stateLabel(State.Slowdown, 'fr')).toBe('Ralenti')
+    expect(stateLabel(State.Done, 'fr')).toBe('Terminé')
+    expect(stateLabel(State.Jam, 'fr')).toBe('Bourrage / trémie vide')
+    expect(stateLabel(State.LowBatt, 'fr')).toBe('Batterie faible')
+    expect(stateLabel(State.Testing, 'fr')).toBe('Test moteur')
+  })
+
+  test('English has its own words', () => {
+    expect(stateLabel(State.Idle, 'en')).toBe('Ready')
+    expect(stateLabel(State.Jam, 'en')).toBe('Jam / hopper empty')
+  })
+})
+
 describe('connectionErrorText', () => {
   test('translates a closed picker', () => {
-    expect(connectionErrorText('User cancelled the requestDevice() chooser.')).toBe('Aucun appareil choisi.')
+    const error = 'User cancelled the requestDevice() chooser.'
+    expect(connectionErrorText(error, 'fr')).toBe('Aucun appareil choisi.')
+    expect(connectionErrorText(error, 'en')).toBe('No device picked.')
+  })
+
+  test('says Bluetooth is off in plain words', () => {
+    expect(connectionErrorText('Bluetooth adapter not available.', 'fr')).toBe('Le Bluetooth du téléphone est désactivé.')
+  })
+
+  test('passes other errors through, with French typography', () => {
+    expect(connectionErrorText('GATT Server is disconnected', 'fr')).toBe('Connexion impossible\u00a0: GATT Server is disconnected')
+    expect(connectionErrorText('GATT Server is disconnected', 'en')).toBe("Couldn't connect: GATT Server is disconnected")
+  })
+})
+
+describe('sendErrorText', () => {
+  test('says the BLE layer\'s "Not connected" in the language', () => {
+    expect(sendErrorText('Not connected', 'fr')).toBe("Échec de l'envoi\u00a0: Pas connecté.")
+    expect(sendErrorText('Not connected', 'en')).toBe("Couldn't send: Not connected.")
+    expect(sendErrorText('GATT operation failed', 'en')).toBe("Couldn't send: GATT operation failed")
   })
 })

@@ -8,6 +8,7 @@ import { isMockRequested, requestLink } from './ble/link.ts'
 import { createReconnect, type Phase } from './ble/reconnect.ts'
 import { PRESET_COUNT, State } from './ble/protocol.ts'
 import { type DeviceState, useStore } from './ble/store.ts'
+import { LANG_NAMES, LANGS, langStore, setLang, t } from './i18n/index.ts'
 import {
   batteryLevel,
   batteryText,
@@ -18,6 +19,7 @@ import {
   isRunning,
   parseTarget,
   progress,
+  sendErrorText,
   stateLabel,
 } from './ui/rules.ts'
 import {
@@ -95,7 +97,13 @@ async function disconnect(): Promise<void> {
   reconnect.disconnect()
 }
 
+// The current language, for the pure functions that take it. Read during render: App subscribes to
+// langStore, so a switch re-renders every screen.
+const lang = () => langStore.get().lang
+
 export function App() {
+  // Switching language re-renders from here down; nothing navigates, so the link stays up.
+  useStore(langStore)
   const s = useStore(ble.store)
   const { phase } = useStore(reconnect.store)
   const [screen, setScreen] = useState<Screen>('main')
@@ -135,8 +143,9 @@ export function App() {
       <main class="screen center">
         <h1 class="title">BULLOADER+</h1>
         <p class="error" role="alert">
-          Web Bluetooth indisponible. Utilise Chrome sur Android.
+          {t('app.noBluetooth')}
         </p>
+        <LanguageSwitch />
       </main>
     )
   }
@@ -155,19 +164,19 @@ function LinkBanner({ phase }: { phase: Phase }) {
   if (phase !== 'gaveup') {
     return (
       <div class="banner" role="status">
-        Déconnecté — reconnexion…
+        {t('banner.reconnecting')}
       </div>
     )
   }
   return (
     <div class="banner lost" role="alert">
-      <p>Connexion perdue. Rallume le BULLOADER ou rapproche-toi.</p>
+      <p>{t('banner.lost')}</p>
       <div class="banner-actions">
         <button class="btn" type="button" onClick={() => reconnect.retry()}>
-          Reconnecter
+          {t('banner.retry')}
         </button>
         <button class="btn ghost" type="button" onClick={() => disconnect()}>
-          Changer d'appareil
+          {t('banner.changeDevice')}
         </button>
       </div>
     </div>
@@ -189,21 +198,22 @@ function ConnectScreen({ s, searching }: { s: DeviceState; searching: boolean })
           void ble.connect()
         }}
       >
-        {busy ? 'Connexion…' : 'Connecter'}
+        {busy ? t('connect.busy') : t('connect.button')}
       </button>
-      {searching && !busy && <p class="hint">Recherche du BULLOADER déjà utilisé…</p>}
+      {searching && !busy && <p class="hint">{t('connect.searching')}</p>}
       {s.connection === 'incompatible' ? (
         <p class="error" role="alert">
-          Firmware incompatible : mets à jour l'app ou le BULLOADER.
+          {t('connect.incompatible')}
         </p>
       ) : (
         s.error && (
           <p class="error" role="alert">
-            {connectionErrorText(s.error)}
+            {connectionErrorText(s.error, lang())}
           </p>
         )
       )}
-      {mock && <p class="hint">Mode démo (?mock) : pas de vrai appareil.</p>}
+      {mock && <p class="hint">{t('connect.mock')}</p>}
+      <LanguageSwitch />
     </main>
   )
 }
@@ -226,15 +236,15 @@ function MainScreen(props: {
       <header class="bar">
         <span class="device">{s.deviceName}</span>
         {s.battery !== null && (
-          <span class={`battery ${batteryLevel(s.battery)}`}>{batteryText(s.battery)}</span>
+          <span class={`battery ${batteryLevel(s.battery)}`}>{batteryText(s.battery, lang())}</span>
         )}
-        <button class="btn icon" type="button" aria-label="Réglages" onClick={onSettings}>
+        <button class="btn icon" type="button" aria-label={t('main.settings')} onClick={onSettings}>
           ⚙
         </button>
       </header>
 
       <section class="status" aria-live="polite">
-        <p class={alarm ? 'state alarm' : 'state'}>{s.state === null ? '—' : stateLabel[s.state]}</p>
+        <p class={alarm ? 'state alarm' : 'state'}>{s.state === null ? '—' : stateLabel(s.state, lang())}</p>
         <p class="count">
           <span>{s.count ?? '—'}</span>
           <span class="of"> / {s.target ?? '—'}</span>
@@ -281,7 +291,7 @@ function MainScreen(props: {
       </div>
 
       <button class="btn quiet" type="button" onClick={() => disconnect()}>
-        Déconnecter
+        {t('main.disconnect')}
       </button>
     </main>
   )
@@ -313,13 +323,13 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
   return (
     <div class="target">
       <label for="target" class="label">
-        Objectif
+        {t('main.target')}
       </label>
       <div class="stepper">
         <button
           class="btn step"
           type="button"
-          aria-label="Moins un"
+          aria-label={t('main.minusOne')}
           disabled={disabled || target === null}
           onClick={() => step(-1)}
         >
@@ -352,7 +362,7 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
         <button
           class="btn step"
           type="button"
-          aria-label="Plus un"
+          aria-label={t('main.plusOne')}
           disabled={disabled || target === null}
           onClick={() => step(1)}
         >
@@ -386,7 +396,8 @@ function SettingsScreen(props: {
   const { s, offline, onBack } = props
   const [draft, setDraft] = useState<SettingsDraft | null>(null)
   const [busy, setBusy] = useState<Busy>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  // Kept as a function so it follows a language switch while it is on screen.
+  const [notice, setNotice] = useState<{ text: () => string } | null>(null)
   const mounted = useRef(true)
 
   // Leaving this screen (Retour, or giving up on a lost link) stops a spin. A drop alone keeps the
@@ -404,7 +415,7 @@ function SettingsScreen(props: {
   const stored = s.config && s.presets ? draftFrom(s.presets, s.config) : emptyDraft
   const values = draft ?? stored
   const dirty = draft !== null && !sameDraft(draft, stored)
-  const validation = validateSettings(values)
+  const validation = validateSettings(values, lang())
   const errors: Partial<Record<DraftField, string>> = validation.ok ? {} : validation.errors
   const atRest = canEditSettings(s.state)
   const canAct = !offline && !incompatible && atRest && busy === null && validation.ok
@@ -433,7 +444,7 @@ function SettingsScreen(props: {
       now.config !== null &&
       now.presets !== null &&
       sameDraft(draftFrom(now.presets, now.config), draftFrom(presets, config))
-    setNotice(kept ? 'Enregistré.' : "L'appareil n'a pas tout pris : voici ses valeurs.")
+    setNotice({ text: () => (kept ? t('settings.saved') : t('settings.notKept')) })
   }
 
   // « Enregistrer », or « Enregistrer et tester »: a test spin uses the device's saved config, so
@@ -449,7 +460,10 @@ function SettingsScreen(props: {
       spinRequested = true
       await ble.testSpin(kind)
     } catch (error) {
-      if (mounted.current) setNotice(`Échec de l'envoi : ${message(error)}`)
+      if (mounted.current) {
+        const reason = message(error)
+        setNotice({ text: () => sendErrorText(reason, lang()) })
+      }
     } finally {
       if (mounted.current) setBusy(null)
     }
@@ -459,21 +473,21 @@ function SettingsScreen(props: {
     <main class={offline ? 'screen settings stale' : 'screen settings'}>
       {props.banner}
       <header class="bar">
-        <button class="btn icon" type="button" aria-label="Retour" onClick={onBack}>
+        <button class="btn icon" type="button" aria-label={t('settings.back')} onClick={onBack}>
           ←
         </button>
-        <h1 class="bar-title">Réglages</h1>
-        <span class={testing ? 'pill active' : 'pill'}>{s.state === null ? '—' : stateLabel[s.state]}</span>
+        <h1 class="bar-title">{t('settings.title')}</h1>
+        <span class={testing ? 'pill active' : 'pill'}>{s.state === null ? '—' : stateLabel(s.state, lang())}</span>
       </header>
 
       {incompatible && (
         <p class="error" role="alert">
-          Firmware incompatible : réglages indisponibles. Mets à jour l'app ou le BULLOADER.
+          {t('settings.incompatible')}
         </p>
       )}
 
       <section class="group">
-        <h2 class="group-title">Préréglages</h2>
+        <h2 class="group-title">{t('settings.presets')}</h2>
         <div class="presets">
           {PRESET_INDEXES.map((i) => (
             <input
@@ -484,7 +498,7 @@ function SettingsScreen(props: {
               pattern="[0-9]*"
               maxLength={4}
               autoComplete="off"
-              aria-label={`Préréglage ${i + 1}`}
+              aria-label={t('settings.preset', { n: i + 1 })}
               aria-invalid={!!errors[`preset${i}`]}
               disabled={incompatible}
               value={values.presets[i]}
@@ -501,7 +515,7 @@ function SettingsScreen(props: {
           return (
             error && (
               <p key={i} class="field-error">
-                Préréglage {i + 1} : {error}
+                {t('settings.presetError', { n: i + 1, error })}
               </p>
             )
           )
@@ -509,10 +523,10 @@ function SettingsScreen(props: {
       </section>
 
       <section class="group">
-        <h2 class="group-title">Chargement</h2>
+        <h2 class="group-title">{t('settings.loading')}</h2>
         <NumberField
           id="slowdown"
-          label="Ralentir à N billes de la fin"
+          label={t('settings.slowdown')}
           value={values.slowdownN}
           error={errors.slowdownN}
           disabled={incompatible}
@@ -520,7 +534,7 @@ function SettingsScreen(props: {
         />
         <NumberField
           id="jam"
-          label="Bourrage après (ms sans bille)"
+          label={t('settings.jam')}
           value={values.jamTimeoutMs}
           error={errors.jamTimeoutMs}
           disabled={incompatible}
@@ -529,16 +543,16 @@ function SettingsScreen(props: {
       </section>
 
       <section class="group">
-        <h2 class="group-title">Servo</h2>
+        <h2 class="group-title">{t('settings.servo')}</h2>
         <div class="target">
           <label for="neutral" class="label">
-            Neutre (µs)
+            {t('settings.neutral')}
           </label>
           <div class="stepper">
             <button
               class="btn step small"
               type="button"
-              aria-label={`Moins ${NEUTRAL_STEP_US} µs`}
+              aria-label={t('settings.minusUs', { n: NEUTRAL_STEP_US })}
               disabled={incompatible}
               onClick={() => neutralStep(-NEUTRAL_STEP_US)}
             >
@@ -560,7 +574,7 @@ function SettingsScreen(props: {
             <button
               class="btn step small"
               type="button"
-              aria-label={`Plus ${NEUTRAL_STEP_US} µs`}
+              aria-label={t('settings.plusUs', { n: NEUTRAL_STEP_US })}
               disabled={incompatible}
               onClick={() => neutralStep(NEUTRAL_STEP_US)}
             >
@@ -571,7 +585,7 @@ function SettingsScreen(props: {
         </div>
         <NumberField
           id="full"
-          label="Écart vitesse rapide (µs)"
+          label={t('settings.fullOffset')}
           value={values.speedFullOffsetUs}
           error={errors.speedFullOffsetUs}
           disabled={incompatible}
@@ -580,7 +594,7 @@ function SettingsScreen(props: {
         />
         <NumberField
           id="slow"
-          label="Écart vitesse lente (µs)"
+          label={t('settings.slowOffset')}
           value={values.speedSlowOffsetUs}
           error={errors.speedSlowOffsetUs}
           disabled={incompatible}
@@ -595,54 +609,81 @@ function SettingsScreen(props: {
           disabled={incompatible}
           onClick={() => edit({ reverse: !values.reverse })}
         >
-          <span>Sens inversé</span>
-          <span class="toggle-value">{values.reverse ? 'OUI' : 'NON'}</span>
+          <span>{t('settings.reverse')}</span>
+          <span class="toggle-value">{values.reverse ? t('settings.yes') : t('settings.no')}</span>
         </button>
       </section>
 
       <section class="group">
         {!validation.ok && !incompatible && (
           <p class="field-error" role="alert">
-            Corrige les valeurs en rouge pour enregistrer.
+            {t('settings.fixErrors')}
           </p>
         )}
-        {!offline && !atRest && !testing && !incompatible && <p class="hint">Moteur en marche : arrête-le pour enregistrer ou tester.</p>}
+        {!offline && !atRest && !testing && !incompatible && <p class="hint">{t('settings.motorRunning')}</p>}
         {notice && (
           <p class="hint" role="status">
-            {notice}
+            {notice.text()}
           </p>
         )}
         <button class="btn primary" type="button" disabled={!canAct || !dirty} onClick={() => run('save')}>
-          {busy === 'save' ? 'Enregistrement…' : 'Enregistrer'}
+          {busy === 'save' ? t('settings.saving') : t('settings.save')}
         </button>
       </section>
 
       <section class="group">
-        <h2 class="group-title">Test du moteur</h2>
+        <h2 class="group-title">{t('settings.motorTest')}</h2>
         {offline ? (
-          <p class="hint">Connexion perdue : le BULLOADER arrête le moteur de lui-même.</p>
+          <p class="hint">{t('settings.testOffline')}</p>
         ) : testing ? (
           <p class="spin-live" aria-live="polite">
-            Test en cours : le moteur tourne.
+            {t('settings.testRunning')}
           </p>
         ) : (
           <p class="hint">
-            {dirty ? 'Chaque test enregistre d’abord tes changements.' : 'Tourne avec les valeurs enregistrées.'}
+            {dirty ? t('settings.testSavesFirst') : t('settings.testSaved')}
           </p>
         )}
         <div class="actions">
           <button class="btn" type="button" disabled={!canAct} onClick={() => run('full')}>
-            {busy === 'full' ? '…' : 'Tester rapide'}
+            {busy === 'full' ? '…' : t('settings.testFull')}
           </button>
           <button class="btn" type="button" disabled={!canAct} onClick={() => run('slow')}>
-            {busy === 'slow' ? '…' : 'Tester lent'}
+            {busy === 'slow' ? '…' : t('settings.testSlow')}
           </button>
         </div>
         <button class="btn stop" type="button" disabled={offline} onClick={() => stopSpin().catch(ignore)}>
           STOP
         </button>
       </section>
+
+      <section class="group">
+        <h2 class="group-title">{t('lang.title')}</h2>
+        <LanguageSwitch />
+      </section>
     </main>
+  )
+}
+
+// Français / English. Local to the phone: works offline and with no device. Each language is named
+// in its own language, so someone who can't read the current one still finds theirs.
+function LanguageSwitch() {
+  const current = langStore.get().lang
+  return (
+    <div class="langs" role="group" aria-label={t('lang.title')}>
+      {LANGS.map((l) => (
+        <button
+          key={l}
+          class={l === current ? 'btn lang current' : 'btn lang'}
+          type="button"
+          lang={l}
+          aria-pressed={l === current}
+          onClick={() => setLang(l)}
+        >
+          {LANG_NAMES[l]}
+        </button>
+      ))}
+    </div>
   )
 }
 

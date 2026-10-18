@@ -13,14 +13,15 @@ const config: DeviceConfig = {
 const presets: Presets = [30, 50, 120, 300]
 const draft = (patch: Partial<SettingsDraft> = {}): SettingsDraft => ({ ...draftFrom(presets, config), ...patch })
 
+// Error messages pinned to French; the rules themselves don't depend on the language.
 function errorsOf(d: SettingsDraft) {
-  const r = validateSettings(d)
+  const r = validateSettings(d, 'fr')
   return r.ok ? {} : r.errors
 }
 
 describe('draft', () => {
   test('round-trips the device values', () => {
-    const r = validateSettings(draft())
+    const r = validateSettings(draft(), 'fr')
     expect(r).toEqual({ ok: true, values: { presets, config } })
   })
 
@@ -50,7 +51,7 @@ describe('validateSettings', () => {
   test('neutral: 1000–2000 µs', () => {
     expect(errorsOf(draft({ servoNeutralUs: '1000' }))).toEqual({})
     expect(errorsOf(draft({ servoNeutralUs: '2000' }))).toEqual({})
-    expect(errorsOf(draft({ servoNeutralUs: '999' })).servoNeutralUs).toBe('Doit être entre 1000 et 2000 µs.')
+    expect(errorsOf(draft({ servoNeutralUs: '999' })).servoNeutralUs).toBe('Doit être entre 1000 et 2000\u00a0µs.')
     expect(errorsOf(draft({ servoNeutralUs: '2001' })).servoNeutralUs).toBeDefined()
   })
 
@@ -67,6 +68,14 @@ describe('validateSettings', () => {
     expect(errorsOf(draft({ presets: ['1', '9999', '2', '3'] }))).toEqual({})
   })
 
+  test('messages in English too', () => {
+    const r = validateSettings(draft({ servoNeutralUs: '999', presets: ['', '50', '120', '300'] }), 'en')
+    expect(r.ok ? {} : r.errors).toEqual({
+      servoNeutralUs: 'Must be between 1000 and 2000\u00a0µs.',
+      preset0: 'Whole number expected, between 1 and 9999.',
+    })
+  })
+
   test('slowdown N: 0–255 (uint8)', () => {
     expect(errorsOf(draft({ slowdownN: '0' }))).toEqual({})
     expect(errorsOf(draft({ slowdownN: '255' }))).toEqual({})
@@ -77,12 +86,12 @@ describe('validateSettings', () => {
   test('jam timeout: 300–10000 ms', () => {
     expect(errorsOf(draft({ jamTimeoutMs: '300' }))).toEqual({})
     expect(errorsOf(draft({ jamTimeoutMs: '10000' }))).toEqual({})
-    expect(errorsOf(draft({ jamTimeoutMs: '299' })).jamTimeoutMs).toBe('Doit être entre 300 et 10000 ms.')
+    expect(errorsOf(draft({ jamTimeoutMs: '299' })).jamTimeoutMs).toBe('Doit être entre 300 et 10000\u00a0ms.')
     expect(errorsOf(draft({ jamTimeoutMs: '65535' })).jamTimeoutMs).toBeDefined()
   })
 
   test('values come out as numbers, reverse kept', () => {
-    const r = validateSettings(draft({ servoNeutralUs: '1490', speedFullOffsetUs: '-250', reverse: true }))
+    const r = validateSettings(draft({ servoNeutralUs: '1490', speedFullOffsetUs: '-250', reverse: true }), 'fr')
     expect(r.ok && r.values.config).toEqual({ ...config, servoNeutralUs: 1490, speedFullOffsetUs: -250, reverse: true })
   })
 })

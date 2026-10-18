@@ -16,7 +16,11 @@ bun run icons    # regenerate PNG icons in public/ from public/favicon.svg
 
 ## Layout
 
-- `src/content/docs/`: the docs pages (Markdown). The UI is in French.
+- `src/content/docs/`: the docs pages (Markdown). French at the root, English under `en/` with
+  the same file names (that is how Starlight's language picker pairs them).
+- `src/i18n/`: the app's strings. `fr.ts` holds every key; `en.ts` must have the same ones or
+  `tsc` fails. The app follows the phone's language until the user picks one in the app (kept in
+  `localStorage`).
 - `src/pages/app.astro`: the app page. It mounts `src/app.tsx` with `client:only="preact"`,
   because `navigator.bluetooth` does not exist at build time.
 - `src/ble/protocol.ts`: UUIDs and byte codecs.

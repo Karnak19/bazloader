@@ -1,11 +1,11 @@
-name: Deploy PWA
+name: Deploy web
 
 on:
   push:
     branches: [main]
     paths:
-      - 'pwa/**'
-      - '.github/workflows/deploy-pwa.yml'
+      - 'web/**'
+      - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
 permissions:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: pwa
+        working-directory: web
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -34,7 +34,7 @@ jobs:
       - run: bun run build
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: pwa/dist
+          path: web/dist
 
   deploy:
     needs: build

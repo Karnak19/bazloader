@@ -10,7 +10,7 @@ MIN_WALL = 1.6  # Thinnest wall we print (4 perimeters at 0.4 mm nozzle).
 EDGE_FILLET = 0.8  # Rounding of the outer edges along the tube, so nothing is sharp in the hand.
 
 # --- Inner barrel (IR collar sits around it) --------------------------------
-BARREL_OD = 9.0  # TODO: measure. Outer diameter of the 120 mm inner barrel, expected 8.5-9.5.
+BARREL_OD = 8.55  # Outer diameter of the 120 mm inner barrel: a standard AEG inner barrel. Confirm with calipers (#16).
 
 # --- IR barrier ---------------------------------------------------------------
 IR_LED_DIAMETER = 3.0  # TODO: measure. Body of the 3 mm IR LED.

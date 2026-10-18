@@ -8,7 +8,7 @@ import { isMockRequested, requestLink } from './ble/link.ts'
 import { createReconnect, type Phase } from './ble/reconnect.ts'
 import { PRESET_COUNT, State, TARGET_MAX, TARGET_MIN } from './ble/protocol.ts'
 import { createStore, type DeviceState, useStore } from './ble/store.ts'
-import { LANG_NAMES, LANGS, langStore, setLang, t } from './i18n/index.ts'
+import { type Key, LANG_NAMES, LANGS, langStore, setLang, t } from './i18n/index.ts'
 import {
   batteryLevel,
   batteryText,
@@ -42,6 +42,7 @@ import {
   stepNeutral,
   validateSettings,
 } from './ui/settings.ts'
+import { setTheme, THEME_PREFS, themeStore } from './ui/theme.ts'
 
 const hasBluetooth = typeof navigator !== 'undefined' && 'bluetooth' in navigator
 const mock = isMockRequested()
@@ -158,6 +159,7 @@ const lang = () => langStore.get().lang
 export function App() {
   // Switching language re-renders from here down; nothing navigates, so the link stays up.
   useStore(langStore)
+  useStore(themeStore)
   const s = useStore(ble.store)
   const { phase } = useStore(reconnect.store)
   const [screen, setScreen] = useState<Screen>('main')
@@ -195,9 +197,10 @@ export function App() {
   if (!hasBluetooth && !mock) {
     return (
       <main class="screen center">
-        <h1 class="title">BULLOADER+</h1>
-        <p class="error" role="alert">
-          {t('app.noBluetooth')}
+        <Wordmark />
+        <p class="alert" role="alert">
+          <Icon name="alarm" />
+          <span>{t('app.noBluetooth')}</span>
         </p>
         <LanguageSwitch />
       </main>
@@ -227,20 +230,26 @@ function LinkBanner({ phase, state }: { phase: Phase; state: State | null }) {
   if (phase !== 'gaveup') {
     return (
       <div class="banner" role={moving ? 'alert' : 'status'}>
-        <p>{t('banner.reconnecting')}</p>
+        <p class="banner-title">
+          <Icon name="link" />
+          <span>{t('banner.reconnecting')}</span>
+        </p>
         {notes}
       </div>
     )
   }
   return (
     <div class="banner lost" role="alert">
-      <p>{t('banner.lost')}</p>
+      <p class="banner-title">
+        <Icon name="alarm" />
+        <span>{t('banner.lost')}</span>
+      </p>
       {notes}
       <div class="banner-actions">
-        <button class="btn" type="button" onClick={() => reconnect.retry()}>
+        <button class="btn primary" type="button" onClick={() => reconnect.retry()}>
           {t('banner.retry')}
         </button>
-        <button class="btn ghost" type="button" onClick={() => disconnect()}>
+        <button class="btn" type="button" onClick={() => disconnect()}>
           {t('banner.changeDevice')}
         </button>
       </div>
@@ -252,7 +261,7 @@ function ConnectScreen({ s, searching }: { s: DeviceState; searching: boolean })
   const busy = s.connection === 'connecting'
   return (
     <main class="screen center">
-      <h1 class="title">BULLOADER+</h1>
+      <Wordmark />
       <button
         class="btn primary wide"
         type="button"
@@ -267,13 +276,15 @@ function ConnectScreen({ s, searching }: { s: DeviceState; searching: boolean })
       </button>
       {searching && !busy && <p class="hint">{t('connect.searching')}</p>}
       {s.connection === 'incompatible' ? (
-        <p class="error" role="alert">
-          {t('connect.incompatible')}
+        <p class="alert" role="alert">
+          <Icon name="alarm" />
+          <span>{t('connect.incompatible')}</span>
         </p>
       ) : (
         s.error && (
-          <p class="error" role="alert">
-            {connectionErrorText(s.error, lang())}
+          <p class="alert" role="alert">
+            <Icon name="alarm" />
+            <span>{connectionErrorText(s.error, lang())}</span>
           </p>
         )
       )}
@@ -314,19 +325,22 @@ function MainScreen(props: {
   }
 
   return (
-    <main class={offline ? 'screen main stale' : 'screen main'}>
+    <main class={`screen main tone-${tone}${offline ? ' stale' : ''}`}>
       {props.banner}
       <header class="bar">
         <span class="device">{s.deviceName}</span>
         {s.battery !== null && (
-          <span class={`battery ${batteryLevel(s.battery)}`}>{batteryText(s.battery, lang())}</span>
+          <span class={`battery ${batteryLevel(s.battery)}`}>
+            <Icon name="battery" />
+            {batteryText(s.battery, lang())}
+          </span>
         )}
         <button class="btn icon" type="button" aria-label={t('main.settings')} onClick={onSettings}>
           <Icon name="settings" />
         </button>
       </header>
 
-      <section class={`hero tone-${tone}`}>
+      <section class="hero">
         {/* Only the state and its line are announced: the count would read out every BB. */}
         <div class="state-block" role="status" aria-atomic="true">
           <p class="state">
@@ -336,39 +350,57 @@ function MainScreen(props: {
           <p class="state-sub">{sub}</p>
         </div>
         <p class={current ? 'count' : 'count old'}>
-          <span>{s.count ?? '—'}</span>
-          <span class="of"> / {s.target ?? '—'}</span>
+          <Digits value={s.count} />
+          <span class="of">
+            <span class="slash">/</span>
+            {s.target ?? '—'}
+          </span>
         </p>
         <div
-          class="progress"
+          class="rule"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={s.target ?? 0}
           aria-valuenow={current ? (s.count ?? 0) : 0}
+          style={{ '--p': ratio }}
         >
-          <div class="fill" style={{ width: `${ratio * 100}%` }} />
+          <div class="rule-track">
+            <div class="rule-fill" />
+            <div class="rule-edge" />
+          </div>
+          <div class="rule-ticks" aria-hidden="true">
+            {TICKS.map((i) => (
+              <span key={i} />
+            ))}
+          </div>
         </div>
       </section>
 
-      <TargetField target={s.target} disabled={locked} />
-
-      <div class="presets">
-        {(s.presets ?? []).slice(0, PRESET_COUNT).map((p, i) => (
-          <button
-            key={i}
-            class={p === s.target ? 'btn chip current' : 'btn chip'}
-            type="button"
-            aria-pressed={p === s.target}
-            disabled={locked}
-            onClick={() => ble.setTarget(p).catch(ignore)}
-          >
-            {p}
-          </button>
-        ))}
-      </div>
+      <section class="panel" aria-label={t('main.target')}>
+        <TargetField target={s.target} disabled={locked} />
+        <div class="presets">
+          {(s.presets ?? []).slice(0, PRESET_COUNT).map((p, i) => (
+            <button
+              key={i}
+              class={p === s.target ? 'btn chip current' : 'btn chip'}
+              type="button"
+              aria-pressed={p === s.target}
+              disabled={locked}
+              onClick={() => ble.setTarget(p).catch(ignore)}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <div class="dock">
-        {reload !== null && <p class="dock-hint">{t('main.goReloads', { n: reload })}</p>}
+        {reload !== null && (
+          <p class="dock-hint">
+            <Icon name="alarm" />
+            <span>{t('main.goReloads', { n: reload })}</span>
+          </p>
+        )}
         {moving ? (
           // Offline, STOP can't be sent: it is kept and sent on reconnect (see queueStop).
           <button
@@ -377,7 +409,10 @@ function MainScreen(props: {
             disabled={offline && pendingStop === 'any'}
             onClick={() => (offline ? queueStop() : ble.stop().catch(ignore))}
           >
-            STOP
+            <span class="btn-main">
+              <Icon name="stop" />
+              STOP
+            </span>
             {offline && pendingStop === 'any' && <span class="btn-sub">{t('main.stopQueued')}</span>}
           </button>
         ) : (
@@ -387,11 +422,33 @@ function MainScreen(props: {
             disabled={offline || !canGo(s.state)}
             onClick={() => ble.go().catch(ignore)}
           >
-            GO
+            <span class="btn-main">
+              <Icon name="go" />
+              GO
+            </span>
           </button>
         )}
       </div>
     </main>
+  )
+}
+
+// Eleven marks on the progress rule: every tenth of the target.
+const TICKS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// The count, one span per digit. A digit's key is its place and its value, so only the digits
+// that changed are new elements, and only they play the tick (transform and opacity, in CSS).
+function Digits({ value }: { value: number | null }) {
+  if (value === null) return <span class="digits">—</span>
+  const text = String(value)
+  return (
+    <span class="digits">
+      {[...text].map((d, i) => (
+        <span key={`${text.length - i}:${d}`} class="digit">
+          {d}
+        </span>
+      ))}
+    </span>
   )
 }
 
@@ -444,11 +501,11 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
           disabled={disabled || !canStep(target, -1)}
           onClick={() => step(-1)}
         >
-          −
+          <Icon name="minus" />
         </button>
         <input
           id="target"
-          class="field"
+          class="field big"
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
@@ -479,7 +536,7 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
           disabled={disabled || !canStep(target, 1)}
           onClick={() => step(1)}
         >
-          +
+          <Icon name="plus" />
         </button>
       </div>
       <p id="target-note" class="note" role="status">
@@ -490,9 +547,9 @@ function TargetField({ target, disabled }: { target: number | null; disabled: bo
 }
 
 // Drawn icons, one stroke weight. Each sits next to a word: never the only carrier of meaning.
-type IconName = Tone | 'settings' | 'back'
+type IconName = Tone | 'settings' | 'back' | 'battery' | 'go' | 'stop' | 'plus' | 'minus' | 'link'
 const iconPaths: Record<IconName, JSX.Element> = {
-  idle: <circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none" />,
+  idle: <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />,
   run: <path d="M4.5 5.5 11 12l-6.5 6.5M12.5 5.5 19 12l-6.5 6.5" />,
   slow: <path d="M9 5.5 15.5 12 9 18.5" />,
   ok: <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />,
@@ -501,6 +558,12 @@ const iconPaths: Record<IconName, JSX.Element> = {
   test: <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4h-4" />,
   settings: <path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 4.5v5M9 14.5v5" />,
   back: <path d="M19.5 12h-15M11 5.5 4.5 12l6.5 6.5" />,
+  battery: <path d="M3 8h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 17 16H3a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 3 8ZM21.5 10.5v3" />,
+  go: <path d="M7 4.5v15L19.5 12 7 4.5Z" fill="currentColor" />,
+  stop: <rect x="5.5" y="5.5" width="13" height="13" rx="1.5" fill="currentColor" />,
+  plus: <path d="M12 4.5v15M4.5 12h15" />,
+  minus: <path d="M4.5 12h15" />,
+  link: <path d="M9.5 14.5 14.5 9.5M10 6.5l1.75-1.75a4 4 0 0 1 5.66 0l1.84 1.84a4 4 0 0 1 0 5.66L17.5 14M14 17.5l-1.75 1.75a4 4 0 0 1-5.66 0l-1.84-1.84a4 4 0 0 1 0-5.66L6.5 10M3.5 3.5l17 17" />,
 }
 
 function Icon({ name }: { name: IconName }) {
@@ -510,13 +573,22 @@ function Icon({ name }: { name: IconName }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="2.5"
+      stroke-width="2.25"
       stroke-linecap="round"
       stroke-linejoin="round"
       aria-hidden="true"
     >
       {iconPaths[name]}
     </svg>
+  )
+}
+
+// The name, with the « + » in the action colour.
+function Wordmark() {
+  return (
+    <h1 class="wordmark">
+      BULLOADER<span class="plus">+</span>
+    </h1>
   )
 }
 
@@ -653,6 +725,8 @@ function SettingsScreen(props: {
     return error ? t('settings.presetError', { n: i + 1, error }) : null
   }).find((e) => e !== null)
 
+  const tone = stateTone(s.state)
+
   return (
     <main class={offline ? 'screen settings stale' : 'screen settings'}>
       {props.banner}
@@ -660,8 +734,13 @@ function SettingsScreen(props: {
         <h2 id="unsaved-title" class="confirm-title">
           {t('settings.unsavedTitle')}
         </h2>
-        <p>{t('settings.unsavedBody')}</p>
-        {cantSave && <p class="hint">{cantSave}</p>}
+        <p class="confirm-body">{t('settings.unsavedBody')}</p>
+        {cantSave && (
+          <p class="hint warn-line">
+            <Icon name="alarm" />
+            <span>{cantSave}</span>
+          </p>
+        )}
         <div class="confirm-actions">
           <button class="btn primary" type="button" disabled={!canAct} onClick={() => void saveAndLeave()}>
             {t('settings.save')}
@@ -686,137 +765,152 @@ function SettingsScreen(props: {
           <Icon name="back" />
         </button>
         <h1 class="bar-title">{t('settings.title')}</h1>
-        <span class={testing ? 'pill active' : 'pill'}>{s.state === null ? '—' : stateLabel(s.state, lang())}</span>
+        <span class={`pill tone-${tone}`}>
+          {s.state !== null && <Icon name={tone} />}
+          {s.state === null ? '—' : stateLabel(s.state, lang())}
+        </span>
       </header>
 
       {incompatible && (
-        <p class="error" role="alert">
-          {t('settings.incompatible')}
+        <p class="alert" role="alert">
+          <Icon name="alarm" />
+          <span>{t('settings.incompatible')}</span>
         </p>
       )}
 
       <section class="group">
         <h2 class="group-title">{t('settings.presets')}</h2>
-        <div class="presets">
-          {PRESET_INDEXES.map((i) => (
-            <input
-              key={i}
-              class={errors[`preset${i}`] ? 'field small invalid' : 'field small'}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              autoComplete="off"
-              aria-label={t('settings.preset', { n: i + 1 })}
-              aria-invalid={!!errors[`preset${i}`]}
-              aria-describedby="preset-error"
-              disabled={incompatible}
-              value={values.presets[i]}
-              onInput={(e) => {
-                const presets = [...values.presets] as SettingsDraft['presets']
-                presets[i] = e.currentTarget.value
-                edit({ presets })
-              }}
-            />
-          ))}
+        <div class="panel">
+          <div class="presets">
+            {PRESET_INDEXES.map((i) => (
+              <input
+                key={i}
+                class={errors[`preset${i}`] ? 'field invalid' : 'field'}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                autoComplete="off"
+                aria-label={t('settings.preset', { n: i + 1 })}
+                aria-invalid={!!errors[`preset${i}`]}
+                aria-describedby="preset-error"
+                disabled={incompatible}
+                value={values.presets[i]}
+                onInput={(e) => {
+                  const presets = [...values.presets] as SettingsDraft['presets']
+                  presets[i] = e.currentTarget.value
+                  edit({ presets })
+                }}
+              />
+            ))}
+          </div>
+          <FieldError id="preset-error" error={presetError} />
         </div>
-        <FieldError id="preset-error" error={presetError} />
       </section>
 
       <section class="group">
         <h2 class="group-title">{t('settings.loading')}</h2>
-        <NumberField
-          id="slowdown"
-          label={t('settings.slowdown')}
-          value={values.slowdownN}
-          error={errors.slowdownN}
-          disabled={incompatible}
-          onInput={(slowdownN) => edit({ slowdownN })}
-        />
-        <NumberField
-          id="jam"
-          label={t('settings.jam')}
-          value={values.jamTimeoutMs}
-          error={errors.jamTimeoutMs}
-          disabled={incompatible}
-          onInput={(jamTimeoutMs) => edit({ jamTimeoutMs })}
-        />
+        <div class="panel">
+          <NumberField
+            id="slowdown"
+            label={t('settings.slowdown')}
+            value={values.slowdownN}
+            error={errors.slowdownN}
+            disabled={incompatible}
+            onInput={(slowdownN) => edit({ slowdownN })}
+          />
+          <NumberField
+            id="jam"
+            label={t('settings.jam')}
+            value={values.jamTimeoutMs}
+            error={errors.jamTimeoutMs}
+            disabled={incompatible}
+            onInput={(jamTimeoutMs) => edit({ jamTimeoutMs })}
+          />
+        </div>
       </section>
 
       <section class="group">
         <h2 class="group-title">{t('settings.servo')}</h2>
-        <div class="target">
-          <label for="neutral" class="label">
-            {t('settings.neutral')}
-          </label>
-          <div class="stepper">
-            <button
-              class="btn step small"
-              type="button"
-              aria-label={t('settings.minusUs', { n: NEUTRAL_STEP_US })}
-              disabled={incompatible}
-              onClick={() => neutralStep(-NEUTRAL_STEP_US)}
-            >
-              −{NEUTRAL_STEP_US}
-            </button>
-            <input
-              id="neutral"
-              class={errors.servoNeutralUs ? 'field invalid' : 'field'}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              autoComplete="off"
-              aria-invalid={!!errors.servoNeutralUs}
-              aria-describedby="neutral-error"
-              disabled={incompatible}
-              value={values.servoNeutralUs}
-              onInput={(e) => edit({ servoNeutralUs: e.currentTarget.value })}
-            />
-            <button
-              class="btn step small"
-              type="button"
-              aria-label={t('settings.plusUs', { n: NEUTRAL_STEP_US })}
-              disabled={incompatible}
-              onClick={() => neutralStep(NEUTRAL_STEP_US)}
-            >
-              +{NEUTRAL_STEP_US}
-            </button>
+        <div class="panel">
+          <div class="target">
+            <label for="neutral" class="label">
+              {t('settings.neutral')}
+            </label>
+            <div class="stepper">
+              <button
+                class="btn step small"
+                type="button"
+                aria-label={t('settings.minusUs', { n: NEUTRAL_STEP_US })}
+                disabled={incompatible}
+                onClick={() => neutralStep(-NEUTRAL_STEP_US)}
+              >
+                −{NEUTRAL_STEP_US}
+              </button>
+              <input
+                id="neutral"
+                class={errors.servoNeutralUs ? 'field invalid' : 'field'}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                autoComplete="off"
+                aria-invalid={!!errors.servoNeutralUs}
+                aria-describedby="neutral-error"
+                disabled={incompatible}
+                value={values.servoNeutralUs}
+                onInput={(e) => edit({ servoNeutralUs: e.currentTarget.value })}
+              />
+              <button
+                class="btn step small"
+                type="button"
+                aria-label={t('settings.plusUs', { n: NEUTRAL_STEP_US })}
+                disabled={incompatible}
+                onClick={() => neutralStep(NEUTRAL_STEP_US)}
+              >
+                +{NEUTRAL_STEP_US}
+              </button>
+            </div>
+            <FieldError id="neutral-error" error={errors.servoNeutralUs} />
           </div>
-          <FieldError id="neutral-error" error={errors.servoNeutralUs} />
+          <NumberField
+            id="full"
+            label={t('settings.fullOffset')}
+            value={values.speedFullOffsetUs}
+            error={errors.speedFullOffsetUs}
+            disabled={incompatible}
+            signed
+            onInput={(speedFullOffsetUs) => edit({ speedFullOffsetUs })}
+          />
+          <NumberField
+            id="slow"
+            label={t('settings.slowOffset')}
+            value={values.speedSlowOffsetUs}
+            error={errors.speedSlowOffsetUs}
+            disabled={incompatible}
+            signed
+            onInput={(speedSlowOffsetUs) => edit({ speedSlowOffsetUs })}
+          />
+          <button
+            class={values.reverse ? 'btn toggle on' : 'btn toggle'}
+            type="button"
+            role="switch"
+            aria-checked={values.reverse}
+            disabled={incompatible}
+            onClick={() => edit({ reverse: !values.reverse })}
+          >
+            <span>{t('settings.reverse')}</span>
+            <span class="toggle-value">
+              <span class="toggle-word">{values.reverse ? t('settings.yes') : t('settings.no')}</span>
+              <span class="switch" aria-hidden="true">
+                <span class="knob" />
+              </span>
+            </span>
+          </button>
         </div>
-        <NumberField
-          id="full"
-          label={t('settings.fullOffset')}
-          value={values.speedFullOffsetUs}
-          error={errors.speedFullOffsetUs}
-          disabled={incompatible}
-          signed
-          onInput={(speedFullOffsetUs) => edit({ speedFullOffsetUs })}
-        />
-        <NumberField
-          id="slow"
-          label={t('settings.slowOffset')}
-          value={values.speedSlowOffsetUs}
-          error={errors.speedSlowOffsetUs}
-          disabled={incompatible}
-          signed
-          onInput={(speedSlowOffsetUs) => edit({ speedSlowOffsetUs })}
-        />
-        <button
-          class={values.reverse ? 'btn toggle on' : 'btn toggle'}
-          type="button"
-          role="switch"
-          aria-checked={values.reverse}
-          disabled={incompatible}
-          onClick={() => edit({ reverse: !values.reverse })}
-        >
-          <span>{t('settings.reverse')}</span>
-          <span class="toggle-value">{values.reverse ? t('settings.yes') : t('settings.no')}</span>
-        </button>
       </section>
 
-      <section class="group">
+      <section class="group save">
         <p class="field-error" role="status">
           {!validation.ok && !incompatible && (
             <>
@@ -838,28 +932,42 @@ function SettingsScreen(props: {
 
       <section class="group">
         <h2 class="group-title">{t('settings.motorTest')}</h2>
-        {offline ? (
-          <p class="hint">{t('settings.testOffline')}</p>
-        ) : testing ? (
-          <p class="spin-live" aria-live="polite">
-            {t('settings.testRunning')}
-          </p>
-        ) : (
-          <p class="hint">
-            {dirty ? t('settings.testSavesFirst') : t('settings.testSaved')}
-          </p>
-        )}
-        <div class="actions">
-          <button class="btn" type="button" disabled={!canAct} onClick={() => run('full')}>
-            {busy === 'full' ? '…' : t('settings.testFull')}
-          </button>
-          <button class="btn" type="button" disabled={!canAct} onClick={() => run('slow')}>
-            {busy === 'slow' ? '…' : t('settings.testSlow')}
+        <div class={testing ? 'panel testing' : 'panel'}>
+          {offline ? (
+            <p class="hint">{t('settings.testOffline')}</p>
+          ) : testing ? (
+            <p class="spin-live" aria-live="polite">
+              <Icon name="test" />
+              <span>{t('settings.testRunning')}</span>
+            </p>
+          ) : (
+            <p class="hint">{dirty ? t('settings.testSavesFirst') : t('settings.testSaved')}</p>
+          )}
+          <div class="actions">
+            <button class="btn" type="button" disabled={!canAct} onClick={() => run('full')}>
+              {busy === 'full' ? '…' : t('settings.testFull')}
+            </button>
+            <button class="btn" type="button" disabled={!canAct} onClick={() => run('slow')}>
+              {busy === 'slow' ? '…' : t('settings.testSlow')}
+            </button>
+          </div>
+          <button
+            class={testing ? 'btn stop' : 'btn stop idle'}
+            type="button"
+            disabled={offline}
+            onClick={() => stopSpin().catch(ignore)}
+          >
+            <span class="btn-main">
+              <Icon name="stop" />
+              STOP
+            </span>
           </button>
         </div>
-        <button class="btn stop" type="button" disabled={offline} onClick={() => stopSpin().catch(ignore)}>
-          STOP
-        </button>
+      </section>
+
+      <section class="group">
+        <h2 class="group-title">{t('theme.title')}</h2>
+        <ThemeSwitch />
       </section>
 
       <section class="group">
@@ -869,34 +977,70 @@ function SettingsScreen(props: {
 
       <section class="group">
         <h2 class="group-title">{t('settings.device')}</h2>
-        <p class="device-name">{s.deviceName}</p>
-        <button class="btn" type="button" onClick={() => void disconnect()}>
-          {t('banner.changeDevice')}
-        </button>
+        <div class="panel">
+          <p class="device-name">{s.deviceName}</p>
+          <button class="btn" type="button" onClick={() => void disconnect()}>
+            {t('banner.changeDevice')}
+          </button>
+        </div>
       </section>
     </main>
+  )
+}
+
+// One choice among a few, all visible: language, theme.
+function Choice<T extends string>(props: {
+  label: string
+  options: readonly { value: T; text: string; lang?: string }[]
+  current: T
+  onPick: (value: T) => void
+}) {
+  return (
+    <div class="choice" role="group" aria-label={props.label}>
+      {props.options.map((o) => (
+        <button
+          key={o.value}
+          class={o.value === props.current ? 'btn seg current' : 'btn seg'}
+          type="button"
+          lang={o.lang}
+          aria-pressed={o.value === props.current}
+          onClick={() => props.onPick(o.value)}
+        >
+          {o.text}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const themeKey: Record<(typeof THEME_PREFS)[number], Key> = {
+  auto: 'theme.auto',
+  light: 'theme.light',
+  dark: 'theme.dark',
+}
+
+// Auto (follows the phone), Clair, Sombre. Local to the phone, like the language.
+function ThemeSwitch() {
+  return (
+    <Choice
+      label={t('theme.title')}
+      options={THEME_PREFS.map((p) => ({ value: p, text: t(themeKey[p]) }))}
+      current={themeStore.get().pref}
+      onPick={setTheme}
+    />
   )
 }
 
 // Français / English. Local to the phone: works offline and with no device. Each language is named
 // in its own language, so someone who can't read the current one still finds theirs.
 function LanguageSwitch() {
-  const current = langStore.get().lang
   return (
-    <div class="langs" role="group" aria-label={t('lang.title')}>
-      {LANGS.map((l) => (
-        <button
-          key={l}
-          class={l === current ? 'btn lang current' : 'btn lang'}
-          type="button"
-          lang={l}
-          aria-pressed={l === current}
-          onClick={() => setLang(l)}
-        >
-          {LANG_NAMES[l]}
-        </button>
-      ))}
-    </div>
+    <Choice
+      label={t('lang.title')}
+      options={LANGS.map((l) => ({ value: l, text: LANG_NAMES[l], lang: l }))}
+      current={langStore.get().lang}
+      onPick={setLang}
+    />
   )
 }
 
@@ -910,13 +1054,13 @@ function NumberField(props: {
   onInput: (value: string) => void
 }) {
   return (
-    <div class="target">
+    <div class="target row">
       <label for={props.id} class="label">
         {props.label}
       </label>
       <input
         id={props.id}
-        class={props.error ? 'field small invalid' : 'field small'}
+        class={props.error ? 'field invalid' : 'field'}
         type="text"
         inputMode="numeric"
         // Signed fields take a minus: no digits-only pattern there.

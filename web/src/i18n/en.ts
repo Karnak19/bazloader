@@ -5,6 +5,10 @@ import type { fr } from './fr.ts'
 
 export const en: Record<keyof typeof fr, string> = {
   'lang.title': 'Language',
+  'theme.title': 'Theme',
+  'theme.auto': 'Auto',
+  'theme.light': 'Light',
+  'theme.dark': 'Dark',
 
   'app.noBluetooth': "Web Bluetooth isn't available. Use Chrome on Android.",
 

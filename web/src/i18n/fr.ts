@@ -7,6 +7,10 @@
 export const fr = {
   // Language switch. Each language is named in its own language, on purpose.
   'lang.title': 'Langue',
+  'theme.title': 'Thème',
+  'theme.auto': 'Auto',
+  'theme.light': 'Clair',
+  'theme.dark': 'Sombre',
 
   'app.noBluetooth': 'Web Bluetooth indisponible. Utilise Chrome sur Android.',
 

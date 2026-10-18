@@ -72,6 +72,8 @@ class Run {
   bool go(uint32_t nowMs, bool batteryOk);
   // Any state -> IDLE. The count stays wherever the caller keeps it.
   void stop() { state_ = State::Idle; }
+  // The battery stayed flat under load: a run ends in LOW_BATT. Ignored when not running.
+  void lowBattery();
   // Drives the transitions from the current count and time.
   void update(uint32_t nowMs, uint32_t count);
 

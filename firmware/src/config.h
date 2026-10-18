@@ -50,6 +50,15 @@ constexpr uint16_t BATT_REFUSE_MV = 6600; // refuse to start below this
 // Divider: 100k on top, 27k to GND -> V_batt = V_adc * (100 + 27) / 27.
 constexpr float BATT_DIVIDER_RATIO = (100.0f + 27.0f) / 27.0f;
 constexpr float BATT_CALIBRATION   = 1.0f; // tweak after measuring with a multimeter
+// Leaving LOW_BATT (and the warning) needs this much above the threshold, so noise can't flicker.
+constexpr uint16_t BATT_HYSTERESIS_MV = 100;
+// With USB and no battery the ADC reads ~0 V. A 2S pack never sits below 6 V in normal use, so
+// anything under this is "no battery": report 0 mV and skip the guard (the servo has no power).
+constexpr uint16_t BATT_USB_BELOW_MV = 3000;
+// The pack sags under servo load: a run stops only after this long below BATT_REFUSE_MV.
+constexpr uint16_t BATT_SAG_MS = 2000;
+constexpr uint16_t BATT_READ_PERIOD_MS = 500;
+constexpr uint8_t  BATT_ADC_SAMPLES    = 16; // averaged per reading
 
 // ---- Simulation (env:sim) ----
 constexpr uint16_t SIM_BB_PER_SECOND = 15; // fake IR pulse rate when SIMULATE_IR is set

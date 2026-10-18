@@ -15,6 +15,15 @@ struct BatteryConfig {
 // Battery voltage from the ADC pin voltage: divider ratio times calibration, rounded.
 uint32_t batteryMvFromAdc(uint32_t adcMv, float dividerRatio, float calibration);
 
+// Bars of the OLED battery gauge (0-4): one per threshold in `thresholdsMv` (ascending) reached.
+// A bar goes as soon as the voltage drops below its threshold, and comes back only at
+// threshold + hysteresisMv, so a voltage hovering on a threshold can't make it flicker.
+// `previous` is the last result, or kGaugeUnknown for the first reading (no hysteresis then).
+constexpr uint8_t kGaugeBars = 4;
+constexpr uint8_t kGaugeUnknown = 0xFF;
+uint8_t gaugeBars(uint16_t mv, uint8_t previous, const uint16_t (&thresholdsMv)[kGaugeBars],
+                  uint16_t hysteresisMv);
+
 class Battery {
  public:
   explicit Battery(BatteryConfig cfg) : cfg_(cfg) {}

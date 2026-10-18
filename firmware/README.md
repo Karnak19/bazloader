@@ -15,10 +15,12 @@ The logic lives in files with no Arduino include, so the `native` env compiles t
 tests in `test/`: the run (state machine, BB counter, servo pulse maths) in `src/run.cpp`, the
 battery guard in `src/battery.cpp`, the saved settings (validation, defaults, delayed target save)
 in `src/settings.cpp`, the encoder, buttons, presets and what GO or a click does in
-`src/controls.cpp`, what the OLED shows in `src/screen.cpp`, and the BLE write decoding and
+`src/controls.cpp`, what the OLED shows in `src/screen.cpp` and where it goes in
+`src/screen_draw.cpp` (with U8g2's C core, built for the host by `scripts/u8g2_native.py`), and
+the BLE write decoding and
 notification rules in `src/ble_logic.cpp`. `main.cpp` is the thin Arduino
 layer (IR and encoder interrupts, LEDC servo output, battery ADC, simulator, serial commands),
-`display.cpp` draws the screen with U8g2, `nvs_store.cpp` reads and writes NVS, and `ble.cpp` is
+`display.cpp` sends the frame to the OLED, `nvs_store.cpp` reads and writes NVS, and `ble.cpp` is
 the NimBLE glue.
 
 The first build downloads the toolchain and takes a few minutes.
@@ -49,10 +51,18 @@ upload again. Press RESET after the upload to run it.
 The target can't change during a run, whatever drives it. GO in « Batterie faible » does nothing
 while the pack is still low.
 
-The OLED (SSD1306 128×64, I2C on SDA 10 / SCL 20 at 400 kHz, address `OLED_I2C_ADDRESS`) shows the
-state in French, the battery (`7.4 V`, `USB`, with a warning triangle when low), and the target at
-rest or `count / target` during and after a run. It redraws only when that changes, at most every
-100 ms. A full redraw blocks `loop()` for the I2C transfer (~25 ms expected): the boot log and `?`
+The OLED (SSD1306 128×64, I2C on SDA 10 / SCL 20 at 400 kHz, address `OLED_I2C_ADDRESS`) is laid
+out for the common yellow/blue module, whose top 16 rows are yellow and the rest blue, with a dark
+row between them that is never drawn on. The yellow band is a status bar: the state in French on
+the left, then a Bluetooth rune while a phone is connected, and a battery gauge with the voltage
+(`7.4V`), or `USB` with no pack. The gauge has one bar per threshold reached (`BATT_GAUGE_MV`,
+with a hysteresis so it doesn't flicker); below the warning voltage it blinks inverted, once a
+second. The blue area shows the target at rest, or the count, `/ target` and a progress bar during
+and after a run; a jam or a flat pack shows its message there on two lines. It redraws only when
+that changes, at most every 100 ms (the blink adds two redraws a second). The layout lives in
+`src/screen_draw.cpp`, which only uses U8g2's C core: the native tests draw every screen into a
+128×64 buffer and fail if a pixel lands on the gap row, past the right edge, or where two parts
+would touch. A full redraw blocks `loop()` for the I2C transfer (~25 ms expected): the boot log and `?`
 print the measured time. The stop doesn't wait for it, since the count interrupt cuts the servo on
 its own.
 

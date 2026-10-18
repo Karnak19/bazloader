@@ -50,6 +50,7 @@ export default defineConfig({
       sidebar: [
         { label: 'Application', link: '/app/' },
         { label: 'Protocole BLE', slug: 'protocole-ble' },
+        { label: 'Câblage', slug: 'cablage' },
       ],
     }),
     preact(),

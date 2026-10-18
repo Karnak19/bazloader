@@ -20,10 +20,21 @@ constexpr uint16_t SERVO_NEUTRAL_US      = 1500; // pulse width where the servo 
 constexpr int16_t  SERVO_FULL_OFFSET_US  = 300;  // added to neutral at full speed
 constexpr int16_t  SERVO_SLOW_OFFSET_US  = 100;  // added to neutral in slowdown
 constexpr bool     SERVO_REVERSE         = false;
+// Stopped servo gets no pulse at all, so a slightly wrong neutral can't make it creep.
+// Fallback if the real servo misbehaves without signal (#13): set to true for a neutral pulse.
+constexpr bool     SERVO_STOP_NEUTRAL    = false;
+constexpr uint8_t  SERVO_LEDC_CHANNEL    = 0;
+constexpr uint8_t  SERVO_LEDC_BITS       = 14; // C3 max at 50 Hz
 
 // ---- Run logic ----
 constexpr uint8_t  SLOWDOWN_N     = 4;    // switch to slow speed when <= N BBs remain
 constexpr uint16_t JAM_TIMEOUT_MS = 1500; // no BB for this long -> jam
+// The first BB comes later: the mechanism spins up and the feed fills.
+constexpr uint16_t FIRST_BB_TIMEOUT_MS = 4000;
+constexpr uint16_t DONE_HOLD_MS   = 2000; // DONE stays shown this long, then IDLE
+// With a pull-up, a cut beam turns the phototransistor off and the pin goes HIGH (RISING).
+// Set to false if the wiring inverts it.
+constexpr bool IR_BREAK_RISING = true;
 // Minimum gap between two counted BBs. A 6 mm BB crosses the beam in well under 1 ms even at
 // low speed, and the loader feeds at most a few dozen BBs/s (>= ~20 ms apart), so 5 ms rejects
 // edge bounce without risking a missed BB.
@@ -42,6 +53,8 @@ constexpr float BATT_CALIBRATION   = 1.0f; // tweak after measuring with a multi
 
 // ---- Simulation (env:sim) ----
 constexpr uint16_t SIM_BB_PER_SECOND = 15; // fake IR pulse rate when SIMULATE_IR is set
+// Fake BBs in the hopper, refilled at each GO. A target above it ends in JAM.
+constexpr uint16_t SIM_HOPPER_CAPACITY = 100;
 
 // ---- BLE notifications ----
 constexpr uint32_t COUNT_NOTIFY_THROTTLE_MS = 50;   // ~20 Hz

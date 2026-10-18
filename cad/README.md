@@ -23,8 +23,10 @@ and the encoder knob with both bore types:
 uv run python check.py
 ```
 
-It probes the bore, both sockets, the shoulders and the apertures, and fails if the sockets are not
-on one line through the tube centre. On the knob it probes the bore (size, flat, depth, on the
+On the collar it probes both grip bores, the clamp slots (and that they stop at the ring), the
+ring's two shoulders and its BB guide, both sockets, their shoulders and the window, the walls
+around them, the screws and the wire grooves, and fails if the sockets are not on one line
+`BEAM_OFFSET` off the axis. On the knob it probes the bore (size, flat, depth, on the
 axis), the recess, the ridges and the top chamfer.
 
 ## Parts
@@ -32,19 +34,22 @@ axis), the recess, the ridges and the top chamfer.
 | Part           | What it is                                                                  |
 | -------------- | --------------------------------------------------------------------------- |
 | `fit_coupon`   | Print this first. Test bores and sockets at several tolerances, labelled.   |
-| `ir_collar`    | Clamps on the output inner barrel and holds the IR LED and phototransistor. |
+| `ir_collar`    | Joins the two halves of the cut barrel and holds the IR LED and phototransistor. |
 | `encoder_knob` | Big ridged knob for the KY-040 encoder, to turn with gloves on.             |
 | `test_ring`    | M0 smoke test of the build pipeline.                                        |
 
 ### `fit_coupon`
 
-A plate with four barrel bores (`BARREL_OD` −0.2, 0, +0.2, +0.4), a rib with three horizontal
+A plate with four barrel bores (`BARREL_OD` −0.2, 0, +0.2, +0.4), three BB guide bores
+(`BB_GUIDE_D` −0.1, 0, +0.1), a rib with three horizontal
 sockets (`IR_LED_DIAMETER` +0, +0.1, +0.2), and a thicker strip with the encoder shaft bores: three
 D-flats (`SHAFT_D` and `SHAFT_FLAT` +0.1, +0.2, +0.3) and four round ones (`SHAFT_D` −0.2, −0.1,
 0, +0.1). Each hole has its offset engraved next to it. Print it the same way and in the same
 filament as the collar and the knob, then:
 
 - slide it on the barrel: the label of the bore that slides on without play is your `FIT_TOLERANCE`;
+- drop a BB through the BB guide bores: it must fall freely through the one marked 0. If it only
+  goes through +.1, add 0.1 to `BB_GUIDE_D`;
 - push the LED and the phototransistor in: the label of the socket that holds them straight without
   forcing is your `SOCKET_TOLERANCE`;
 - D-flat shaft: push it into the D-flat row. The label of the one that goes on by hand without
@@ -57,42 +62,64 @@ horizontal holes a little smaller than vertical ones.
 
 ### `ir_collar`
 
-One piece, closed around the barrel by a single M3 screw.
+The output inner barrel is metal, so infrared can't get through it. Rather than drilling it, you
+cut it in two and the collar joins the halves: a sleeve, with a grip bore for one half at each end
+and a printed ring in the middle. The beam crosses that ring, so there is nothing to drill.
 
-- **Clamp.** A C-clamp: one slot along the tube, two ears, an M3 × 10 screw (head on the LED side),
-  and the nut pressed into a hexagonal trap in the other ear. One piece rather than two halves,
-  because both sockets are then printed in the same layers and stay coaxial whatever the screw does.
-  The nut trap has a corner on top, so it prints without support.
-- **Sockets.** The LED goes in from the outside on one side, the phototransistor on the other. Each
-  stops on a flat shoulder at the same distance from the bore, with a small window (`APERTURE_D`)
-  between the shoulder and the bore. The window narrows the beam: a thin beam sees the gap between
-  two touching BBs better (see #12) and lets in less stray light. Set `APERTURE_W` wider than
-  `APERTURE_D` to get a horizontal slit with more light but the same sharpness along the tube.
+- **Grip bores.** `BARREL_OD + FIT_TOLERANCE`, `GRIP_LENGTH` (10 mm) long at each end. That's over
+  one barrel diameter, so each half sits straight, and it leaves room for the nut trap with
+  `MIN_WALL` to the end.
+- **Ring.** Between the grips, `BARREL_GAP` (6.5 mm) long. Its two faces are the shoulders both
+  halves butt against, so the gap and the alignment come from the print, not from how far you
+  push. Its bore is the BB guide, `BB_GUIDE_D` (6.2 mm): a bit over the 6.05 mm barrel bore, so a
+  hole printed slightly small still never pinches a 5.95 to 6 mm BB. Both guide edges have a 45°
+  chamfer (`RING_CHAMFER`), which also shortens the overhang under the ring when printing. 6.5 mm
+  is what it takes to hold the 3.2 mm sockets with `SOCKET_WALL` above and below, so no socket
+  breaks into a grip bore; that leaves 2 mm of ring above and below the window.
+- **Clamps.** One C-clamp per half: a slot along each grip on +Y, two ears, an M3 × 10 screw (head
+  on the LED side) and its nut pressed into a hexagonal trap. The slots stop at the ring, so the
+  ring stays a closed circle: tightening the screws squeezes the barrel halves, never the BB guide.
+  A single slot over the whole length would close the guide too, and one screw in the middle would
+  not hold two separate tubes. One piece rather than two shells, because both sockets are then
+  printed in the same layers and stay coaxial whatever the screws do. The nut traps have a corner
+  on top, so they print without support.
+- **Sockets.** The LED goes in from the outside on one side, the phototransistor on the other, both
+  in the ring. Each stops on a flat shoulder at the same distance from the BB guide, with a small
+  window (`APERTURE_D`) between the shoulder and the guide. The window narrows the beam: a thin
+  beam sees the gap between two touching BBs better (see #12) and lets in less stray light. Set
+  `APERTURE_W` wider than `APERTURE_D` to get a horizontal slit with more light but the same
+  sharpness along the tube.
 - **Beam off the axis.** The beam does not cross the tube through its centre but `BEAM_OFFSET`
-  (2 mm) to the side, on the opposite side from the clamp slot. The BBs travel touching each other,
-  and where two touch, the centre line is still solid, so a beam through the axis never sees light.
-  Off the axis it sees the gap between two balls: with a 1.5 mm window, about 83 % of the light
-  passes at 2 mm, against 4 % on the axis. The window must stay inside the barrel bore
-  (`BEAM_OFFSET + APERTURE_W / 2` under `BARREL_ID / 2`), which `check.py` checks.
-- **Light shield.** The sockets are closed all round, the leads come out at the back, and the collar
-  runs `COLLAR_LENGTH / 2` along the tube on each side of the beam, so the sun cannot shine straight
-  onto the phototransistor through the gap around the barrel.
+  (2 mm) to the side, on the opposite side from the clamp slots. The BBs travel touching each
+  other, and where two touch, the centre line is still solid, so a beam through the axis never sees
+  light. Off the axis it sees the gap between two balls: with a 1.5 mm window, about 83 % of the
+  light passes at 2 mm, against 4 % on the axis. The window must stay inside the BB guide
+  (`BEAM_OFFSET + APERTURE_W / 2` under `BB_GUIDE_D / 2`), which `check.py` checks.
+- **Light shield.** The sockets are closed all round, the leads come out at the back, and the beam
+  crosses inside the ring, with the barrel halves pushed in on both sides: no light gets to the
+  phototransistor except down the bore.
 - **Wires.** Each pair of leads bends down at the back of its socket into a groove that runs to the
-  bottom end of the collar.
+  bottom end of the collar. The grooves keep `MIN_WALL` to the grip bore (on a thick barrel the
+  sockets move out a little to keep it).
 
-The beam sits at mid-length of the collar. Where the collar goes on the barrel comes from #12.
+Overall, at `BARREL_OD` 8.55: about 15.5 × 20.6 mm across and 26.5 mm long. Where the collar goes
+on the barrel comes from #12.
+
+**Cutting the barrel.** Remove `BARREL_GAP` (6.5 mm) of tube in total, where the collar will sit:
+two cuts 6.5 mm apart, or one cut then trim one half by 6.5 mm. The collar puts that gap back, so
+the reassembled barrel keeps its original length. Cut square, with a tube cutter if you have one
+(else a hacksaw in a mitre box). Deburr inside and out, and put a light chamfer on the **inner**
+edge of both cut ends (a deburring tool, or a countersink bit turned by hand): BBs come out of the
+6.2 mm guide into the 6.05 mm barrel, and the chamfer keeps them from catching on that step. Blow
+the chips out, push each half in until it stops on the ring, and tighten both screws.
 
 **Before printing:**
 
-1. Measure `BARREL_OD` with calipers where the collar will sit, and the bodies of the two components
-   (`IR_LED_DIAMETER`, `PHOTOTRANSISTOR_DIAMETER`, `IR_BODY_LENGTH`).
-2. Print `fit_coupon`, set `FIT_TOLERANCE` and `SOCKET_TOLERANCE`.
-3. Check that the barrel lets 940 nm through where the beam crosses it. If it is opaque (a metal
-   barrel), clamp the collar where it will sit and drill 1.5 mm straight through one window, through
-   both walls of the barrel, and out of the other window: the window is one straight line, so the
-   collar is the drilling guide. The holes are not opposite each other across the centre, they are
-   2 mm to the side, so do not drill without the collar.
-4. Run `uv run python check.py`, then `uv run python build.py`.
+1. Measure `BARREL_OD` with calipers, and the bodies of the two components (`IR_LED_DIAMETER`,
+   `PHOTOTRANSISTOR_DIAMETER`, `IR_BODY_LENGTH`).
+2. Print `fit_coupon`, set `FIT_TOLERANCE` and `SOCKET_TOLERANCE`, and check a BB drops freely
+   through the BB guide hole marked 0.
+3. Run `uv run python check.py`, then `uv run python build.py`.
 
 **Printing:** stand the collar on its flat end face (Z = 0, the end the wire grooves open onto).
 No supports. Use a **dark, opaque filament** (black PETG or PLA): white or light colours let infrared
@@ -131,7 +158,8 @@ cradle, encoder knob) are fine to commit.
 
 Placeholders marked `TODO: measure` in `params.py`:
 
-- `BARREL_OD`: outer diameter of the 120 mm inner barrel (expected 8.5 to 9.5 mm, set to 9.0).
+- `BARREL_OD`: outer diameter of the 120 mm inner barrel (8.55 mm on a standard AEG barrel;
+  `check.py` covers 8.5 to 9.5).
 - `IR_LED_DIAMETER`: body of the IR LED (nominal 3.0 mm).
 - `PHOTOTRANSISTOR_DIAMETER`: body of the phototransistor (nominal 3.0 mm).
 - `IR_BODY_LENGTH`: straight body of each component, from the start of the dome to the flange

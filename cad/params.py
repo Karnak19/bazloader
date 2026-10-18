@@ -9,9 +9,9 @@ FIT_TOLERANCE = 0.2  # TODO: calibrate with fit_coupon. Clearance added to every
 MIN_WALL = 1.6  # Thinnest wall we print (4 perimeters at 0.4 mm nozzle).
 EDGE_FILLET = 0.8  # Rounding of the outer edges along the tube, so nothing is sharp in the hand.
 
-# --- Inner barrel (IR collar sits around it) --------------------------------
+# --- Inner barrel (cut in two, the IR collar joins the halves) ----------------
 BARREL_OD = 8.55  # Outer diameter of the 120 mm inner barrel: a standard AEG inner barrel. Confirm with calipers (#16).
-BARREL_ID = 6.05  # Bore of that barrel, the usual 6.05 mm AEG bore. The beam window must fit inside it.
+BARREL_ID = 6.05  # Bore of that barrel, the usual 6.05 mm AEG bore. The printed BB guide must be wider.
 
 # --- IR barrier ---------------------------------------------------------------
 IR_LED_DIAMETER = 3.0  # TODO: measure. Body of the 3 mm IR LED.
@@ -19,22 +19,33 @@ PHOTOTRANSISTOR_DIAMETER = 3.0  # TODO: measure. Body of the 3 mm phototransisto
 IR_BODY_LENGTH = 4.0  # TODO: measure. Straight body of each component, from the start of the dome to the flange.
 
 # --- IR collar ----------------------------------------------------------------
-# Printed standing on its end face, tube axis vertical: the bore comes out round
-# and both sockets are built in the same layers, so they stay coaxial.
+# The barrel is cut in two. The collar is a sleeve: each end grips one half, and a
+# printed ring between them sets the gap and guides the BBs across it. The beam
+# crosses that ring, so nothing is drilled. Printed standing on its end face, tube
+# axis vertical: the bores come out round and both sockets are built in the same
+# layers, so they stay coaxial.
 SOCKET_TOLERANCE = 0.2  # TODO: calibrate with fit_coupon. Clearance on the 3 mm sockets.
 SOCKET_DEPTH = 3.5  # Guide length up to the stop shoulder. Below IR_BODY_LENGTH, so the flange stays outside.
 SOCKET_WALL = 1.6  # Wall around each socket.
 APERTURE_D = 1.5  # Height of the window between socket and bore, along the tube. Narrower = sharper beam (#12).
 APERTURE_W = 1.5  # Width of that window across the tube. Equal to APERTURE_D: round hole; wider: horizontal slit.
-APERTURE_LEN = 1.2  # Length of the window, i.e. the thinnest wall between the stop shoulder and the bore.
+APERTURE_LEN = 1.2  # Length of the window, i.e. the thinnest wall between the stop shoulder and the BB guide.
 BEAM_OFFSET = 2.0  # Beam moved sideways off the tube axis (#12). BBs travel touching, and where two touch the
 # axis is still solid, so a beam through the axis is never let through. Off-axis it sees the gap between two
-# balls: about 83 % of the light at 2.0 mm, against 4 % on the axis. Keep it + APERTURE_W / 2 inside BARREL_ID.
-COLLAR_WALL = 2.0  # Radial wall around the bore.
-COLLAR_LENGTH = 16.0  # Length along the tube. The beam sits in the middle, half of it shields each side.
+# balls: about 83 % of the light at 2.0 mm, against 4 % on the axis. Keep it + APERTURE_W / 2 inside BB_GUIDE_D.
+BB_GUIDE_D = 6.2  # Bore of the printed ring the BBs cross. Over BARREL_ID, so a hole printed a bit small still
+# clears a 5.95-6 mm BB; the step back into the 6.05 barrel is what the chamfer on the cut ends is for.
+BARREL_GAP = 6.5  # Ring length = gap between the two barrel halves = tube to remove when cutting. Holds the
+# 3.2 mm socket with SOCKET_WALL above and below (6.4), so no socket breaks into a grip bore; that also leaves
+# well over MIN_WALL of ring above and below the 1.5 mm window.
+GRIP_LENGTH = 10.0  # Bore gripping each barrel half. Over one barrel diameter, so the halves stay coaxial, and
+# long enough for the M3 nut trap (6.7 mm tall) with MIN_WALL to the end.
+RING_CHAMFER = 0.5  # 45 deg chamfer on both edges of the BB guide. Shortens the overhang under the ring when
+# printing, and takes off the edge a BB could catch on.
+COLLAR_WALL = 2.0  # Radial wall around the grip bores.
 WIRE_CHANNEL_W = 3.4  # Groove for one pair of leads (2.54 mm pitch + wire), from under each socket to the bottom end.
 WIRE_CHANNEL_DEPTH = 1.5  # Depth of that groove.
-CLAMP_SLOT = 1.5  # Gap of the C-clamp, closed by the M3 screw. Far more than the bore clearance it has to take up.
+CLAMP_SLOT = 1.5  # Gap of each C-clamp, closed by its M3 screw. Far more than the bore clearance it has to take up.
 
 # --- Hardware ---------------------------------------------------------------
 M3_CLEARANCE = 3.4  # Through-hole for an M3 screw.
@@ -73,8 +84,9 @@ KNOB_PANEL_GAP = 1.0  # Gap left between the knob's skirt and the panel when it 
 KNOB_BORE_CHAMFER = 0.5  # Lead-in chamfer at the bore entrance, helps find the shaft.
 
 # --- Fit coupon (print it first, then update the tolerances above) -----------
-COUPON_THICKNESS = 3.0  # Plate thickness, i.e. how long the barrel test bores are.
+COUPON_THICKNESS = 3.0  # Plate thickness, i.e. how long the barrel and BB guide test bores are.
 COUPON_BORE_OFFSETS = (-0.2, 0.0, 0.2, 0.4)  # Bore = BARREL_OD + offset. The best slide gives FIT_TOLERANCE.
+COUPON_GUIDE_OFFSETS = (-0.1, 0.0, 0.1)  # BB guide = BB_GUIDE_D + offset. A BB must drop through the 0 one freely.
 COUPON_SOCKET_OFFSETS = (0.0, 0.1, 0.2)  # Socket = IR_LED_DIAMETER + offset. The best hold gives SOCKET_TOLERANCE.
 COUPON_SHAFT_OFFSETS = (0.1, 0.2, 0.3)  # D-flat bore = SHAFT_D/SHAFT_FLAT + offset. The best fit gives SHAFT_TOLERANCE.
 COUPON_PRESS_OFFSETS = (-0.2, -0.1, 0.0, 0.1)  # Round bore = SHAFT_D + offset. Tightest one that goes on: KNOB_PRESS_FIT.

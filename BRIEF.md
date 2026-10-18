@@ -169,7 +169,7 @@ L'ESP32 est la source de vérité. Toute modification (molette ou BLE) est notif
 
 ### Pièces
 
-1. **Collier capteur IR** : se fixe autour de l'inner barrel de sortie (canon d'AEG, diamètre extérieur 8,55 mm, paramètre), deux logements de 3 mm face à face sur une ligne décalée de 2 mm par rapport à l'axe du tube (les billes se touchent : un faisceau centré ne verrait jamais de vide entre elles), passage de fils, fixation par vis M3 ou clip.
+1. **Collier capteur IR** : l'inner barrel de sortie (canon d'AEG, diamètre extérieur 8,55 mm, paramètre) est coupé en deux, sans perçage ; le collier est un manchon qui serre chaque moitié (une vis M3 par moitié) et les tient bout à bout, séparées par un anneau imprimé de 6,5 mm (butée des deux moitiés, guide des billes de 6,2 mm). Deux logements de 3 mm face à face dans cet anneau, sur une ligne décalée de 2 mm par rapport à l'axe du tube (les billes se touchent : un faisceau centré ne verrait jamais de vide entre elles), passage de fils. On retire 6,5 mm de tube à la coupe, pour que le canon garde sa longueur.
 2. **Support électronique** : berceau pour perfboard (ESP32 + buck + condensateur), trous de fixation, passages de câbles. Dimensions à confirmer à réception des composants.
 3. **Panneau de contrôle remixé** : à faire plus tard, à partir des fichiers originaux (découpe OLED, trou encodeur 7 mm + ergot anti-rotation, conservation de l'interrupteur et du bouton GO). Si seul un STL est disponible : booléens via trimesh + manifold3d.
 

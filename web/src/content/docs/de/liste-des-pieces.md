@@ -100,8 +100,8 @@ Diese Teile stammen aus dem Original-BULLOADER und werden wiederverwendet. **Nic
 | Dicke Silikonlitze | **1 m** rot + **1 m** schwarz | Weiche Silikonlitze **18 AWG** (etwa 0,8 mm²). Suche: „silicone wire 18AWG“. | Silikon: flexibel und schmilzt nicht unter dem Lötkolben. Dick genug für den **Strom des Servos**, der in Ampere gemessen wird. | Akku, Schalter, Servo (oder BEC), Eingang des Wandlers. |
 | Dünne Litze für Signale | **1 Pack** (mehrere Farben) | Silikonlitze **26 oder 28 AWG**, mehrere Farben. Suche: „silicone wire 26AWG 10 colors“. | Mehrere Farben, damit nichts verwechselt wird (eine Farbe pro Funktion). Silikon lässt sich in einem engen Gehäuse gut biegen. | IR-LED, Fototransistor, Drehgeber, Display, GO-Taster, Servosignal. |
 | JST-XH-Steckverbinder 2,54 mm | **1 Set** (2, 3, 4 und 5 Pins) | JST-XH-Set 2,54 mm: Einlötbuchsen und Stecker. Am einfachsten: **fertig gecrimpte Kabel**. Suche: „JST XH 2.54 pre-crimped cable“ oder „JST XH connector kit“. | Damit lässt sich jedes Teil (Display, Drehgeber, IR-Sensor, Taster) **abstecken** und ohne Entlöten ausbauen. Zum Crimpen von Steckern braucht man eine Crimpzange: Fertig gecrimpte Kabel ersparen das. Dupont-Stecker gehen auch, halten bei Vibrationen aber schlechter. **Nicht für den Strom des Servos**: Dafür seinen Originalstecker behalten. | Die Elektronik mit der Platine verbinden. |
-| Schraube M3 × 10 | **1 Pack** (1 wird gebraucht) | Zylinderschraube mit Innensechskant **M3 × 10 mm**. Suche: „M3 x 10 socket head screw“. | **10 mm** lang. Ein M3-Sortiment von 6 bis 20 mm ist auch für später nützlich (Elektronikhalter). | Schließt den IR-Ring um das Rohr. |
-| Mutter M3 | **1 Pack** (1 wird gebraucht) | Standard-Sechskantmutter **M3** (5,5 mm Schlüsselweite, 2,4 mm dick). Suche: „M3 hex nut“. | Eine normale Sechskantmutter, keine Bundmutter und keine Sicherungsmutter mit Nylonring: Sie muss in die sechseckige Aussparung des Rings passen. | Sitzt im IR-Ring, gegenüber der Schraube. |
+| Schraube M3 × 10 | **1 Pack** (2 werden gebraucht) | Zylinderschraube mit Innensechskant **M3 × 10 mm**. Suche: „M3 x 10 socket head screw“. | **10 mm** lang. Ein M3-Sortiment von 6 bis 20 mm ist auch für später nützlich (Elektronikhalter). | Klemmt den IR-Ring auf dem Rohr fest, eine Schraube pro Hälfte. |
+| Mutter M3 | **1 Pack** (2 werden gebraucht) | Standard-Sechskantmutter **M3** (5,5 mm Schlüsselweite, 2,4 mm dick). Suche: „M3 hex nut“. | Eine normale Sechskantmutter, keine Bundmutter und keine Sicherungsmutter mit Nylonring: Sie muss in die sechseckige Aussparung des Rings passen. | Sitzt im IR-Ring, gegenüber jeder Schraube. |
 | Schwarzer Schrumpfschlauch | **1 Sortiment** | **Schwarzer** Schrumpfschlauch, Durchmesser 1,5 bis 6 mm. Suche: „heat shrink tube black assortment“. | **Schwarz**: Er isoliert nicht nur die Lötstellen, sondern schützt auch die Rückseite des Fototransistors vor Licht. | Lötstellen isolieren, und den Fototransistor samt Beinen abschatten. |
 
 ## Druck
@@ -120,7 +120,7 @@ Die Druckdateien und wie man sie anpasst, liegen im Ordner
 | Multimeter | **Ja** | Den Wandler auf 5,0 V einstellen, bevor der ESP32 angeschlossen wird. Ohne Multimeter kein Aufbau. Dient auch zum Kalibrieren der Akkumessung. |
 | Lötkolben, Lötzinn, Flussmittel | Ja | Alle Verbindungen. Ein temperaturgeregelter Lötkolben ist viel angenehmer. |
 | Messschieber | Ja | Den Durchmesser des Auslaufrohrs (*Inner Barrel*) und der IR-Bauteile messen, um den Ring anzupassen. Ein günstiger digitaler reicht. |
-| **1,5-mm**-Bohrer (mit Handbohrer/Stiftenklöbchen oder einer kleinen Bohrmaschine) | Ja, sehr wahrscheinlich | Das Auslaufrohr ist vermutlich aus Metall und damit für Infrarot undurchlässig: Du musst **zwei Löcher** bohren, auf die Fenster des Rings ausgerichtet, damit der Strahl durchkommt. Der Strahl geht nicht durch die Mitte des Rohrs, sondern 2 mm daneben: Bohre mit dem festgeschraubten Ring, von einem Fenster zum anderen, er dient als Bohrlehre. |
+| **Rohrabschneider** (am besten) oder eine Metallsäge in einer Gehrungslade, und ein **Entgrater** | Ja | Das Auslaufrohr ist aus Metall und damit für Infrarot undurchlässig. Es wird nicht gebohrt, sondern in zwei Teile geschnitten: Der Ring hält beide Hälften Stoß an Stoß, und der Strahl geht durch die Lücke dazwischen. Der Rohrabschneider schneidet ohne Mühe rechtwinklig. Der Entgrater (oder ein von Hand gedrehter Kegelsenker) säubert die Schnittenden. Siehe [weiter unten](#rohr-schneiden-und-ring-montieren). |
 | USB-C-**Datenkabel** | Ja | Den ESP32 flashen. Viele USB-C-Kabel können nur laden: Wenn das Board am Computer nicht auftaucht, probier ein anderes Kabel. |
 | Abisolierzange, Seitenschneider | Ja | Die Litzen vorbereiten. |
 | Heißluftföhn oder Feuerzeug | Praktisch | Den Schrumpfschlauch schrumpfen. |
@@ -143,5 +143,26 @@ Bevor du irgendetwas lötest:
 5. **Das Teststück drucken** (`fit_coupon`), um das richtige Spiel zu finden, wie im
    [README des Ordners `cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad#fit_coupon)
    beschrieben, bevor du den Ring druckst.
+
+## Rohr schneiden und Ring montieren
+
+Infrarot geht nicht durch das Auslaufrohr aus Metall. Statt Löcher hineinzubohren, schneidest du
+es in zwei Teile. Der Ring hält beide Hälften Stoß an Stoß mit **6,5 mm** Lücke dazwischen, und der
+Strahl geht durch diese Lücke, durch den gedruckten Ring, der die Kugeln führt.
+
+1. **Anzeichnen:** einen **6,5 mm** breiten Streifen (`BARREL_GAP` in `params.py`) an der Stelle,
+   wo der Ring hinkommt. So viel Rohr kommt weg: Der Ring setzt genau diese Lücke wieder ein, also
+   hat das Rohr nach dem Zusammenbau seine ursprüngliche Länge.
+2. **Rechtwinklig schneiden**, auf beiden Seiten des Streifens (oder einmal schneiden und dann eine
+   Hälfte um 6,5 mm kürzen). Am besten mit einem **Rohrabschneider**: gerader, sauberer Schnitt ohne
+   Mühe. Sonst eine Metallsäge in einer Gehrungslade.
+3. **Entgraten**, innen und außen. An der **inneren** Kante jedes Schnittendes eine **leichte
+   Fase** anbringen, mit einem Entgrater oder einem von Hand gedrehten Kegelsenker. Die gedruckte
+   Führung hat 6,2 mm, das Rohr 6,05 mm: Ohne diese Fase kann eine Kugel an der kleinen Stufe
+   hängen bleiben, wenn sie in die Auslaufhälfte geht.
+4. **Ausblasen**, beide Hälften, damit keine Späne drinbleiben.
+5. **Einschieben:** jede Hälfte in den Ring, bis sie am Ring in der Mitte anschlägt. Der Ring legt
+   Abstand und Ausrichtung fest, nicht du.
+6. **Festziehen:** beide M3-Schrauben, eine pro Hälfte.
 
 Danach geht es an die [Verkabelung](/bulloader-plus/de/cablage/).

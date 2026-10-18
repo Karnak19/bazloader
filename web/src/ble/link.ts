@@ -162,7 +162,7 @@ export async function findKnownDevice(options: {
 // `?mock` in the URL swaps the real device for MockDevice. `?mock=jam` makes the mock jam during
 // a run, `?mock=v2` makes it answer with a config version this app doesn't know. `?mock=drop`
 // drops the link 4 s after connecting and comes back in range 6 s later; `?mock=gone` drops the
-// same way and never comes back.
+// same way and never comes back. `?mock=lowbatt` starts with a flat pack, so GO answers LOW_BATT.
 export function mockOptionsFromUrl(search: string): MockOptions | null {
   const params = new URLSearchParams(search)
   if (!params.has('mock')) return null
@@ -170,6 +170,7 @@ export function mockOptionsFromUrl(search: string): MockOptions | null {
   if (mode === 'jam') return { jamAt: 7 }
   if (mode === 'v2') return { configVersion: 2 }
   if (mode === 'drop') return { dropAfterMs: 4000, awayMs: 6000 }
+  if (mode === 'lowbatt') return { battery: 6500 }
   if (mode === 'gone') return { dropAfterMs: 4000, awayMs: Number.POSITIVE_INFINITY }
   return {}
 }

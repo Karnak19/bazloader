@@ -2,7 +2,7 @@
 // the list of keys: en.ts must have exactly the same ones, or tsc fails.
 //
 // {name} is replaced by t()'s second argument. French typography: a non-breaking space ( )
-// before « : » and units, and inside « ».
+// before « : » and units, and inside « ».
 
 export const fr = {
   // Language switch. Each language is named in its own language, on purpose.
@@ -14,6 +14,9 @@ export const fr = {
   'banner.lost': 'Connexion perdue. Rallume le BULLOADER ou rapproche-toi.',
   'banner.retry': 'Reconnecter',
   'banner.changeDevice': "Changer d'appareil",
+  // The device stops a run with its GO button or a push on the knob (firmware/src/controls.cpp).
+  'banner.motorMayRun': "Le moteur tourne peut-être encore. Pour l'arrêter : appuie sur GO ou sur la molette du BULLOADER.",
+  'banner.stopQueued': 'STOP en attente : envoyé dès la reconnexion.',
 
   'connect.button': 'Connecter',
   'connect.busy': 'Connexion…',
@@ -31,10 +34,24 @@ export const fr = {
   'state.testing': 'Test moteur',
 
   'main.settings': 'Réglages',
-  'main.disconnect': 'Déconnecter',
   'main.target': 'Objectif',
   'main.minusOne': 'Moins un',
   'main.plusOne': 'Plus un',
+  'main.stopQueued': 'en attente',
+  'main.goReloads': "GO recharge {n} billes : vide le chargeur d'abord.",
+  'main.noteMin': 'Minimum {n} : objectif mis à {n}.',
+  'main.noteMax': 'Maximum {n} : objectif mis à {n}.',
+  'main.noteNotNumber': 'Chiffres seulement : objectif inchangé.',
+
+  // What to do next, under the state.
+  'next.jam': 'Vérifie la trémie et dégage le bourrage, puis GO.',
+  'next.lowBatt': 'Recharge ou change la batterie, puis GO.',
+
+  // How the last run ended, under « Prêt », until the next GO.
+  'last.done': 'Dernier chargement : {count} / {target}',
+  'last.stopped': 'Dernier chargement : arrêté à {count} / {target}',
+  'last.jam': 'Dernier chargement : bourrage à {count} / {target}',
+  'last.lowBatt': 'Dernier chargement : batterie faible à {count} / {target}',
 
   'error.cancelled': 'Aucun appareil choisi.',
   'error.bluetoothOff': 'Le Bluetooth du téléphone est désactivé.',
@@ -61,19 +78,26 @@ export const fr = {
   'settings.reverse': 'Sens inversé',
   'settings.yes': 'OUI',
   'settings.no': 'NON',
-  'settings.fixErrors': 'Corrige les valeurs en rouge pour enregistrer.',
+  'settings.fixErrors': 'Corrige les valeurs signalées plus haut pour enregistrer.',
   'settings.motorRunning': 'Moteur en marche : arrête-le pour enregistrer ou tester.',
   'settings.save': 'Enregistrer',
   'settings.saving': 'Enregistrement…',
   'settings.saved': 'Enregistré.',
   'settings.notKept': "L'appareil n'a pas tout pris : voici ses valeurs.",
   'settings.motorTest': 'Test du moteur',
-  'settings.testOffline': 'Connexion perdue : le BULLOADER arrête le moteur de lui-même.',
+  'settings.testOffline':
+    "Connexion perdue : le BULLOADER coupe normalement le moteur de lui-même, et l'app renvoie STOP dès la reconnexion.",
   'settings.testRunning': 'Test en cours : le moteur tourne.',
   'settings.testSavesFirst': 'Chaque test enregistre d’abord tes changements.',
   'settings.testSaved': 'Tourne avec les valeurs enregistrées.',
   'settings.testFull': 'Tester rapide',
   'settings.testSlow': 'Tester lent',
+  'settings.device': 'Appareil',
+  'settings.unsavedTitle': 'Réglages non enregistrés',
+  'settings.unsavedBody': 'Tu as changé des réglages sans les enregistrer.',
+  'settings.unsavedInvalid': 'Certaines valeurs sont invalides : abandonne-les, ou reste pour les corriger.',
+  'settings.discard': 'Abandonner',
+  'settings.stay': 'Rester',
 
   // {unit} is empty or starts with a non-breaking space (« 1000 µs »).
   'validation.integer': 'Nombre entier attendu, entre {min} et {max}{unit}.',

@@ -87,8 +87,8 @@ export default defineConfig({
       scope: appScope,
       workbox: {
         // Used on airsoft fields with no network: the app page and everything it loads must be
-        // precached. Docs pages are left out on purpose.
-        globPatterns: ['app/index.html', '_astro/*.{js,css}', '*.{svg,png}'],
+        // precached, fonts included. Docs pages are left out on purpose.
+        globPatterns: ['app/index.html', '_astro/*.{js,css}', '*.{svg,png}', 'fonts/*.woff2'],
         manifestTransforms: [keepAppAssets],
         navigateFallback: appScope,
         navigateFallbackAllowlist: [new RegExp(`^${appScope}`)],
@@ -100,8 +100,9 @@ export default defineConfig({
         lang: 'fr',
         display: 'standalone',
         orientation: 'portrait',
-        theme_color: '#111214',
-        background_color: '#111214',
+        // The dark theme's ground. The page updates its own theme-color per theme at runtime.
+        theme_color: '#0b0c0e',
+        background_color: '#0b0c0e',
         start_url: appScope,
         scope: appScope,
         icons: [

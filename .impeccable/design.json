@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-18T18:37:58+00:00",
+  "title": "Design System: BULLOADER+",
+  "extensions": {
+    "colorMeta": {
+      "accent-dark": {
+        "role": "primary",
+        "displayName": "Signal Orange (dark)",
+        "canonical": "oklch(0.724 0.186 48)",
+        "tonalRamp": [
+          "oklch(0.15 0.093 48)",
+          "oklch(0.27 0.093 48)",
+          "oklch(0.39 0.186 48)",
+          "oklch(0.51 0.186 48)",
+          "oklch(0.63 0.186 48)",
+          "oklch(0.75 0.186 48)",
+          "oklch(0.86 0.093 48)",
+          "oklch(0.95 0.093 48)"
+        ]
+      },
+      "accent-light": {
+        "role": "primary",
+        "displayName": "Signal Orange (light)",
+        "tonalRamp": [
+          "oklch(0.15 0.093 48)",
+          "oklch(0.27 0.093 48)",
+          "oklch(0.39 0.186 48)",
+          "oklch(0.51 0.186 48)",
+          "oklch(0.63 0.186 48)",
+          "oklch(0.75 0.186 48)",
+          "oklch(0.86 0.093 48)",
+          "oklch(0.95 0.093 48)"
+        ]
+      },
+      "accent-ink-dark": {
+        "role": "primary",
+        "displayName": "Signal Orange Ink (dark)"
+      },
+      "accent-ink-light": {
+        "role": "primary",
+        "displayName": "Signal Orange Ink (light)"
+      },
+      "slow": {
+        "role": "state",
+        "displayName": "Slowdown Cyan",
+        "canonical": "oklch(0.773 0.129 224)",
+        "tonalRamp": [
+          "oklch(0.15 0.065 224)",
+          "oklch(0.27 0.065 224)",
+          "oklch(0.39 0.129 224)",
+          "oklch(0.51 0.129 224)",
+          "oklch(0.63 0.129 224)",
+          "oklch(0.75 0.129 224)",
+          "oklch(0.86 0.065 224)",
+          "oklch(0.95 0.065 224)"
+        ]
+      },
+      "ok": {
+        "role": "state",
+        "displayName": "Done Green",
+        "canonical": "oklch(0.793 0.180 154)",
+        "tonalRamp": [
+          "oklch(0.15 0.090 154)",
+          "oklch(0.27 0.090 154)",
+          "oklch(0.39 0.180 154)",
+          "oklch(0.51 0.180 154)",
+          "oklch(0.63 0.180 154)",
+          "oklch(0.75 0.180 154)",
+          "oklch(0.86 0.090 154)",
+          "oklch(0.95 0.090 154)"
+        ]
+      },
+      "jam": {
+        "role": "state",
+        "displayName": "Jam Magenta-Red",
+        "canonical": "oklch(0.688 0.215 4)",
+        "tonalRamp": [
+          "oklch(0.15 0.107 4)",
+          "oklch(0.27 0.107 4)",
+          "oklch(0.39 0.215 4)",
+          "oklch(0.51 0.215 4)",
+          "oklch(0.63 0.215 4)",
+          "oklch(0.75 0.215 4)",
+          "oklch(0.86 0.107 4)",
+          "oklch(0.95 0.107 4)"
+        ]
+      },
+      "warn": {
+        "role": "state",
+        "displayName": "Battery Yellow",
+        "canonical": "oklch(0.879 0.162 91)",
+        "tonalRamp": [
+          "oklch(0.15 0.081 91)",
+          "oklch(0.27 0.081 91)",
+          "oklch(0.39 0.162 91)",
+          "oklch(0.51 0.162 91)",
+          "oklch(0.63 0.162 91)",
+          "oklch(0.75 0.162 91)",
+          "oklch(0.86 0.081 91)",
+          "oklch(0.95 0.081 91)"
+        ]
+      },
+      "bg-dark": {
+        "role": "neutral",
+        "displayName": "Graphite Ground",
+        "canonical": "oklch(0.154 0.005 264)",
+        "tonalRamp": [
+          "#0b0c0e",
+          "#131519",
+          "#1b1e23",
+          "#262a30",
+          "#5c626b",
+          "#7d838c",
+          "#959ba4",
+          "#f2f3f5"
+        ]
+      },
+      "bg-light": {
+        "role": "neutral",
+        "displayName": "Paper Ground",
+        "canonical": "oklch(0.967 0.007 89)",
+        "tonalRamp": [
+          "#121316",
+          "#3d4148",
+          "#5b6069",
+          "#6c6f75",
+          "#8c8a84",
+          "#dcd8cf",
+          "#efebe3",
+          "#fdfcf9"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "count": {
+        "displayName": "Count",
+        "purpose": "The live BB count; '/ target' on the same line at 0.5em in ink 3."
+      },
+      "action": {
+        "displayName": "Action",
+        "purpose": "GO and STOP in the 96 px dock button."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "BULLOADER with an orange « + » on the connect screen."
+      },
+      "state": {
+        "displayName": "State",
+        "purpose": "The state word in its badge."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Réglages header and dialog titles."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Default and primary buttons."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Hints, notes, banners."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Battery, chips, fields: any measured or set number."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Small uppercase mono group titles."
+      }
+    },
+    "themes": {
+      "mechanism": "Each colour token is light-dark(light, dark); color-scheme follows the phone (Auto) unless data-theme='light'|'dark' pins it on <html>. Default Auto.",
+      "themeColor": {
+        "light": "#f6f4ef",
+        "dark": "#0b0c0e"
+      }
+    },
+    "fonts": [
+      {
+        "family": "Geist",
+        "file": "web/public/fonts/Geist.woff2",
+        "weights": "100 900",
+        "license": "SIL OFL",
+        "note": "self-hosted, preloaded, precached for offline"
+      },
+      {
+        "family": "Geist Mono",
+        "file": "web/public/fonts/GeistMono.woff2",
+        "weights": "100 900",
+        "license": "SIL OFL",
+        "note": "self-hosted, preloaded, precached for offline"
+      }
+    ],
+    "shadows": [
+      {
+        "name": "dialog-lift",
+        "value": "0 1.5rem 3rem -1rem rgb(0 0 0 / 0.5)",
+        "purpose": "The confirm dialog only; backdrop rgb(0 0 0 / 0.65)."
+      },
+      {
+        "name": "banner-mask",
+        "value": "0 0 0 0.75rem var(--bg)",
+        "purpose": "Hides content scrolling under the sticky banner; not a visible shadow."
+      },
+      {
+        "name": "run-edge-glow",
+        "value": "0 0 0.5rem 0.125rem color-mix(in oklab, var(--tone) 70%, transparent), 0 0 1.25rem 0.25rem color-mix(in oklab, var(--tone) 35%, transparent)",
+        "purpose": "Leading edge of the progress rule while running (orange) or slowing down (cyan). State only."
+      },
+      {
+        "name": "done-pulse",
+        "value": "0 0 0.75rem 0.125rem color-mix(in oklab, var(--ok) 60%, transparent)",
+        "purpose": "One pulse of the full bar on entering done (700 ms keyframe at 40%)."
+      },
+      {
+        "name": "focus-ring",
+        "value": "outline: 2px solid var(--accent-ink); outline-offset: 2px",
+        "purpose": "Every control; fields use a 1 px accent-ink ring plus border instead."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The one easing for state changes."
+      },
+      {
+        "name": "digit-tick",
+        "value": "90ms, translateY(-0.12em) to 0",
+        "purpose": "A changed count digit drops into place. Transform only; short so it reads solid at 10+ BBs a second."
+      },
+      {
+        "name": "press",
+        "value": "120ms, translateY(1px) scale(0.99)",
+        "purpose": "Button press."
+      },
+      {
+        "name": "state-change",
+        "value": "160-200ms",
+        "purpose": "Colour and border transitions; the rule fill moves with scaleX in 160 ms linear."
+      },
+      {
+        "name": "dialog-in",
+        "value": "180ms, opacity 0 and translateY(0.5rem) to rest",
+        "purpose": "Confirm dialog entry via @starting-style."
+      },
+      {
+        "name": "done-pulse",
+        "value": "700ms",
+        "purpose": "Once, on entering done."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce -> no animation, no transition",
+        "purpose": "Honoured globally."
+      },
+      {
+        "name": "haptics",
+        "value": "done 150ms; jam 300/150/300ms",
+        "purpose": "navigator.vibrate on the two endings worth feeling in a pocket."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "column",
+        "value": "30rem max width, single column, 1rem gutters; no other breakpoints"
+      }
+    ],
+    "scope": "The app at /app/ only. The Starlight docs site does not use this world yet; planned."
+  },
+  "components": [
+    {
+      "name": "GO",
+      "kind": "button",
+      "refersTo": "button-go",
+      "description": "The one main action at rest: full-width 96 px orange bar in the bottom dock.",
+      "html": "<button class=\"ds-btn ds-big ds-go\"><span><svg width=\"0.75em\" height=\"0.75em\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 4.5v15L19.5 12 7 4.5Z\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linejoin=\"round\"/></svg> GO</span><span class=\"ds-sub\">Cible 100</span></button>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 16px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink);font:600 1.125rem/1 Geist,system-ui,sans-serif;letter-spacing:-0.01em;cursor:pointer;transition:background-color 160ms var(--ease),border-color 160ms var(--ease),transform 120ms var(--ease)} .ds-btn:hover{border-color:var(--ink-3)} .ds-btn:active{transform:translateY(1px) scale(0.99)} .ds-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px} .ds-big{flex-direction:column;gap:2px;width:100%;min-height:96px;border-radius:8px;font-size:2.25rem;font-weight:700;letter-spacing:0.06em} .ds-sub{font:500 0.9375rem 'Geist Mono',ui-monospace,monospace;letter-spacing:0.04em;text-transform:uppercase} .ds-go{border-color:var(--accent);background:var(--accent);color:var(--on-accent)} .ds-go:hover{border-color:var(--accent);background:color-mix(in oklab,var(--accent) 88%,var(--ink))}"
+    },
+    {
+      "name": "STOP",
+      "kind": "button",
+      "refersTo": "button-stop",
+      "description": "Replaces GO while the motor turns: ink on the ground's opposite, square glyph, never orange.",
+      "html": "<button class=\"ds-btn ds-big ds-stop\"><span><svg width=\"0.75em\" height=\"0.75em\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5.5\" y=\"5.5\" width=\"13\" height=\"13\" rx=\"1.5\" fill=\"currentColor\"/></svg> STOP</span></button>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 16px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink);font:600 1.125rem/1 Geist,system-ui,sans-serif;letter-spacing:-0.01em;cursor:pointer;transition:background-color 160ms var(--ease),border-color 160ms var(--ease),transform 120ms var(--ease)} .ds-btn:hover{border-color:var(--ink-3)} .ds-btn:active{transform:translateY(1px) scale(0.99)} .ds-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px} .ds-big{flex-direction:column;gap:2px;width:100%;min-height:96px;border-radius:8px;font-size:2.25rem;font-weight:700;letter-spacing:0.06em} .ds-sub{font:500 0.9375rem 'Geist Mono',ui-monospace,monospace;letter-spacing:0.04em;text-transform:uppercase} .ds-stop{border-color:var(--ink);background:var(--ink);color:var(--bg)}"
+    },
+    {
+      "name": "Default and primary buttons",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "56 px buttons: raised surface by default, orange fill for the primary, dashed when disabled.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-btn\">Annuler</button><button class=\"ds-btn ds-primary\">Enregistrer</button><button class=\"ds-btn\" disabled>Off</button></div>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 16px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink);font:600 1.125rem/1 Geist,system-ui,sans-serif;letter-spacing:-0.01em;cursor:pointer;transition:background-color 160ms var(--ease),border-color 160ms var(--ease),transform 120ms var(--ease)} .ds-btn:hover{border-color:var(--ink-3)} .ds-btn:active{transform:translateY(1px) scale(0.99)} .ds-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px} .ds-row{display:flex;gap:8px;flex-wrap:wrap} .ds-primary{border-color:var(--accent);background:var(--accent);color:var(--on-accent)} .ds-primary:hover{border-color:var(--accent);background:color-mix(in oklab,var(--accent) 88%,var(--ink))} .ds-btn:disabled{border:1px dashed var(--line-strong);background:transparent;color:var(--off);cursor:not-allowed}"
+    },
+    {
+      "name": "Target stepper and preset chips",
+      "kind": "chip",
+      "refersTo": "chip-preset",
+      "description": "Minus, big mono field, plus; four mono preset chips, the current one in orange tint with a ring.",
+      "html": "<div class=\"ds-panel\"><div class=\"ds-step\"><button class=\"ds-btn ds-s\">−</button><input class=\"ds-field\" value=\"100\"><button class=\"ds-btn ds-s\">+</button></div><div class=\"ds-presets\"><button class=\"ds-btn ds-chip\">50</button><button class=\"ds-btn ds-chip ds-cur\">100</button><button class=\"ds-btn ds-chip\">150</button><button class=\"ds-btn ds-chip\">200</button></div></div>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 16px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink);font:600 1.125rem/1 Geist,system-ui,sans-serif;letter-spacing:-0.01em;cursor:pointer;transition:background-color 160ms var(--ease),border-color 160ms var(--ease),transform 120ms var(--ease)} .ds-btn:hover{border-color:var(--ink-3)} .ds-btn:active{transform:translateY(1px) scale(0.99)} .ds-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px} .ds-panel{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)} .ds-step{display:grid;grid-template-columns:72px 1fr 72px;gap:8px} .ds-s{min-height:64px;padding:0;font-size:1.75rem} .ds-field{min-width:0;min-height:64px;border:1px solid var(--line-strong);border-radius:6px;background:var(--bg);color:var(--ink);font:600 2rem 'Geist Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;text-align:center} .ds-field:focus{outline:none;border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)} .ds-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px} .ds-chip{padding:0;font:500 1.25rem 'Geist Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums} .ds-cur{border-color:var(--accent-ink);background:color-mix(in oklab,var(--accent) 16%,var(--surface));box-shadow:inset 0 0 0 1px var(--accent-ink)}"
+    },
+    {
+      "name": "Segmented control",
+      "kind": "nav",
+      "refersTo": "button-default",
+      "description": "Language and theme choice (Auto / Clair / Sombre): surface track, current segment in orange tint.",
+      "html": "<div class=\"ds-choice\"><button class=\"ds-btn ds-seg ds-cur\">Auto</button><button class=\"ds-btn ds-seg\">Clair</button><button class=\"ds-btn ds-seg\">Sombre</button></div>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 16px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink);font:600 1.125rem/1 Geist,system-ui,sans-serif;letter-spacing:-0.01em;cursor:pointer;transition:background-color 160ms var(--ease),border-color 160ms var(--ease),transform 120ms var(--ease)} .ds-btn:hover{border-color:var(--ink-3)} .ds-btn:active{transform:translateY(1px) scale(0.99)} .ds-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px} .ds-choice{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--surface)} .ds-seg{padding:0 8px;border-color:transparent;background:transparent;color:var(--ink-2);font-size:1.0625rem} .ds-cur{border-color:var(--accent-ink);background:color-mix(in oklab,var(--accent) 16%,var(--surface));box-shadow:inset 0 0 0 1px var(--accent-ink);color:var(--ink)}"
+    },
+    {
+      "name": "State badge",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "The state word in its fill with dark text and its glyph; colour is never alone.",
+      "html": "<span class=\"ds-state\"><svg width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4.5 12.5 9.5 17.5 19.5 6.5\"/></svg> Terminé</span>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-state{display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:4px 16px;border:1px solid var(--ok);border-radius:8px;background:var(--ok);color:#0b0c0e;font:650 1.625rem/1.15 Geist,system-ui,sans-serif;letter-spacing:-0.02em}"
+    },
+    {
+      "name": "Count and progress rule",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Signature: giant tabular mono count, a thin rule whose leading edge glows while running, a tick every tenth.",
+      "html": "<div class=\"ds-hero\"><div class=\"ds-count\">62<span class=\"ds-of\"><span class=\"ds-slash\">/</span>100</span></div><div class=\"ds-track\"><div class=\"ds-fill\"></div><div class=\"ds-edge\"></div></div><div class=\"ds-ticks\"><span class=\"on\"></span><span class=\"on\"></span><span class=\"on\"></span><span class=\"on\"></span><span class=\"on\"></span><span class=\"on\"></span><span class=\"on\"></span><span class=\"\"></span><span class=\"\"></span><span class=\"\"></span><span class=\"\"></span></div></div>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-hero{display:flex;flex-direction:column;gap:6px;text-align:center} .ds-count{display:flex;align-items:baseline;justify-content:center;column-gap:12px;font:600 6rem/0.95 'Geist Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-0.04em;margin-bottom:8px} .ds-of{color:var(--ink-3);font-size:0.5em;font-weight:500} .ds-slash{margin-right:0.25em;color:var(--line-strong)} .ds-track{position:relative;height:6px;border-radius:3px;background:var(--line)} .ds-fill{position:absolute;inset:0;border-radius:inherit;background:var(--accent-ink);transform:scaleX(0.62);transform-origin:left} .ds-edge{position:absolute;top:-5px;left:62%;width:2px;height:16px;border-radius:1px;background:var(--accent-ink);box-shadow:0 0 0.5rem 0.125rem color-mix(in oklab,var(--accent) 70%,transparent),0 0 1.25rem 0.25rem color-mix(in oklab,var(--accent) 35%,transparent)} .ds-ticks{display:flex;justify-content:space-between;height:8px} .ds-ticks span{width:1px;height:5px;background:var(--line-strong)} .ds-ticks span:nth-child(5n+1){height:8px} .ds-ticks span.on{background:var(--accent-ink)}"
+    },
+    {
+      "name": "Lost-link banner",
+      "kind": "card",
+      "refersTo": "",
+      "description": "Sticky banner: a tint of the state colour, state-ink border, glyph and title, note, two actions.",
+      "html": "<div class=\"ds-banner\"><div class=\"ds-bt\">Liaison perdue</div><p class=\"ds-bn\">Le moteur s’arrête tout seul.</p><div class=\"ds-ba\"><button class=\"ds-btn ds-primary\">Reconnecter</button><button class=\"ds-btn\">Quitter</button></div></div>",
+      "css": ":host{--bg:#0b0c0e;--surface:#131519;--surface-2:#1b1e23;--line:#262a30;--line-strong:#5c626b;--ink:#f2f3f5;--ink-2:#b9bec6;--ink-3:#959ba4;--off:#7d838c;--accent:#ff7a1f;--accent-ink:#ff8a3a;--on-accent:#0b0c0e;--ok:#3ddc84;--jam:#ff4f8b;--warn:#ffd23f;--slow:#3fc6f2;--ease:cubic-bezier(0.16,1,0.3,1);font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--bg)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 16px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink);font:600 1.125rem/1 Geist,system-ui,sans-serif;letter-spacing:-0.01em;cursor:pointer;transition:background-color 160ms var(--ease),border-color 160ms var(--ease),transform 120ms var(--ease)} .ds-btn:hover{border-color:var(--ink-3)} .ds-btn:active{transform:translateY(1px) scale(0.99)} .ds-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px} .ds-banner{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid var(--jam);border-radius:8px;background:color-mix(in oklab,var(--jam) 20%,var(--bg));color:var(--ink)} .ds-bt{font-size:1.1875rem;font-weight:700} .ds-bn{margin:0;font-weight:500} .ds-ba{display:grid;grid-template-columns:1fr 1fr;gap:8px} .ds-primary{border-color:var(--accent);background:var(--accent);color:var(--on-accent)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Field Instrument",
+    "overview": "The app is a measuring instrument, not a remote control. One number fills the screen: the count, in very large tabular mono, read from a metre away in the sun. Under the thumb sits one action, signal orange to start, solid ink to stop. Everything else is quiet: a graphite near-black ground in dark, a warm paper-white ground in light, hairline borders, tight corners, a faint drafting grid behind the header that fades out before the count.\n\nThe references are developer consoles like Neon and Supabase: flat panels, 1 px lines, mono for numbers and labels, one saturated accent. The world refuses the generic dark IoT remote with a stack of equal-weight cards. Hierarchy comes from size and position, not from boxes.\n\nBoth themes are first class. Auto (follow the phone) is the default; Réglages can pin Clair or Sombre. Every token has a light and a dark value, picked by the CSS `light-dark()` function, so a component is written once.",
+    "keyCharacteristics": [
+      "One giant mono count with \"/ target\" at half size, and a thin progress rule with a tick every tenth.",
+      "One full-width 96 px action bar fixed at the bottom, in the thumb zone.",
+      "Signal orange is the only action colour; state colours are reserved and always come with a glyph and a word.",
+      "Hairline borders, 6-8 px corners, no decorative shadows.",
+      "Motion is short, transform-only and means something: digits tick, the leading edge glows while the motor runs, the bar pulses once on done.",
+      "Dark and light themes from one token set; Auto by default."
+    ],
+    "rules": [
+      {
+        "name": "The One Orange Rule",
+        "body": "Orange means \"act\" or \"acting\": GO, the primary button, the selected choice, the switch on, and the running state that GO started. Nothing decorative is orange except the « + » of the wordmark.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never Colour Alone Rule",
+        "body": "Every state colour comes with its glyph and its word (badge, banner, field error, battery chip). A colour-blind player in sunlight reads the word.",
+        "section": "colors"
+      },
+      {
+        "name": "The Reserved State Rule",
+        "body": "Cyan is slowdown, green is done, magenta-red is jam or error, yellow is low battery or a warning. Do not borrow them for anything else.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numbers Are Mono Rule",
+        "body": "Any number the device measures or the player sets is in Geist Mono with tabular figures, so digits never shift as they change.",
+        "section": "typography"
+      },
+      {
+        "name": "The Thumb Bar Rule",
+        "body": "The main action of a screen lives in the bottom dock, full width, 96 px tall. Only one main action is shown at a time: STOP while the motor turns, GO otherwise.",
+        "section": "layout"
+      },
+      {
+        "name": "The Glow Is State Rule",
+        "body": "Glow appears only to say what the machine is doing: the leading edge glows while the motor loads (running or slowdown) and the bar pulses once on done. Never as decoration, hover or emphasis.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** write every colour as one token with a light and a dark value (`light-dark()`), and test both themes plus Auto.",
+      "**Do** pair every state colour with its glyph and its word.",
+      "**Do** put the screen's one main action in the bottom dock, full width, 96 px.",
+      "**Do** keep every touch target at 56 px or more and every text at 4.5:1 on its ground.",
+      "**Do** set numbers in Geist Mono with tabular figures.",
+      "**Do** animate with transform and opacity only, keep it under 200 ms for anything that repeats, and honour reduced motion.",
+      "**Do** mark \"off\" with a dashed border and no fill, not with fading."
+    ],
+    "donts": [
+      "**Don't** use orange for anything that is not an action, a selection, or the running state.",
+      "**Don't** use green for \"fine\" (a healthy battery is neutral); green means done.",
+      "**Don't** add glow or shadow for decoration; glow encodes state, the dialog is the only lifted surface.",
+      "**Don't** stack equal-weight cards; the count and the action dominate, the rest is one quiet panel.",
+      "**Don't** load fonts or anything else from the network; the app works offline.",
+      "**Don't** let a line appearing or a digit changing move the count."
+    ]
+  }
+}

@@ -75,7 +75,8 @@ There are no photos of the physical build yet, and no field usage numbers, BB ac
 
 ## Accessibility & Inclusion
 
-- **Outdoor legibility:** strong contrast in direct sunlight; dark theme by default.
+- **Outdoor legibility:** strong contrast in direct sunlight, in both themes.
+- **Themes, your choice:** Auto (the default, follows the phone), light and dark, picked in the app's settings. Both are first-class: every text passes 4.5:1 on its ground.
 - **Touch targets:** at least 56 px, usable with gloves.
 - **Colour:** never rely on colour alone for state (battery level, errors). Text always accompanies it.
 - **Languages:** docs and README in French, English, Spanish and German (French is the source); app in French and English; OLED in French.

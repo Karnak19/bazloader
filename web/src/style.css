@@ -1,23 +1,71 @@
-/* Dark, big, high contrast: used outdoors, with gloves. Touch targets are 56 px or more. */
+/* A console you read from a metre away, in the sun, with gloves on. Touch targets are 56 px or
+   more, GO/STOP are 96 px tall, every text passes 4.5:1 on its ground in both themes.
+
+   One set of tokens, two values each: light-dark() picks one from the page's colour scheme, which
+   follows the phone (Auto) unless Réglages pins it (data-theme on <html>, see src/ui/theme.ts). */
 
 :root {
-  color-scheme: dark;
-  --bg: #111214;
-  --surface: #1d1f23;
-  --line: #34373d;
-  --fg: #f4f4f4;
-  --muted: #9a9da3;
-  --accent: #f2b705;
+  color-scheme: light dark;
+
+  /* Grounds and lines */
+  --bg: light-dark(#f6f4ef, #0b0c0e);
+  --surface: light-dark(#fdfcf9, #131519);
+  --surface-2: light-dark(#efebe3, #1b1e23);
+  --line: light-dark(#dcd8cf, #262a30); /* hairlines: panels, rules */
+  --line-strong: light-dark(#8c8a84, #5c626b); /* control edges, 3:1 on the ground */
+  --grid: light-dark(rgb(18 19 22 / 0.05), rgb(255 255 255 / 0.045));
+
+  /* Text */
+  --ink: light-dark(#121316, #f2f3f5);
+  --ink-2: light-dark(#3d4148, #b9bec6);
+  --ink-3: light-dark(#5b6069, #959ba4);
+  --off: light-dark(#6c6f75, #7d838c);
+
+  /* The one action colour. --accent fills (GO, primary), --accent-ink is orange text and strokes
+     on the ground, darker in light so it still reads. */
+  --accent: light-dark(#e65c00, #ff7a1f);
+  --accent-ink: light-dark(#a84300, #ff8a3a);
+  --accent-tint: color-mix(in oklab, var(--accent) 16%, var(--surface));
+  --on-accent: #0b0c0e;
+
+  /* States: a bright fill with dark text (badges), and an ink for text and strokes on the ground. */
+  --on-tone: #0b0c0e;
+  --slow: #3fc6f2;
+  --slow-ink: light-dark(#00698f, #3fc6f2);
   --ok: #3ddc84;
-  --warn: #ffa630;
-  --danger: #ff6a5c;
-  --slow: #6cc8ff;
-  --off-fg: #8b8e95;
-  --off-line: #4a4e56;
+  --ok-ink: light-dark(#13773d, #3ddc84);
+  --jam: #ff4f8b;
+  --jam-ink: light-dark(#c2134f, #ff4f8b);
+  --warn: #ffd23f;
+  --warn-ink: light-dark(#7a5a00, #ffd23f);
+
   --touch: 3.5rem; /* 56 px */
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 0.375rem;
+  --radius-lg: 0.5rem;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --font-ui: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  font-family: var(--font-ui);
+  line-height: 1.4;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--ink);
+  caret-color: var(--accent-ink);
+  scrollbar-color: var(--line-strong) transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+  color: var(--ink);
 }
 
 * {
@@ -25,9 +73,26 @@
 }
 
 body {
+  position: relative;
   margin: 0;
   min-height: 100dvh;
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A faint drafting grid behind the header only, fading out before the count. */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 9rem;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 1.5rem 1.5rem;
+  background-position: center top;
+  mask-image: linear-gradient(#000 30%, transparent);
+  pointer-events: none;
 }
 
 p {
@@ -35,51 +100,39 @@ p {
 }
 
 .screen {
+  position: relative;
   min-height: 100dvh;
   max-width: 30rem;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  gap: 1rem;
+  padding: max(0.75rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
 }
 
 .screen.center {
   align-items: center;
   justify-content: center;
+  gap: 1.25rem;
   text-align: center;
 }
 
-.title {
-  margin: 0;
-  font-size: 2rem;
-  letter-spacing: 0.05em;
+.wordmark {
+  margin: 0 0 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.wordmark .plus {
+  color: var(--accent-ink);
 }
 
 .hint {
-  color: var(--muted);
-}
-
-.error {
-  max-width: 22rem;
-  color: var(--danger);
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-/* ---- Buttons ---- */
-
-.btn {
-  min-height: var(--touch);
-  min-width: var(--touch);
-  border: 2px solid var(--line);
-  border-radius: 0.875rem;
-  background: var(--surface);
-  color: var(--fg);
-  font: inherit;
-  font-size: 1.25rem;
-  font-weight: 700;
-  touch-action: manipulation;
+  color: var(--ink-2);
+  font-size: 1rem;
+  text-wrap: pretty;
 }
 
 .icon {
@@ -88,38 +141,106 @@ p {
   flex: none;
 }
 
-.btn:focus-visible {
-  outline: 3px solid var(--accent);
+/* An error said out loud: glyph and words, on a tint of the jam colour. */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--jam-ink);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--jam) 12%, var(--surface));
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.alert .icon {
+  margin-top: 0.15em;
+  color: var(--jam-ink);
+}
+
+/* ---- Buttons ---- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--touch);
+  min-width: var(--touch);
+  padding: 0 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease),
+    color 160ms var(--ease),
+    transform 120ms var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    border-color: var(--ink-3);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
 }
 
 .btn.primary {
   border-color: var(--accent);
   background: var(--accent);
-  color: #111214;
+  color: var(--on-accent);
+}
+
+@media (hover: hover) {
+  .btn.primary:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 88%, var(--ink));
+  }
 }
 
 .btn.wide {
   width: 100%;
-  max-width: 20rem;
-  min-height: 4.5rem;
-  font-size: 1.5rem;
+  max-width: 22rem;
+  min-height: 6rem;
+  border-radius: var(--radius-lg);
+  font-size: 1.75rem;
+  font-weight: 700;
 }
 
 .btn.quiet {
+  border-color: transparent;
   background: transparent;
-  color: var(--muted);
-  font-size: 1.125rem;
-  font-weight: 600;
+  color: var(--ink-2);
 }
 
 .btn.icon {
-  display: grid;
-  place-items: center;
-  font-size: 1.75rem;
+  padding: 0;
+  border-color: var(--line);
+  background: transparent;
+  font-size: 1.5rem;
 }
 
-/* ---- Main screen ---- */
+/* ---- Header ---- */
 
 .bar {
   display: flex;
@@ -130,93 +251,141 @@ p {
 
 .device {
   flex: 1;
-  color: var(--muted);
-  font-weight: 600;
+  min-width: 0;
   overflow: hidden;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Neutral while it's fine: green means « Terminé » here, nothing else. */
 .battery {
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  color: #111214;
-  font-size: 1.25rem;
-  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.battery.ok {
-  background: var(--ok);
+.battery .icon {
+  font-size: 1.25rem;
 }
 
 .battery.warn {
-  background: var(--warn);
+  border-color: var(--warn-ink);
+  color: var(--warn-ink);
 }
 
 .battery.low {
-  background: var(--danger);
+  border-color: var(--warn);
+  background: var(--warn);
+  color: var(--on-tone);
 }
 
 .battery.usb {
-  background: var(--line);
-  color: var(--fg);
+  color: var(--ink-2);
 }
 
-/* The state leads the screen: big word, glyph, and one tint per state on the word and the bar. */
-.hero {
-  --tone: var(--fg);
-  --fill: var(--muted);
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  text-align: center;
+/* ---- The state, the count, the rule ---- */
+
+/* Each state sets its fill (badge, rule edge) and its ink (text and strokes on the ground). */
+.tone-idle {
+  --tone: var(--surface);
+  --tone-ink: var(--ink-3);
 }
 
 .tone-run {
   --tone: var(--accent);
-  --fill: var(--accent);
+  --tone-ink: var(--accent-ink);
 }
 
 .tone-slow {
   --tone: var(--slow);
-  --fill: var(--slow);
+  --tone-ink: var(--slow-ink);
 }
 
 .tone-ok {
   --tone: var(--ok);
-  --fill: var(--ok);
+  --tone-ink: var(--ok-ink);
 }
 
 .tone-alarm {
-  --tone: var(--danger);
-  --fill: var(--danger);
+  --tone: var(--jam);
+  --tone-ink: var(--jam-ink);
 }
 
 .tone-warn {
   --tone: var(--warn);
-  --fill: var(--warn);
+  --tone-ink: var(--warn-ink);
 }
 
 .tone-test {
-  --tone: var(--accent);
-  --fill: var(--accent);
+  --tone: transparent;
+  --tone-ink: var(--accent-ink);
+}
+
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 15rem;
+  text-align: center;
 }
 
 .state-block {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
+/* The state word as a solid badge: one fill per state, dark text on it, and its glyph. */
 .state {
-  min-height: 3rem;
-  color: var(--tone);
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  min-height: 3.25rem;
+  padding: 0.25rem 1rem;
+  border: 1px solid var(--tone-ink);
+  border-radius: var(--radius-lg);
+  background: var(--tone);
+  color: var(--on-tone);
+  font-size: 1.625rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   text-wrap: balance;
-  transition: color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    background-color 200ms var(--ease),
+    border-color 200ms var(--ease);
+}
+
+.tone-idle .state {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.tone-idle .state .icon {
+  color: var(--ink-3);
+}
+
+.tone-test .state {
+  border-width: 2px;
+  color: var(--accent-ink);
 }
 
 /* One line kept for it, so the count below doesn't jump when it appears. */
@@ -225,50 +394,164 @@ p {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  min-height: 1.75rem;
-  font-size: 1.125rem;
-  font-weight: 600;
+  min-height: 1.5rem;
+  color: var(--ink-2);
+  font-size: 1.0625rem;
+  font-weight: 500;
   text-wrap: balance;
 }
 
-.state .icon {
-  margin-right: 0.375rem;
-  vertical-align: -0.12em;
-}
-
 .state-sub .icon {
-  color: var(--ok);
+  color: var(--ok-ink);
 }
 
 .count {
-  font-size: 4.5rem;
-  font-weight: 800;
-  line-height: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: clamp(4.5rem, 28vw, 8rem);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
 }
 
 .count .of {
-  color: var(--muted);
-  font-size: 2.25rem;
+  color: var(--ink-3);
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.count .slash {
+  margin-right: 0.25em;
+  color: var(--line-strong);
 }
 
 /* The count of a run made for another target: still the device's number, but not this target's. */
-.count.old {
-  color: var(--muted);
+.count.old .digits {
+  color: var(--ink-3);
 }
 
-.progress {
-  height: 1.25rem;
-  border-radius: 0.625rem;
+.digits {
+  display: inline-flex;
+}
+
+/* A digit that changed drops into place, like a mechanical counter. Transform only, and short:
+   at 10+ BBs a second the units digit restarts it every ~100 ms and must still read solid. The mono
+   digits never change width, so nothing reflows. */
+.digit {
+  display: inline-block;
+  animation: tick 90ms var(--ease);
+}
+
+@keyframes tick {
+  from {
+    transform: translateY(-0.12em);
+  }
+}
+
+/* The progress rule: a thin track, the fill, a leading edge, and a tick every tenth. */
+.rule {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding-top: 0.5rem;
+}
+
+.rule-track {
+  position: relative;
+  height: 0.375rem;
+  border-radius: 0.1875rem;
+  background: var(--line);
+  container-type: inline-size;
+}
+
+.rule-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--tone-ink);
+  transform: scaleX(var(--p, 0));
+  transform-origin: left;
+  transition:
+    transform 160ms linear,
+    background-color 200ms var(--ease);
+}
+
+.tone-idle .rule-fill {
+  background: var(--ink-3);
+}
+
+/* The edge only shows, and glows, while the motor loads: the glow means « running », nothing else. */
+.rule-edge {
+  position: absolute;
+  top: -0.3125rem;
+  left: -1px;
+  width: 2px;
+  height: 1rem;
+  border-radius: 1px;
+  background: var(--tone-ink);
+  opacity: 0;
+  transform: translateX(calc(var(--p, 0) * 100cqw));
+  transition:
+    transform 160ms linear,
+    opacity 200ms var(--ease);
+}
+
+.tone-run .rule-edge,
+.tone-slow .rule-edge {
+  opacity: 1;
+  box-shadow:
+    0 0 0.5rem 0.125rem color-mix(in oklab, var(--tone) 70%, transparent),
+    0 0 1.25rem 0.25rem color-mix(in oklab, var(--tone) 35%, transparent);
+}
+
+.rule-ticks {
+  display: flex;
+  justify-content: space-between;
+  height: 0.5rem;
+}
+
+.rule-ticks span {
+  width: 1px;
+  height: 0.3125rem;
+  background: var(--line-strong);
+}
+
+.rule-ticks span:nth-child(5n + 1) {
+  height: 0.5rem;
+}
+
+/* The ticks the fill has passed take the state's colour. */
+.rule-ticks span.on {
+  background: var(--tone-ink);
+}
+
+/* Entering « Terminé »: the full green bar pulses once. */
+.tone-ok .rule-fill {
+  animation: done-pulse 700ms var(--ease);
+}
+
+@keyframes done-pulse {
+  40% {
+    box-shadow: 0 0 0.75rem 0.125rem color-mix(in oklab, var(--ok) 60%, transparent);
+  }
+}
+
+/* ---- Panels and fields ---- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
   background: var(--surface);
-  border: 2px solid var(--line);
-  overflow: hidden;
-}
-
-.progress .fill {
-  height: 100%;
-  background: var(--fill);
-  transition: background-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .target {
@@ -278,72 +561,118 @@ p {
 }
 
 .label {
-  color: var(--muted);
-  font-weight: 600;
+  color: var(--ink-2);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Small uppercase labels are mono, like the units. */
+.main .label,
+.group-title {
+  margin: 0;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .stepper {
   display: grid;
   grid-template-columns: 4.5rem 1fr 4.5rem;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .btn.step {
-  min-height: 4.5rem;
-  font-size: 2.25rem;
-  line-height: 1;
+  min-height: 4rem;
+  padding: 0;
+  font-size: 1.75rem;
+}
+
+.btn.step.small {
+  min-height: var(--touch);
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 500;
 }
 
 .field {
   width: 100%;
   min-width: 0;
-  min-height: 4.5rem;
-  border: 2px solid var(--line);
-  border-radius: 0.875rem;
+  min-height: var(--touch);
+  padding: 0 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
   background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  font-size: 2.5rem;
-  font-weight: 800;
-  text-align: center;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.375rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
+  text-align: center;
+  transition:
+    border-color 160ms var(--ease),
+    box-shadow 160ms var(--ease);
+}
+
+.field.big {
+  min-height: 4rem;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .field:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-ink);
+  box-shadow: 0 0 0 1px var(--accent-ink);
 }
 
 .field:disabled {
   border-style: dashed;
-  border-color: var(--off-line);
-  color: var(--off-fg);
+  color: var(--off);
+}
+
+.field.invalid {
+  border-color: var(--jam-ink);
+  box-shadow: 0 0 0 1px var(--jam-ink);
 }
 
 .presets {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .btn.chip {
   padding: 0;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
-.btn.chip.current {
-  border-color: var(--accent);
-  color: var(--accent);
+.btn.chip.current,
+.btn.seg.current {
+  border-color: var(--accent-ink);
+  background: var(--accent-tint);
+  box-shadow: inset 0 0 0 1px var(--accent-ink);
+  color: var(--ink);
 }
 
 /* What clamped a typed target, on a line kept for it. */
 .note {
-  min-height: 1.5rem;
-  color: var(--warn);
+  min-height: 1.25rem;
+  margin-top: -0.25rem;
+  line-height: 1.25rem;
+  color: var(--warn-ink);
+  font-size: 0.9375rem;
   font-weight: 600;
 }
 
-/* GO / STOP at the bottom, under the thumb, whatever scrolls above. */
+/* ---- GO / STOP, under the thumb ---- */
+
 .main {
   padding-bottom: 0;
 }
@@ -352,111 +681,147 @@ p {
   position: sticky;
   bottom: 0;
   z-index: 1;
-  margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem 0 max(1rem, env(safe-area-inset-bottom));
+  gap: 0.625rem;
+  margin: 0 -1rem;
+  padding: 0.75rem 1rem max(1rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
   background: var(--bg);
 }
 
 .dock-hint {
-  font-size: 1.125rem;
-  font-weight: 700;
-  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 600;
   text-wrap: balance;
 }
 
-.dock .btn.go,
-.dock .btn.stop {
+.dock-hint .icon {
+  margin-top: 0.15em;
+  color: var(--warn-ink);
+}
+
+.btn.go,
+.btn.stop {
+  flex-direction: column;
+  gap: 0.125rem;
   width: 100%;
-  min-height: 6.5rem;
-  font-size: 2.75rem;
+  min-height: 6rem;
+  border-radius: var(--radius-lg);
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.btn-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.btn-main .icon {
+  font-size: 0.75em;
+}
+
+.btn.go {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* STOP is ink on the ground's opposite: the loudest thing on screen, but not orange (orange is GO). */
+.btn.stop {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* In Réglages, STOP is always there; it only shouts while a test spin runs. */
+.btn.stop.idle {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .btn-sub {
-  display: block;
-  font-size: 1.125rem;
-  letter-spacing: 0;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.btn.go,
-.btn.stop {
-  min-height: 6rem;
-  border: 0;
-  font-size: 2.25rem;
-  letter-spacing: 0.05em;
-}
-
-.btn.go {
-  background: var(--ok);
-  color: #111214;
-}
-
-.btn.stop {
-  background: var(--danger);
-  color: #111214;
+  gap: 0.5rem;
 }
 
 /* ---- Lost link ---- */
 
 /* Stays on top while the settings screen scrolls; the shadow hides what scrolls past around it. */
 .banner {
+  --b: var(--warn);
+  --b-ink: var(--warn-ink);
   position: sticky;
   top: max(0.75rem, env(safe-area-inset-top));
-  box-shadow: 0 0 0 0.75rem var(--bg);
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.625rem;
   padding: 0.875rem 1rem;
-  border-radius: 0.875rem;
-  background: var(--warn);
-  color: #111214;
-  font-size: 1.25rem;
-  font-weight: 800;
-  text-align: center;
+  border: 1px solid var(--b-ink);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--b) 20%, var(--bg));
+  box-shadow: 0 0 0 0.75rem var(--bg);
+  color: var(--ink);
 }
 
 .banner.lost {
-  background: var(--danger);
+  --b: var(--jam);
+  --b-ink: var(--jam-ink);
+}
+
+.banner-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.banner-title .icon {
+  font-size: 1.25rem;
+  color: var(--b-ink);
 }
 
 .banner-note {
-  font-size: 1.0625rem;
-  font-weight: 700;
-  text-wrap: balance;
+  font-size: 1rem;
+  font-weight: 500;
+  text-wrap: pretty;
 }
 
 .banner-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .banner .btn {
-  border-color: #111214;
-  background: #111214;
-  color: var(--fg);
-  font-size: 1.125rem;
-}
-
-.banner .btn.ghost {
-  background: transparent;
-  color: #111214;
+  font-size: 1.0625rem;
 }
 
 /* The last values the device sent, kept on screen but clearly not live. */
 .stale .battery,
 .stale .hero,
 .stale .pill {
-  opacity: 0.4;
+  opacity: 0.45;
   filter: grayscale(1);
 }
 
@@ -465,174 +830,305 @@ p {
 .bar-title {
   flex: 1;
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.375rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
 .pill {
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--line);
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--tone-ink);
+  border-radius: var(--radius);
+  background: var(--tone);
+  color: var(--on-tone);
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
 
-.pill.active {
-  background: var(--accent);
-  color: #111214;
+.pill.tone-idle {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.pill.tone-test {
+  color: var(--accent-ink);
+}
+
+.settings {
+  gap: 1.5rem;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
 }
 
 .group {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group.save {
   gap: 0.75rem;
 }
 
-.group-title {
-  margin: 0;
-  padding-top: 0.75rem;
-  border-top: 2px solid var(--line);
-  color: var(--muted);
-  font-size: 1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+/* Takes no room while empty: a reserved blank line read as broken padding. An error pushes the form
+   down by its own line, which only happens while something needs fixing. */
+.field-error:empty {
+  display: none;
 }
 
-.field.small {
-  min-height: var(--touch);
-  font-size: 1.5rem;
-}
-
-.field.invalid {
-  border-color: var(--danger);
-}
-
-/* Always there (empty when all is well): an error showing up doesn't push the form down. */
 .field-error {
   display: flex;
   align-items: flex-start;
   gap: 0.375rem;
-  /* Two lines kept: the longest messages wrap once at phone width. */
-  min-height: 2.75em;
-  color: var(--danger);
-  font-size: 0.9375rem;
+  color: var(--jam-ink);
+  font-size: 0.875rem;
   font-weight: 600;
+  line-height: 1.3;
 }
+
+/* A setting on one row: what it is on the left, its value on the right, its error line under both. */
+.target.row {
+  display: grid;
+  grid-template-columns: 1fr 7rem;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+}
+
+.target.row .field-error {
+  grid-column: 1 / -1;
+}
+
 
 .field-error .icon {
   margin-top: 0.15em;
 }
 
-.device-name {
-  color: var(--muted);
-  font-weight: 600;
+.panel .target + .target {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
 }
 
-/* « ← » with unsaved changes. */
+.panel .btn.toggle {
+  padding: 0;
+  border-color: var(--line) transparent transparent;
+  border-radius: 0;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.panel .btn.toggle:disabled {
+  border-width: 1px 0 0;
+}
+
+.device-name {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+}
+
+.settings .btn.primary,
+.settings .actions .btn {
+  min-height: 4rem;
+  font-size: 1.25rem;
+}
+
+.settings .btn.stop {
+  min-height: 4.5rem;
+  font-size: 1.75rem;
+}
+
+.panel.testing {
+  border-color: var(--accent-ink);
+}
+
+.spin-live {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--accent-ink);
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+/* Sens inversé: the word and a switch, the word carries it. */
+.btn.toggle {
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 0.75rem 0 1rem;
+  background: transparent;
+}
+
+.toggle-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toggle-word {
+  min-width: 2.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+
+.switch {
+  position: relative;
+  width: 3rem;
+  height: 1.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 1rem;
+  background: var(--surface-2);
+  transition:
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease);
+}
+
+.knob {
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.3125rem;
+  height: 1.3125rem;
+  border-radius: 50%;
+  background: var(--ink-2);
+  transition:
+    transform 180ms var(--ease),
+    background-color 160ms var(--ease);
+}
+
+.btn.toggle.on .switch {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.btn.toggle.on .knob {
+  background: var(--on-accent);
+  transform: translateX(1.1875rem);
+}
+
+/* ---- Choices (language, theme) ---- */
+
+.choice {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.center .choice {
+  max-width: 22rem;
+}
+
+.btn.seg {
+  padding: 0 0.5rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 1.0625rem;
+}
+
+.btn.seg.current {
+  color: var(--ink);
+}
+
+/* ---- « ← » with unsaved changes ---- */
+
 .confirm {
   width: min(26rem, calc(100% - 2rem));
   padding: 1.25rem;
-  border: 2px solid var(--line);
-  border-radius: 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75rem;
   background: var(--surface);
-  color: var(--fg);
+  color: var(--ink);
+  box-shadow: 0 1.5rem 3rem -1rem rgb(0 0 0 / 0.5);
+  transition:
+    opacity 180ms var(--ease),
+    transform 180ms var(--ease),
+    overlay 180ms allow-discrete,
+    display 180ms allow-discrete;
+}
+
+@starting-style {
+  .confirm[open] {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
 }
 
 .confirm::backdrop {
-  background: rgb(0 0 0 / 0.75);
+  background: rgb(0 0 0 / 0.65);
 }
 
 .confirm-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
+  margin: 0 0 0.375rem;
+  font-size: 1.375rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.confirm-body {
+  color: var(--ink-2);
+  font-size: 1.0625rem;
+}
+
+.warn-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  color: var(--ink);
+}
+
+.warn-line .icon {
+  margin-top: 0.15em;
+  color: var(--warn-ink);
 }
 
 .confirm-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-top: 1.25rem;
-}
-
-.btn.step.small {
-  font-size: 1.5rem;
-}
-
-.btn.toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 0.5rem 0 1rem;
-}
-
-.toggle-value {
-  min-width: 4.5rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--line);
-  text-align: center;
-}
-
-.btn.toggle.on {
-  border-color: var(--accent);
-}
-
-.btn.toggle.on .toggle-value {
-  background: var(--accent);
-  color: #111214;
-}
-
-.settings .btn.primary,
-.settings .actions .btn {
-  min-height: 4.5rem;
-  font-size: 1.5rem;
-}
-
-.settings .btn.stop {
-  min-height: 6rem;
-}
-
-.spin-live {
-  color: var(--accent);
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
-/* ---- Language ---- */
-
-.langs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.center .langs {
-  max-width: 20rem;
-}
-
-.btn.lang {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.btn.lang.current {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 
 /* ---- Off ---- */
 
-/* Flat, no fill, dashed edge, grey text: reads as "not now" in sunlight, where a faded colour still
-   looks live. Last in the file so it wins over every button style above. */
+/* Flat, no fill, dashed edge, dimmer text: reads as "not now" in sunlight, where a faded colour
+   still looks live. Last in the file so it wins over every button style above. */
 .btn:disabled,
 .btn.chip.current:disabled,
 .btn.toggle.on:disabled {
-  border: 2px dashed var(--off-line);
+  border: 1px dashed var(--line-strong);
   background: transparent;
-  color: var(--off-fg);
+  box-shadow: none;
+  color: var(--off);
   cursor: not-allowed;
 }
 
-.btn:disabled .toggle-value {
+.btn:disabled .switch {
+  border-style: dashed;
   background: transparent;
-  color: inherit;
+}
+
+.btn:disabled .knob {
+  background: var(--off);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

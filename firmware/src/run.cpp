@@ -13,6 +13,7 @@ static bool isRunning(State s) { return s == State::Running || s == State::Slowd
 Speed Run::speed() const {
   if (state_ == State::Running) return Speed::Full;
   if (state_ == State::Slowdown) return Speed::Slow;
+  if (state_ == State::Testing) return testSpeed_;
   return Speed::Off;
 }
 
@@ -32,7 +33,7 @@ bool Run::setTiming(uint8_t slowdownN, uint16_t jamTimeoutMs) {
 }
 
 bool Run::go(uint32_t nowMs, bool batteryOk) {
-  if (isRunning(state_)) return false;
+  if (isRunning(state_) || state_ == State::Testing) return false;
   if (!batteryOk) {
     state_ = State::LowBatt;
     return false;
@@ -44,8 +45,19 @@ bool Run::go(uint32_t nowMs, bool batteryOk) {
   return true;
 }
 
+bool Run::test(Speed speed, bool batteryOk) {
+  if (isRunning(state_) || speed == Speed::Off) return false;
+  if (!batteryOk) {
+    state_ = State::LowBatt;
+    return false;
+  }
+  state_ = State::Testing;
+  testSpeed_ = speed;
+  return true;
+}
+
 void Run::lowBattery() {
-  if (isRunning(state_)) state_ = State::LowBatt;
+  if (isRunning(state_) || state_ == State::Testing) state_ = State::LowBatt;
 }
 
 void Run::update(uint32_t nowMs, uint32_t count) {

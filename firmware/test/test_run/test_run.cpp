@@ -259,6 +259,85 @@ static void test_servo_pulse_and_duty() {
   TEST_ASSERT_EQUAL_UINT32(16384, servoDuty(20000, 14));
 }
 
+// ---- Test spins (TESTING) ----
+
+static void test_test_spin_entered_from_rest_states_at_its_speed() {
+  Run run(kCfg);
+  TEST_ASSERT_TRUE(run.test(Speed::Full, true));
+  assertState(State::Testing, run);
+  TEST_ASSERT_EQUAL(Speed::Full, run.speed());
+  TEST_ASSERT_TRUE(run.test(Speed::Slow, true));  // switching speed while testing
+  TEST_ASSERT_EQUAL(Speed::Slow, run.speed());
+  run.stop();
+  assertState(State::Idle, run);
+  TEST_ASSERT_EQUAL(Speed::Off, run.speed());
+
+  // From DONE and JAM, like GO.
+  run.setTarget(5);
+  run.go(0, true);
+  run.update(10, 5);
+  assertState(State::Done, run);
+  TEST_ASSERT_TRUE(run.test(Speed::Full, true));
+  run.stop();
+  run.go(0, true);
+  run.update(FIRST_BB_TIMEOUT_MS, 0);
+  assertState(State::Jam, run);
+  TEST_ASSERT_TRUE(run.test(Speed::Slow, true));
+  assertState(State::Testing, run);
+  TEST_ASSERT_FALSE(run.test(Speed::Off, true));
+}
+
+static void test_test_spin_refused_during_a_run_and_on_low_battery() {
+  Run run(kCfg);
+  run.go(0, true);
+  TEST_ASSERT_FALSE(run.test(Speed::Full, true));
+  assertState(State::Running, run);
+  run.update(10, 50 - SLOWDOWN_N);
+  assertState(State::Slowdown, run);
+  TEST_ASSERT_FALSE(run.test(Speed::Full, true));
+  assertState(State::Slowdown, run);
+
+  Run low(kCfg);
+  TEST_ASSERT_FALSE(low.test(Speed::Full, false));
+  assertState(State::LowBatt, low);
+  TEST_ASSERT_EQUAL(Speed::Off, low.speed());
+}
+
+static void test_test_spin_never_counts_nor_jams() {
+  Run run(kCfg);
+  run.setTarget(10);
+  run.test(Speed::Full, true);
+  TEST_ASSERT_FALSE(run.counting());
+  run.update(60000, 0);  // far past any jam timeout
+  assertState(State::Testing, run);
+  run.update(60001, 500);  // past the target: not DONE either
+  assertState(State::Testing, run);
+  TEST_ASSERT_EQUAL(Speed::Full, run.speed());
+
+  // The counter, disabled as main.cpp does from counting(), counts nothing.
+  Counter counter(IR_MIN_INTERVAL_US);
+  counter.arm(10);
+  counter.enabled = run.counting();
+  TEST_ASSERT_FALSE(counter.pulse(1000000));
+  TEST_ASSERT_EQUAL_UINT32(0, counter.count);
+}
+
+static void test_go_ignored_while_testing_and_target_still_settable() {
+  Run run(kCfg);
+  run.test(Speed::Slow, true);
+  TEST_ASSERT_FALSE(run.go(0, true));
+  assertState(State::Testing, run);
+  TEST_ASSERT_EQUAL_UINT16(120, run.setTarget(120));
+}
+
+static void test_test_spin_stops_on_battery_sag() {
+  Run run(kCfg);
+  run.test(Speed::Full, true);
+  run.lowBattery();
+  assertState(State::LowBatt, run);
+  TEST_ASSERT_EQUAL(Speed::Off, run.speed());
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_run_to_done_with_slowdown_at_target_minus_n);
@@ -282,5 +361,10 @@ int main() {
   RUN_TEST(test_counter_survives_micros_wraparound);
   RUN_TEST(test_counter_signals_target_once_and_ignores_when_disabled);
   RUN_TEST(test_servo_pulse_and_duty);
+  RUN_TEST(test_test_spin_entered_from_rest_states_at_its_speed);
+  RUN_TEST(test_test_spin_refused_during_a_run_and_on_low_battery);
+  RUN_TEST(test_test_spin_never_counts_nor_jams);
+  RUN_TEST(test_go_ignored_while_testing_and_target_still_settable);
+  RUN_TEST(test_test_spin_stops_on_battery_sag);
   return UNITY_END();
 }

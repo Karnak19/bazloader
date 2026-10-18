@@ -15,9 +15,11 @@ The logic lives in files with no Arduino include, so the `native` env compiles t
 tests in `test/`: the run (state machine, BB counter, servo pulse maths) in `src/run.cpp`, the
 battery guard in `src/battery.cpp`, the saved settings (validation, defaults, delayed target save)
 in `src/settings.cpp`, the encoder, buttons, presets and what GO or a click does in
-`src/controls.cpp`, and what the OLED shows in `src/screen.cpp`. `main.cpp` is the thin Arduino
+`src/controls.cpp`, what the OLED shows in `src/screen.cpp`, and the BLE write decoding and
+notification rules in `src/ble_logic.cpp`. `main.cpp` is the thin Arduino
 layer (IR and encoder interrupts, LEDC servo output, battery ADC, simulator, serial commands),
-`display.cpp` draws the screen with U8g2, and `nvs_store.cpp` reads and writes NVS.
+`display.cpp` draws the screen with U8g2, `nvs_store.cpp` reads and writes NVS, and `ble.cpp` is
+the NimBLE glue.
 
 The first build downloads the toolchain and takes a few minutes.
 
@@ -65,6 +67,7 @@ try `OLED_I2C_ADDRESS = 0x3D`.
 | `t<n>`  | set the target (clamped to 1–9999, ignored during a run)       |
 | `g`     | start a run                                                   |
 | `s`     | stop, from any state; the count stays                         |
+| `T`, `Ts` | test spin at full (`T`) or slow (`Ts`) speed until stop (`s`, GO or a click) |
 | `?`     | print state, count, target, battery (`USB` when no pack) and OLED redraw time |
 | `c`     | print the settings: servo/run config, presets, saved target    |
 | `c<neutral>,<full>,<slow>,<rev>,<n>,<jam>` | set the config, e.g. `c1500,300,100,0,4,1500` (refused during a run or out of range) |
@@ -76,6 +79,32 @@ gives the stop latency (target BB to servo cut), and on the way back to IDLE the
 
 In the sim, fake BBs arrive at `SIM_BB_PER_SECOND` only while the servo is commanded to turn, from
 a hopper of `SIM_HOPPER_CAPACITY` refilled at each `g`. A target above it ends in JAM.
+
+## Bluetooth (BLE)
+
+The GATT service is the one in `web/src/content/docs/protocole-ble.md` (NimBLE-Arduino 2.x). The
+device advertises as `BULLOADER`: the service UUID in the advertising packet, the name in the scan
+response (both together are 32 bytes, one over the limit). One client at a time; advertising
+restarts on disconnect. No pairing: anyone in range can drive it, a deliberate choice for now. Wi-Fi
+is never started.
+
+The NimBLE callbacks run on the NimBLE task, not in `loop()`. They only decode a write and put it
+on a FreeRTOS queue (8 entries); `loop()` takes it from there and applies it through the same hooks
+as the controls and the serial commands (`run.setTarget`, `go`, `stop`, test spin, `setConfig`,
+`setPresets`). Then, every pass, `loop()` sets and notifies whatever changed, whatever changed it:
+
+- `target` and `state` on every change; `count` at most every 50 ms, the final value of a run
+  always (it goes out with the state change, before it); `battery` every 5 s (0 on USB).
+- `presets` and `config` have no notify property: their value is kept current for reads.
+- A write is ignored when its length is wrong, the config version isn't 1 or the command is
+  unknown. Writes to `target` or `config` during a run (or a test spin, for `config`) are ignored.
+  Every write to `target`, `presets` or `config` is answered with the real value, taken or not, so
+  the app corrects itself. `presets` are taken during a run: they only change the next preset click.
+
+A test spin (commands 2 and 3, state `testing`, « Test moteur » on the OLED) turns the servo at
+full or slow speed until stop: nothing is counted and there's no jam timer. It starts from the
+same states as GO, never during a run, and switches speed if already spinning. Stop, GO or an
+encoder click ends it, and so does a BLE disconnect (a normal run carries on: it ends on its own).
 
 ## Battery
 

@@ -15,7 +15,7 @@ coinciden, manda `config.h`.**
 
 | GPIO | Función                                   | A tener en cuenta                                                                          |
 | ---- | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 0    | Tensión de la batería (entrada analógica) | A través de un divisor de tensión de 100 kΩ / 27 kΩ, con un condensador de 100 nF a masa.  |
+| 0    | Tensión de la batería (entrada analógica) | A través de un divisor de tensión de 100 kΩ / 20 kΩ, con un condensador de 100 nF a masa.  |
 | 1    | Fototransistor IR                         | Resistencia de pull-up de 10 kΩ a 3,3 V. La señal sube cuando una bola corta el haz.       |
 | 3    | Señal del servo (PWM)                     | Solo el cable de control: el servo se alimenta directamente de la batería.                 |
 | 4    | Botón GO                                  | Contacto seco entre GPIO 4 y GND, nada más. Totalmente desconectado del antiguo circuito de 12 V. |
@@ -43,7 +43,7 @@ da el pin 3V3 del ESP32. Todos los símbolos de masa están unidos entre sí.
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
 <title id="wiring-title">Esquema de cableado del BULLOADER+</title>
-<desc id="wiring-desc">La batería LiPo pasa por el interruptor y luego alimenta directamente el servo (con un condensador de 470 µF al lado), el convertidor de 5 V que alimenta el pin 5V del ESP32, y el divisor de 100 kΩ / 27 kΩ hacia GPIO 0 con 100 nF a masa. El servo recibe su señal en GPIO 3. A 3,3 V: el LED IR con 220 Ω, el fototransistor con una resistencia de pull-up de 10 kΩ hacia GPIO 1, el encoder KY-040 (CLK 5, DT 6, SW 7) y la OLED (SDA 10, SCL 20). El botón GO une GPIO 4 a masa. Masa común.</desc>
+<desc id="wiring-desc">La batería LiPo pasa por el interruptor y luego alimenta directamente el servo (con un condensador de 470 µF al lado), el convertidor de 5 V que alimenta el pin 5V del ESP32, y el divisor de 100 kΩ / 20 kΩ hacia GPIO 0 con 100 nF a masa. El servo recibe su señal en GPIO 3. A 3,3 V: el LED IR con 220 Ω, el fototransistor con una resistencia de pull-up de 10 kΩ hacia GPIO 1, el encoder KY-040 (CLK 5, DT 6, SW 7) y la OLED (SDA 10, SCL 20). El botón GO une GPIO 4 a masa. Masa común.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
 :root[data-theme='light'] .wiring { --vbat: #c92a2a; --v5: #c2410c; --v33: #2b8a3e; --warn: #c92a2a; }
@@ -109,9 +109,8 @@ da el pin 3V3 del ESP32. Todos los símbolos de masa están unidos entre sí.
 <circle class="dot" cx="260" cy="270" r="4"/>
 <path class="w vbat" d="M260 270H285"/>
 <rect class="box" x="285" y="240" width="105" height="60" rx="6"/>
-<text class="b m" x="337" y="260">Buck</text>
-<text class="s m" x="337" y="277">ajustado</text>
-<text class="s m" x="337" y="292">a 5,0 V</text>
+<text class="b m" x="337" y="264">Buck</text>
+<text class="s m" x="337" y="284">salida 5,0 V</text>
 <path class="w v5" d="M390 270H430"/>
 <text class="s v5 m" x="410" y="262">5 V</text>
 <path class="w" d="M337 300V318"/>
@@ -127,13 +126,13 @@ da el pin 3V3 del ESP32. Todos los símbolos de masa están unidos entre sí.
 <path class="w" d="M260 420H430"/>
 <circle class="dot" cx="335" cy="420" r="4"/>
 <rect class="part" x="252" y="435" width="16" height="45"/>
-<text class="s" x="276" y="463">27 kΩ</text>
+<text class="s" x="276" y="463">20 kΩ</text>
 <path class="w" d="M260 480V498"/>
 <use href="#gnd" x="260" y="500"/>
 <path class="w" d="M335 420V448M321 448H349M321 456H349M335 456V498"/>
 <use href="#gnd" x="335" y="500"/>
 <text class="s" x="355" y="457">100 nF</text>
-<text class="s m" x="370" y="410">≈ 1,8 V máx.</text>
+<text class="s m" x="370" y="410">≈ 1,4 V máx.</text>
 <!-- ESP32 -->
 <rect class="box" x="430" y="230" width="160" height="460" rx="8"/>
 <text class="b m" x="495" y="580">ESP32-C3</text>
@@ -234,8 +233,8 @@ da el pin 3V3 del ESP32. Todos los símbolos de masa están unidos entre sí.
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Batería LiPo 2S                   | `+` al interruptor general, `−` a la masa común.                                                                                     |
 | Servo                             | `+` a la batería después del interruptor (no a los 5 V), `−` a masa, señal en GPIO 3. Condensador de 470 µF 16 V entre `+` y masa, lo más cerca posible del servo, con la pata `+` del lado de la batería. |
-| Convertidor de 5 V (MP1584)       | Entrada en la batería después del interruptor, salida ajustada a 5,0 V hacia el pin **5V** del ESP32, masa común.                   |
-| Divisor de tensión de la batería  | Batería → 100 kΩ → GPIO 0 → 27 kΩ → masa. Condensador de 100 nF entre GPIO 0 y masa. A 8,4 V, el pin ve unos 1,8 V.                 |
+| Convertidor de 5 V (MP1584)       | Entrada en la batería después del interruptor, salida a 5,0 V (comprobada con el multímetro) hacia el pin **5V** del ESP32, masa común. |
+| Divisor de tensión de la batería  | Batería → 100 kΩ → GPIO 0 → 20 kΩ → masa. Condensador de 100 nF entre GPIO 0 y masa. A 8,4 V, el pin ve 8,4 × 20 / 120 = 1,40 V. No pongas una de 47 kΩ en su lugar: el pin vería unos 2,7 V, demasiado para que el ADC del C3 mida bien. |
 | LED IR de 940 nm                  | 3,3 V → 220 Ω → ánodo del LED, cátodo a masa. Está siempre encendido (unos 10 mA).                                                   |
 | Fototransistor de 940 nm          | Colector en GPIO 1, con una resistencia de 10 kΩ de GPIO 1 a 3,3 V. Emisor a masa. Frente al LED, al otro lado del tubo.            |
 | Encoder KY-040                    | `CLK` → GPIO 5, `DT` → GPIO 6, `SW` → GPIO 7, `+` → **3,3 V**, `GND` → masa.                                                          |
@@ -247,9 +246,10 @@ da el pin 3V3 del ESP32. Todos los símbolos de masa están unidos entre sí.
 Hazlo en este orden, antes de conectar nada más. Apunta cada valor que midas en la
 [tabla de mediciones](#mediciones) de más abajo.
 
-1. **Ajusta el convertidor a 5,0 V con el multímetro, con el ESP32 desconectado.** Un MP1584 suele
-   salir de fábrica con una tensión cualquiera, a veces cercana a la de la batería, lo que
-   destruiría el ESP32.
+1. **Mide (y si es regulable, ajusta) la salida del convertidor a 5,0 V con el multímetro, con el
+   ESP32 desconectado.** Una versión de 5 V fija no tiene nada que ajustar, pero mídela igualmente.
+   Una regulable suele salir de fábrica con una tensión cualquiera, a veces cercana a la de la
+   batería, lo que destruiría el ESP32.
 2. **Compara la tensión máxima del servo con los 8,4 V de la batería cargada.** Va conectado
    directamente a la batería, y muchos servos «35 kg» solo aguantan hasta 6,8 V y mueren por
    encima. Si su tensión nominal es inferior a 8,4 V, necesita su propio regulador (un BEC o un

@@ -26,7 +26,7 @@ Upgrade du BULLOADER (chargeur de billes airsoft électrique imprimé en 3D, Mak
 | ESP32-C3 SuperMini                               | MCU, BLE 5                                          |
 | Servo 35 kg 360° (rotation continue)             | Entraînement existant du BULLOADER                  |
 | LiPo 7,4 V (2S)                                  | Alimentation existante                              |
-| Buck MP1584 réglé à 5,0 V                        | Alim de l'ESP32 (pin 5V)                            |
+| Buck MP1584 5 V (fixe, ou réglable mis à 5,0 V)  | Alim de l'ESP32 (pin 5V)                            |
 | LED IR 3 mm 940 nm + phototransistor 3 mm 940 nm | Barrière de comptage sur l'inner barrel de sortie   |
 | Encodeur KY-040                                  | Réglage du nombre + clic                            |
 | OLED 0,96" I2C SSD1306 128×64                    | Affichage                                           |
@@ -56,11 +56,11 @@ Upgrade du BULLOADER (chargeur de billes airsoft électrique imprimé en 3D, Mak
 ### Câblage électrique
 
 - LiPo → interrupteur → servo (direct, 7,4 V nominal / 8,4 V max ; vérifier la plage du servo) + 470 µF au plus près du servo.
-- LiPo → interrupteur → buck 5 V → pin 5V de l'ESP32. **Régler le buck au multimètre avant de brancher l'ESP32.**
+- LiPo → interrupteur → buck 5 V → pin 5V de l'ESP32. **Mesurer (et si réglable, régler) la sortie du buck à 5,0 V au multimètre avant de brancher l'ESP32.**
 - Masse commune pour tout.
 - LED IR : 3,3 V → 220 Ω → LED → GND (allumée en permanence, ~10 mA).
 - Phototransistor : collecteur → GPIO 1 avec pull-up 10 kΩ vers 3,3 V, émetteur → GND. À ajuster selon l'alignement ; prévoir une lecture analogique avec seuil si le signal numérique n'est pas assez franc.
-- Pont diviseur batterie : 100 kΩ (haut) / 27 kΩ (bas) → 8,4 V donne ~1,79 V à l'ADC. Calibrer par une constante dans `config.h`.
+- Pont diviseur batterie : 100 kΩ (haut) / 20 kΩ (bas) → 8,4 V donne ~1,40 V à l'ADC. Calibrer par une constante dans `config.h`.
 - Ne pas alimenter par USB et par le buck en même temps tant qu'on n'a pas vérifié la présence d'une diode de protection sur la carte.
 
 ---

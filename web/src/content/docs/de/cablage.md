@@ -15,7 +15,7 @@ beiden einmal voneinander abweichen, gilt `config.h`.**
 
 | GPIO | Funktion                              | Gut zu wissen                                                                              |
 | ---- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 0    | Akkuspannung (Analogeingang)          | Über einen Spannungsteiler 100 kΩ / 27 kΩ, mit einem 100-nF-Kondensator gegen Masse.       |
+| 0    | Akkuspannung (Analogeingang)          | Über einen Spannungsteiler 100 kΩ / 20 kΩ, mit einem 100-nF-Kondensator gegen Masse.       |
 | 1    | IR-Fototransistor                     | Pull-up-Widerstand 10 kΩ nach 3,3 V. Das Signal geht auf High, wenn eine BB den Strahl unterbricht. |
 | 3    | Servosignal (PWM)                     | Nur die Steuerleitung: Das Servo wird direkt aus dem Akku versorgt.                        |
 | 4    | GO-Taster                             | Ein einfacher Kontakt zwischen GPIO 4 und GND, sonst nichts. Vollständig vom alten 12-V-Stromkreis getrennt. |
@@ -43,7 +43,7 @@ Massesymbole sind miteinander verbunden.
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
 <title id="wiring-title">Schaltplan des BULLOADER+</title>
-<desc id="wiring-desc">Der LiPo-Akku geht über den Schalter und versorgt dann direkt das Servo (mit einem 470-µF-Kondensator daneben), den 5-V-Wandler, der den 5V-Pin des ESP32 speist, und den Spannungsteiler 100 kΩ / 27 kΩ an GPIO 0 mit 100 nF gegen Masse. Das Servo bekommt sein Signal an GPIO 3. An 3,3 V: die IR-LED mit 220 Ω, der Fototransistor mit einem 10-kΩ-Pull-up an GPIO 1, der Drehgeber KY-040 (CLK 5, DT 6, SW 7) und das OLED (SDA 10, SCL 20). Der GO-Taster verbindet GPIO 4 mit Masse. Gemeinsame Masse.</desc>
+<desc id="wiring-desc">Der LiPo-Akku geht über den Schalter und versorgt dann direkt das Servo (mit einem 470-µF-Kondensator daneben), den 5-V-Wandler, der den 5V-Pin des ESP32 speist, und den Spannungsteiler 100 kΩ / 20 kΩ an GPIO 0 mit 100 nF gegen Masse. Das Servo bekommt sein Signal an GPIO 3. An 3,3 V: die IR-LED mit 220 Ω, der Fototransistor mit einem 10-kΩ-Pull-up an GPIO 1, der Drehgeber KY-040 (CLK 5, DT 6, SW 7) und das OLED (SDA 10, SCL 20). Der GO-Taster verbindet GPIO 4 mit Masse. Gemeinsame Masse.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
 :root[data-theme='light'] .wiring { --vbat: #c92a2a; --v5: #c2410c; --v33: #2b8a3e; --warn: #c92a2a; }
@@ -109,9 +109,8 @@ Massesymbole sind miteinander verbunden.
 <circle class="dot" cx="260" cy="270" r="4"/>
 <path class="w vbat" d="M260 270H285"/>
 <rect class="box" x="285" y="240" width="105" height="60" rx="6"/>
-<text class="b m" x="337" y="260">Buck</text>
-<text class="s m" x="337" y="277">eingestellt</text>
-<text class="s m" x="337" y="292">auf 5,0 V</text>
+<text class="b m" x="337" y="264">Buck</text>
+<text class="s m" x="337" y="284">Ausgang 5,0 V</text>
 <path class="w v5" d="M390 270H430"/>
 <text class="s v5 m" x="410" y="262">5 V</text>
 <path class="w" d="M337 300V318"/>
@@ -127,13 +126,13 @@ Massesymbole sind miteinander verbunden.
 <path class="w" d="M260 420H430"/>
 <circle class="dot" cx="335" cy="420" r="4"/>
 <rect class="part" x="252" y="435" width="16" height="45"/>
-<text class="s" x="276" y="463">27 kΩ</text>
+<text class="s" x="276" y="463">20 kΩ</text>
 <path class="w" d="M260 480V498"/>
 <use href="#gnd" x="260" y="500"/>
 <path class="w" d="M335 420V448M321 448H349M321 456H349M335 456V498"/>
 <use href="#gnd" x="335" y="500"/>
 <text class="s" x="355" y="457">100 nF</text>
-<text class="s m" x="370" y="410">≈ 1,8 V max.</text>
+<text class="s m" x="370" y="410">≈ 1,4 V max.</text>
 <!-- ESP32 -->
 <rect class="box" x="430" y="230" width="160" height="460" rx="8"/>
 <text class="b m" x="495" y="580">ESP32-C3</text>
@@ -235,8 +234,8 @@ Massesymbole sind miteinander verbunden.
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | 2S-LiPo-Akku                  | `+` an den Hauptschalter, `−` an die gemeinsame Masse.                                                                               |
 | Servo                         | `+` an den Akku hinter dem Schalter (nicht an die 5 V), `−` an Masse, Signal an GPIO 3. Ein Kondensator 470 µF 16 V zwischen `+` und Masse, so nah wie möglich am Servo, mit dem `+`-Bein auf der Akkuseite. |
-| 5-V-Wandler (MP1584)          | Eingang am Akku hinter dem Schalter, Ausgang auf 5,0 V eingestellt, an den **5V**-Pin des ESP32, gemeinsame Masse.                   |
-| Akku-Spannungsteiler          | Akku → 100 kΩ → GPIO 0 → 27 kΩ → Masse. Ein 100-nF-Kondensator zwischen GPIO 0 und Masse. Bei 8,4 V sieht der Pin etwa 1,8 V.        |
+| 5-V-Wandler (MP1584)          | Eingang am Akku hinter dem Schalter, Ausgang 5,0 V (mit dem Multimeter geprüft), an den **5V**-Pin des ESP32, gemeinsame Masse.       |
+| Akku-Spannungsteiler          | Akku → 100 kΩ → GPIO 0 → 20 kΩ → Masse. Ein 100-nF-Kondensator zwischen GPIO 0 und Masse. Bei 8,4 V sieht der Pin 8,4 × 20 / 120 = 1,40 V. Keinen 47 kΩ stattdessen nehmen: Der Pin sähe dann etwa 2,7 V, zu viel, als dass der ADC des C3 noch gut misst. |
 | IR-LED 940 nm                 | 3,3 V → 220 Ω → Anode der LED, Kathode an Masse. Sie leuchtet ständig (etwa 10 mA).                                                  |
 | Fototransistor 940 nm         | Kollektor an GPIO 1, mit einem 10-kΩ-Widerstand von GPIO 1 nach 3,3 V. Emitter an Masse. Gegenüber der LED, auf der anderen Seite des Rohrs. |
 | Drehgeber KY-040              | `CLK` → GPIO 5, `DT` → GPIO 6, `SW` → GPIO 7, `+` → **3,3 V**, `GND` → Masse.                                                         |
@@ -248,9 +247,10 @@ Massesymbole sind miteinander verbunden.
 In dieser Reihenfolge, bevor du irgendetwas anderes anschließt. Trag jeden gemessenen Wert unten in
 die [Tabelle der Messwerte](#messwerte) ein.
 
-1. **Den Wandler mit dem Multimeter auf 5,0 V einstellen, ESP32 abgeklemmt.** Ein MP1584 kommt ab
-   Werk oft mit irgendeiner Spannung, manchmal nahe an der des Akkus, und die würde den ESP32
-   zerstören.
+1. **Den Ausgang des Wandlers mit dem Multimeter auf 5,0 V prüfen (und, wenn er einstellbar ist,
+   einstellen), ESP32 abgeklemmt.** Eine Version mit festen 5 V muss nicht eingestellt werden, wird
+   aber trotzdem gemessen. Eine einstellbare kommt ab Werk oft mit irgendeiner Spannung, manchmal
+   nahe an der des Akkus, und die würde den ESP32 zerstören.
 2. **Die Maximalspannung des Servos mit den 8,4 V des vollen Akkus vergleichen.** Es hängt direkt
    am Akku, und viele „35-kg“-Servos sind nur bis 6,8 V ausgelegt und gehen darüber kaputt. Ist es
    für weniger als 8,4 V spezifiziert, braucht es einen eigenen Regler (ein BEC oder einen zweiten

@@ -87,8 +87,9 @@ constexpr uint16_t OLED_BLINK_MS = 500;
 // ---- Battery (2S LiPo) ----
 constexpr uint16_t BATT_WARN_MV   = 7000; // warn below this
 constexpr uint16_t BATT_REFUSE_MV = 6600; // refuse to start below this
-// Divider: 100k on top, 27k to GND -> V_batt = V_adc * (100 + 27) / 27.
-constexpr float BATT_DIVIDER_RATIO = (100.0f + 27.0f) / 27.0f;
+// Divider: 100k on top, 20k to GND -> V_batt = V_adc * (100 + 20) / 20. 8.4 V gives 1.40 V at
+// the pin. (No 27k in the usual 30-value kits; 47k would give 2.7 V, too high for the C3 ADC.)
+constexpr float BATT_DIVIDER_RATIO = (100.0f + 20.0f) / 20.0f;
 constexpr float BATT_CALIBRATION   = 1.0f; // tweak after measuring with a multimeter
 // Leaving LOW_BATT (and the warning) needs this much above the threshold, so noise can't flicker.
 constexpr uint16_t BATT_HYSTERESIS_MV = 100;

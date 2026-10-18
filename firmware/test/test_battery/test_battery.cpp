@@ -21,9 +21,9 @@ static void feed(Battery& b, uint32_t* now, uint32_t mv, int n, bool running = f
 }
 
 static void test_adc_scaling() {
-  // 1500 mV at the pin through 100k/27k is 7056 mV at the pack.
-  TEST_ASSERT_EQUAL_UINT32(7056, batteryMvFromAdc(1500, BATT_DIVIDER_RATIO, 1.0f));
-  TEST_ASSERT_EQUAL_UINT32(7126, batteryMvFromAdc(1500, BATT_DIVIDER_RATIO, 1.01f));
+  // 1200 mV at the pin through 100k/20k is 7200 mV at the pack.
+  TEST_ASSERT_EQUAL_UINT32(7200, batteryMvFromAdc(1200, BATT_DIVIDER_RATIO, 1.0f));
+  TEST_ASSERT_EQUAL_UINT32(7272, batteryMvFromAdc(1200, BATT_DIVIDER_RATIO, 1.01f));
   TEST_ASSERT_EQUAL_UINT32(0, batteryMvFromAdc(0, BATT_DIVIDER_RATIO, 1.0f));
 }
 

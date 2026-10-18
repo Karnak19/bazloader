@@ -11,10 +11,12 @@ pio run -e sim       # SIMULATE_IR: fake BB pulses, no mechanism needed
 pio test -e native   # run logic tests on this computer, no board needed
 ```
 
-The run logic (state machine, BB counter, servo pulse maths) lives in `src/run.cpp` and the
-battery guard in `src/battery.cpp`, both with no Arduino include, so the `native` env compiles them
-alone with the tests in `test/`. `main.cpp` is the thin Arduino layer: IR interrupt, LEDC servo
-output, battery ADC, simulator, serial commands.
+The logic lives in files with no Arduino include, so the `native` env compiles them alone with the
+tests in `test/`: the run (state machine, BB counter, servo pulse maths) in `src/run.cpp`, the
+battery guard in `src/battery.cpp`, the encoder, buttons, presets and what GO or a click does in
+`src/controls.cpp`, and what the OLED shows in `src/screen.cpp`. `main.cpp` is the thin Arduino
+layer (IR and encoder interrupts, LEDC servo output, battery ADC, simulator, serial commands), and
+`display.cpp` draws the screen with U8g2.
 
 The first build downloads the toolchain and takes a few minutes.
 
@@ -32,14 +34,37 @@ If the board doesn't show up as a serial port (blank chip, or crashed firmware h
 hold **BOOT**, press and release **RESET** (or plug it in while holding BOOT), release BOOT, then
 upload again. Press RESET after the upload to run it.
 
-## Serial commands (temporary, until the OLED and BLE exist)
+## Controls and display
+
+| Control        | Effect                                                                    |
+| -------------- | ------------------------------------------------------------------------- |
+| Encoder turn   | target ±1 per detent, ±10 when detents come less than 30 ms apart; 1–9999 |
+| Encoder click  | next preset (30 → 50 → 120 → 300 → 30); during a run, stop (on the press) |
+| Long click     | held 800 ms: reserved for the settings menu, does nothing yet             |
+| GO             | start from Prêt, Terminé, Bourrage or Batterie faible; stop otherwise     |
+
+The target can't change during a run, whatever drives it. GO in « Batterie faible » does nothing
+while the pack is still low.
+
+The OLED (SSD1306 128×64, I2C on SDA 10 / SCL 20 at 400 kHz, address `OLED_I2C_ADDRESS`) shows the
+state in French, the battery (`7.4 V`, `USB`, with a warning triangle when low), and the target at
+rest or `count / target` during and after a run. It redraws only when that changes, at most every
+100 ms. A full redraw blocks `loop()` for the I2C transfer (~25 ms expected): the boot log and `?`
+print the measured time. The stop doesn't wait for it, since the count interrupt cuts the servo on
+its own.
+
+If the encoder needs two clicks per step, set `ENCODER_STEPS_PER_DETENT` to 2; if clockwise lowers
+the target, set `ENCODER_REVERSE`. If the screen stays dark and the boot log says `oled not found`,
+try `OLED_I2C_ADDRESS = 0x3D`.
+
+## Serial commands (still the only way to drive it without the hardware)
 
 | Command | Effect                                                        |
 | ------- | ------------------------------------------------------------- |
 | `t<n>`  | set the target (clamped to 1–9999, ignored during a run)       |
 | `g`     | start a run                                                   |
 | `s`     | stop, from any state; the count stays                         |
-| `?`     | print state, count, target and battery (`USB` when no pack)   |
+| `?`     | print state, count, target, battery (`USB` when no pack) and OLED redraw time |
 | `p`     | sim only: the next fake BB comes as two pulses 1 ms apart, which must count once |
 
 Every state change is logged with the count, the servo pulse width and LEDC duty. On DONE the log

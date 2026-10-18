@@ -1,4 +1,5 @@
-// SSD1306 OLED glue (U8g2). Draws a ScreenModel; the layout lives here, the content in screen.cpp.
+// SSD1306 OLED glue (U8g2): I2C, and sending the frame. The content is in screen.cpp, the layout
+// in screen_draw.cpp (both host-tested).
 #pragma once
 
 #include <stdint.h>

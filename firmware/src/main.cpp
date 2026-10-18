@@ -36,6 +36,7 @@ static volatile uint32_t servoCutUs = 0;   // when the ISR cut the servo after i
 
 static Battery battery(
     {BATT_WARN_MV, BATT_REFUSE_MV, BATT_HYSTERESIS_MV, BATT_USB_BELOW_MV, BATT_SAG_MS});
+static uint8_t gauge = kGaugeUnknown;  // OLED battery bars, follows each reading
 
 // ---- Servo ----
 
@@ -153,6 +154,9 @@ static void updateBattery(bool force) {
   lastReadMs = now;
   bool running = run.speed() != Speed::Off;
   battery.update(now, readBatteryMv(), running);
+  // On USB there's no gauge; start afresh when a pack shows up.
+  gauge = battery.usb() ? kGaugeUnknown
+                        : gaugeBars(battery.mv(), gauge, BATT_GAUGE_MV, BATT_GAUGE_HYSTERESIS_MV);
   if (running && battery.sagged()) {
     run.lowBattery();
     Serial.printf("[%lu ms] battery below %u mV for %u ms\n", (unsigned long)now, BATT_REFUSE_MV,
@@ -276,14 +280,15 @@ static uint32_t redrawLastUs = 0, redrawMaxUs = 0;
 
 // Redraws when the screen content changed, at most every OLED_MIN_REDRAW_MS. A redraw blocks the
 // loop for the I2C transfer, but not the stop: the count ISR cuts the servo on its own.
+// The warning blink changes the model every OLED_BLINK_MS, so it redraws at that pace, no faster.
 static void updateDisplay(bool force) {
   static ScreenModel shown;
   static uint32_t lastDrawMs = 0;
   if (!displayFound) return;
   uint32_t now = millis();
   if (!force && now - lastDrawMs < OLED_MIN_REDRAW_MS) return;
-  ScreenModel m = screenModel(run.state(), run.target(), counter.count, battery.mv(),
-                              battery.usb(), battery.warn());
+  ScreenModel m = screenModel({run.state(), run.target(), counter.count, battery.mv(),
+                               battery.usb(), battery.warn(), gauge, bleConnected(), now});
   if (!force && m == shown) return;
   shown = m;
   lastDrawMs = now;

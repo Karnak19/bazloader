@@ -12,5 +12,5 @@ bool blePoll(BleRequest* out);
 // Sets the value of each field in `fields` (so reads are current) and notifies it.
 // Count goes before state, so a client sees a run's final count before DONE. Loop context only.
 void blePush(uint8_t fields, const BleValues& v);
-// Whether a client is connected (for the status line).
+// Whether a client is connected (the OLED's Bluetooth icon, the `?` status line). Loop context.
 bool bleConnected();

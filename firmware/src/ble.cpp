@@ -11,6 +11,7 @@ static NimBLEServer* server = nullptr;
 static NimBLECharacteristic* chars[6] = {};  // indexed like the BleField bits
 
 static volatile bool disconnected = false;  // set by the NimBLE task, cleared by blePoll()
+static volatile bool connected = false;     // written by the NimBLE task, read by loop()
 
 static void queue(const BleRequest& r) { xQueueSend(requests, &r, 0); }
 
@@ -30,7 +31,9 @@ class WriteCallbacks : public NimBLECharacteristicCallbacks {
 
 // NimBLE host task too.
 class ServerCallbacks : public NimBLEServerCallbacks {
+  void onConnect(NimBLEServer*, NimBLEConnInfo&) override { connected = true; }
   void onDisconnect(NimBLEServer*, NimBLEConnInfo&, int) override {
+    connected = false;
     // A flag, not the queue: a full queue drops requests, and this one stops a test spin.
     disconnected = true;
     // advertiseOnDisconnect() restarts advertising; one connection at a time
@@ -132,4 +135,4 @@ void blePush(uint8_t fields, const BleValues& v) {
   }
 }
 
-bool bleConnected() { return server != nullptr && server->getConnectedCount() > 0; }
+bool bleConnected() { return connected; }

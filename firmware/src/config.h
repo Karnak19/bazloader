@@ -81,6 +81,8 @@ constexpr uint16_t LONG_CLICK_MS      = 800;  // encoder click held this long: l
 constexpr uint8_t  OLED_I2C_ADDRESS = 0x3C;
 constexpr uint32_t OLED_I2C_HZ      = 400000;
 constexpr uint16_t OLED_MIN_REDRAW_MS = 100;  // at most ~10 Hz, and only when the screen changes
+// The low-battery warning inverts the gauge on and off, each phase this long: two redraws a second.
+constexpr uint16_t OLED_BLINK_MS = 500;
 
 // ---- Battery (2S LiPo) ----
 constexpr uint16_t BATT_WARN_MV   = 7000; // warn below this
@@ -96,6 +98,10 @@ constexpr uint16_t BATT_USB_BELOW_MV = 3000;
 // The pack sags under servo load: a run stops only after this long below BATT_REFUSE_MV.
 constexpr uint16_t BATT_SAG_MS = 2000;
 constexpr uint16_t BATT_READ_PERIOD_MS = 500;
+// OLED gauge: one bar per threshold reached (2S LiPo, approximate, not a state of charge).
+// A bar comes back only BATT_GAUGE_HYSTERESIS_MV above its threshold, so the gauge can't flicker.
+constexpr uint16_t BATT_GAUGE_MV[4] = {6800, 7200, 7600, 8000};
+constexpr uint16_t BATT_GAUGE_HYSTERESIS_MV = 100;
 constexpr uint8_t  BATT_ADC_SAMPLES    = 16; // averaged per reading
 
 // ---- Simulation (env:sim) ----

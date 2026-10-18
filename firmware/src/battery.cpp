@@ -23,6 +23,21 @@ static bool belowWithHysteresis(bool was, uint32_t mv, uint16_t threshold, uint1
   return was;
 }
 
+uint8_t gaugeBars(uint16_t mv, uint8_t previous, const uint16_t (&thresholdsMv)[kGaugeBars],
+                  uint16_t hysteresisMv) {
+  if (previous > kGaugeBars) {
+    uint8_t bars = 0;
+    while (bars < kGaugeBars && mv >= thresholdsMv[bars]) bars++;
+    return bars;
+  }
+  uint8_t bars = previous;
+  while (bars > 0 && mv < thresholdsMv[bars - 1]) bars--;
+  while (bars < kGaugeBars && mv >= static_cast<uint32_t>(thresholdsMv[bars]) + hysteresisMv) {
+    bars++;
+  }
+  return bars;
+}
+
 void Battery::update(uint32_t nowMs, uint32_t readingMv, bool running) {
   // Each reading is already an average of many ADC samples. The median of the last three
   // then drops a single bad reading entirely, which an average would only dilute.

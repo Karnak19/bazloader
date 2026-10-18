@@ -183,8 +183,64 @@ static void test_low_battery_ignored_when_not_running() {
   TEST_ASSERT_EQUAL_STRING("LOW_BATT", stateName(run.state()));
 }
 
+static uint8_t bars(uint16_t mv, uint8_t previous = kGaugeUnknown) {
+  return gaugeBars(mv, previous, BATT_GAUGE_MV, BATT_GAUGE_HYSTERESIS_MV);
+}
+
+static void test_gauge_bars_at_each_threshold() {
+  TEST_ASSERT_EQUAL_UINT8(4, bars(8400));
+  TEST_ASSERT_EQUAL_UINT8(4, bars(8000));
+  TEST_ASSERT_EQUAL_UINT8(3, bars(7999));
+  TEST_ASSERT_EQUAL_UINT8(3, bars(7600));
+  TEST_ASSERT_EQUAL_UINT8(2, bars(7599));
+  TEST_ASSERT_EQUAL_UINT8(2, bars(7200));
+  TEST_ASSERT_EQUAL_UINT8(1, bars(7199));
+  TEST_ASSERT_EQUAL_UINT8(1, bars(6800));
+  TEST_ASSERT_EQUAL_UINT8(0, bars(6799));
+  TEST_ASSERT_EQUAL_UINT8(0, bars(0));
+}
+
+static void test_gauge_drops_at_once_and_climbs_back_with_hysteresis() {
+  // Every boundary: a bar goes just below its threshold, and only comes back 100 mV above it.
+  for (uint8_t i = 0; i < kGaugeBars; i++) {
+    uint16_t t = BATT_GAUGE_MV[i];
+    uint8_t b = bars(t);  // i + 1 bars
+    TEST_ASSERT_EQUAL_UINT8(i + 1, b);
+    b = bars(t - 1, b);
+    TEST_ASSERT_EQUAL_UINT8(i, b);
+    b = bars(t, b);
+    TEST_ASSERT_EQUAL_UINT8(i, b);
+    b = bars(t + BATT_GAUGE_HYSTERESIS_MV - 1, b);
+    TEST_ASSERT_EQUAL_UINT8(i, b);
+    b = bars(t + BATT_GAUGE_HYSTERESIS_MV, b);
+    TEST_ASSERT_EQUAL_UINT8(i + 1, b);
+  }
+}
+
+static void test_gauge_does_not_flicker_on_a_boundary() {
+  // Noise of +-40 mV around 7600 mV: at most one change, then it holds.
+  uint8_t b = bars(7640);
+  uint8_t changes = 0;
+  for (int i = 0; i < 200; i++) {
+    uint8_t next = bars(i % 2 ? 7560 : 7640, b);
+    if (next != b) changes++;
+    b = next;
+  }
+  TEST_ASSERT_LESS_OR_EQUAL_UINT8(1, changes);
+  TEST_ASSERT_EQUAL_UINT8(2, b);
+}
+
+static void test_gauge_jumps_several_bars_at_once() {
+  TEST_ASSERT_EQUAL_UINT8(0, bars(6500, 4));  // a run sagging hard
+  TEST_ASSERT_EQUAL_UINT8(4, bars(8400, 0));  // a fresh pack plugged in
+}
+
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_gauge_bars_at_each_threshold);
+  RUN_TEST(test_gauge_drops_at_once_and_climbs_back_with_hysteresis);
+  RUN_TEST(test_gauge_does_not_flicker_on_a_boundary);
+  RUN_TEST(test_gauge_jumps_several_bars_at_once);
   RUN_TEST(test_adc_scaling);
   RUN_TEST(test_usb_reads_zero_and_guard_off);
   RUN_TEST(test_before_first_reading_is_usb);

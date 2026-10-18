@@ -278,11 +278,21 @@ describe('mock run', () => {
   })
 
   test('test spin goes to testing until stop', async () => {
+    const { ble, store, clock } = await connectMock()
+    for (const speed of ['full', 'slow'] as const) {
+      await ble.testSpin(speed)
+      clock.advance(10000)
+      expect(store.get().state).toBe(State.Testing)
+      await ble.stop()
+      expect(store.get().state).toBe(State.Idle)
+    }
+  })
+
+  test('a test spin is refused during a run', async () => {
     const { ble, store } = await connectMock()
-    await ble.testSpin('full')
-    expect(store.get().state).toBe(State.Testing)
-    await ble.stop()
-    expect(store.get().state).toBe(State.Idle)
+    await ble.go()
+    await ble.testSpin('slow')
+    expect(store.get().state).toBe(State.Running)
   })
 })
 
@@ -318,6 +328,23 @@ describe('store follows the device, never the request', () => {
     const { store, clock } = await connectMock({ battery: 8000 })
     clock.advance(5000)
     expect(store.get().battery).toBe(7995)
+  })
+
+  test('config is read back after a write', async () => {
+    const { ble, store } = await connectMock()
+    const config = { ...store.get().config!, servoNeutralUs: 1485, speedFullOffsetUs: -250, reverse: true }
+    await ble.writeConfig(config)
+    expect(store.get().config).toEqual(config)
+  })
+
+  test('presets and config written during a run are ignored, the read-back shows the old ones', async () => {
+    const { ble, store } = await connectMock()
+    const before = store.get().config!
+    await ble.go()
+    await ble.writePresets([10, 20, 30, 40])
+    await ble.writeConfig({ ...before, slowdownN: 9 })
+    expect(store.get().presets).toEqual([30, 50, 120, 300])
+    expect(store.get().config).toEqual(before)
   })
 
   test('presets are read back after a write', async () => {

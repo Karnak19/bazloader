@@ -284,3 +284,97 @@ p {
   background: var(--danger);
   color: #111214;
 }
+
+/* ---- Settings screen ---- */
+
+.bar-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.pill {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--line);
+  font-weight: 700;
+}
+
+.pill.active {
+  background: var(--accent);
+  color: #111214;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.group-title {
+  margin: 0;
+  padding-top: 0.75rem;
+  border-top: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field.small {
+  min-height: var(--touch);
+  font-size: 1.5rem;
+}
+
+.field.invalid {
+  border-color: var(--danger);
+}
+
+.field-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.btn.step.small {
+  font-size: 1.5rem;
+}
+
+.btn.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem 0 1rem;
+}
+
+.toggle-value {
+  min-width: 4.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--line);
+  text-align: center;
+}
+
+.btn.toggle.on {
+  border-color: var(--accent);
+}
+
+.btn.toggle.on .toggle-value {
+  background: var(--accent);
+  color: #111214;
+}
+
+.settings .btn.primary,
+.settings .actions .btn {
+  min-height: 4.5rem;
+  font-size: 1.5rem;
+}
+
+.settings .btn.stop {
+  min-height: 6rem;
+}
+
+.spin-live {
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 700;
+}

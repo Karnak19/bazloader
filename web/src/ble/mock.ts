@@ -1,7 +1,8 @@
 // A fake device that speaks the same bytes as the firmware, for the tests and for `?mock`.
 // It mirrors firmware/src/run.cpp: Go starts a run (slow straight away if the target is within
 // slowdown_n), one BB per tick, slowdown when ≤ slowdown_n remain, DONE held a while then IDLE,
-// JAM when no BB comes for jam_timeout_ms.
+// JAM when no BB comes for jam_timeout_ms. Test spins (commands 2 and 3) hold TESTING until stop;
+// presets and config writes are ignored during a run.
 
 import type { CharacteristicName, DeviceLink } from './link.ts'
 import {
@@ -130,13 +131,15 @@ export class MockDevice implements DeviceLink {
       }
       case 'command':
         return this.command(decodeUint8(value))
+      // Presets and config are ignored during a run, like the firmware does. They don't notify:
+      // the app reads them back and sees the old values.
       case 'presets': {
-        if (value.byteLength !== PRESET_COUNT * 2) return
+        if (this.isRunning() || value.byteLength !== PRESET_COUNT * 2) return
         this.presets = decodePresets(value)
         return
       }
       case 'config': {
-        if (value.byteLength !== CONFIG_LENGTH) return
+        if (this.isRunning() || value.byteLength !== CONFIG_LENGTH) return
         try {
           this.config = decodeConfig(value)
         } catch {

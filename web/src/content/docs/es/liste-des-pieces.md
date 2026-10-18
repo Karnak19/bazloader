@@ -119,7 +119,7 @@ Los archivos para imprimir y cómo ajustarlos están en la carpeta
 | Multímetro | **Sí** | Ajustar el convertidor a 5,0 V antes de conectar el ESP32. Sin multímetro, no hay montaje. También sirve para calibrar la lectura de la batería. |
 | Soldador, estaño, flux | Sí | Todas las conexiones. Un soldador con temperatura regulable es mucho más cómodo. |
 | Pie de rey | Sí | Medir el diámetro del tubo de salida (*inner barrel*) y de los componentes IR, para ajustar el collar. Basta con uno digital barato. |
-| Broca de **1,5 mm** (con un portabrocas de mano o un taladro pequeño) | Sí, muy probablemente | El tubo de salida seguramente es de metal y, por tanto, opaco al infrarrojo: hay que hacerle **dos agujeros enfrentados**, alineados con las ventanas del collar, para que pase el haz. |
+| Broca de **1,5 mm** (con un portabrocas de mano o un taladro pequeño) | Sí, muy probablemente | El tubo de salida seguramente es de metal y, por tanto, opaco al infrarrojo: hay que hacerle **dos agujeros**, alineados con las ventanas del collar, para que pase el haz. El haz no pasa por el centro del tubo sino 2 mm al lado: taladra con el collar apretado en su sitio, de una ventana a la otra, que sirve de guía. |
 | Cable USB-C **de datos** | Sí | Flashear el ESP32. Muchos cables USB-C solo cargan: si la placa no aparece en el ordenador, prueba con otro cable. |
 | Pelacables, alicate de corte | Sí | Preparar los cables. |
 | Pistola de aire caliente o mechero | Práctico | Contraer la funda. |

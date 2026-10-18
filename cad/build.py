@@ -45,19 +45,26 @@ def collar_layout() -> dict[str, float]:
     """Key positions of the IR collar, shared by ir_collar() and check.py.
 
     Frame: the tube axis is Z, the collar sits on Z=0 (its print face), the beam
-    runs along X through the tube centre at mid-length, the clamp slot is on +Y.
+    runs along X at mid-length, the clamp slot is on +Y. The beam is a chord of
+    the bore, BEAM_OFFSET off the axis on -Y, away from the slot and the screw.
     """
     bore_r = (p.BARREL_OD + p.FIT_TOLERANCE) / 2
     led_r = (p.IR_LED_DIAMETER + p.SOCKET_TOLERANCE) / 2
     photo_r = (p.PHOTOTRANSISTOR_DIAMETER + p.SOCKET_TOLERANCE) / 2
     socket_r = max(led_r, photo_r)
-    shoulder_x = bore_r + p.APERTURE_LEN  # Both stop shoulders sit this far from the axis.
+    beam_y = -p.BEAM_OFFSET
+    # Off-axis, the bore surface along the beam is at sqrt(bore_r^2 - y^2), furthest out where y is
+    # nearest the axis. Measured at the socket edge nearest the axis (wider than the window), the
+    # wall in front of each shoulder is at least APERTURE_LEN everywhere.
+    near_y = max(0.0, abs(beam_y) - socket_r)
+    shoulder_x = math.sqrt(bore_r**2 - near_y**2) + p.APERTURE_LEN  # Both stop shoulders sit at this |X|.
     nut_r = (p.M3_NUT_AF + p.NUT_TOLERANCE) / math.sqrt(3)  # Hexagon corner radius.
     screw_y = bore_r + p.MIN_WALL + nut_r  # Nut trap clears the bore by MIN_WALL.
     return {
         "bore_r": bore_r,
         "outer_r": bore_r + p.COLLAR_WALL,
         "beam_z": p.COLLAR_LENGTH / 2,
+        "beam_y": beam_y,
         "led_r": led_r,  # LED socket, on -X.
         "photo_r": photo_r,  # Phototransistor socket, on +X.
         "socket_r": socket_r,
@@ -91,12 +98,13 @@ def ir_collar() -> Part:
         "the aperture must be narrower than the component, or there is no shoulder to stop it"
     )
     assert k["channel_top"] > p.MIN_WALL, "collar too short for the wire channels"
-    L, z0 = p.COLLAR_LENGTH, k["beam_z"]
+    assert p.BEAM_OFFSET + p.APERTURE_W / 2 < p.BARREL_ID / 2, "the window pokes past the barrel bore"
+    L, z0, y0 = p.COLLAR_LENGTH, k["beam_z"], k["beam_y"]
 
-    # Outer outline, seen from above: ring + bar holding the sockets + clamp ears.
+    # Outer outline, seen from above: ring + bar holding the sockets (on the beam line) + clamp ears.
     outline = (
         Circle(k["outer_r"])
-        + Rectangle(2 * k["back_x"], 2 * k["bar_hw"])
+        + Pos(0, y0) * Rectangle(2 * k["back_x"], 2 * k["bar_hw"])
         + Pos(0, k["ear_y"] / 2) * Rectangle(2 * k["ear_hx"], k["ear_y"])
     )
     outline = fillet(outline.vertices(), p.EDGE_FILLET)
@@ -106,26 +114,27 @@ def ir_collar() -> Part:
     body -= Cylinder(k["bore_r"], L, align=(Align.CENTER, Align.CENTER, Align.MIN))
     body -= Pos(0, k["ear_y"] / 2, L / 2) * Box(p.CLAMP_SLOT, k["ear_y"] + 1, L + 1)
 
-    # Sockets: LED on -X, phototransistor on +X, open at the back for insertion.
+    # Sockets: LED on -X, phototransistor on +X, both on the beam line y0, open at the back.
     # Each ends on a flat shoulder at shoulder_x, the same on both sides.
     socket_len = p.SOCKET_DEPTH + 1  # Runs 1 mm past the back face for a clean cut.
     for side, r in ((-1, k["led_r"]), (1, k["photo_r"])):
         x_mid = side * (k["shoulder_x"] + socket_len / 2)
-        body -= Pos(x_mid, 0, z0) * Rot(0, 90, 0) * Cylinder(r, socket_len)
+        body -= Pos(x_mid, y0, z0) * Rot(0, 90, 0) * Cylinder(r, socket_len)
 
-    # Aperture: one window straight through both walls, so the two cannot drift apart.
+    # Aperture: one window straight through both walls, so the two cannot drift apart. It is a
+    # chord of the bore, and the drilling guide for the two holes in a metal barrel.
     if p.APERTURE_W > p.APERTURE_D:
         window = SlotOverall(p.APERTURE_W, p.APERTURE_D)
     else:
         window = Circle(p.APERTURE_D / 2)
     reach = k["shoulder_x"] + 0.5
-    body -= extrude(_yz_plane(-reach, 0, z0, 1) * window, 2 * reach)
+    body -= extrude(_yz_plane(-reach, y0, z0, 1) * window, 2 * reach)
 
     # Wire channels: a groove on each back face, from under the socket to the bottom end.
     for side in (-1, 1):
         x = side * (k["back_x"] - p.WIRE_CHANNEL_DEPTH / 2)
         h = k["channel_top"] + 1
-        body -= Pos(x, 0, h / 2 - 1) * Box(p.WIRE_CHANNEL_DEPTH + 0.01, p.WIRE_CHANNEL_W, h)
+        body -= Pos(x, y0, h / 2 - 1) * Box(p.WIRE_CHANNEL_DEPTH + 0.01, p.WIRE_CHANNEL_W, h)
 
     # M3 screw across the ears, head on -X, nut trapped in the +X ear.
     ear_span = 2 * k["ear_hx"] + 2

@@ -68,6 +68,12 @@ One piece, closed around the barrel by a single M3 screw.
   between the shoulder and the bore. The window narrows the beam: a thin beam sees the gap between
   two touching BBs better (see #12) and lets in less stray light. Set `APERTURE_W` wider than
   `APERTURE_D` to get a horizontal slit with more light but the same sharpness along the tube.
+- **Beam off the axis.** The beam does not cross the tube through its centre but `BEAM_OFFSET`
+  (2 mm) to the side, on the opposite side from the clamp slot. The BBs travel touching each other,
+  and where two touch, the centre line is still solid, so a beam through the axis never sees light.
+  Off the axis it sees the gap between two balls: with a 1.5 mm window, about 83 % of the light
+  passes at 2 mm, against 4 % on the axis. The window must stay inside the barrel bore
+  (`BEAM_OFFSET + APERTURE_W / 2` under `BARREL_ID / 2`), which `check.py` checks.
 - **Light shield.** The sockets are closed all round, the leads come out at the back, and the collar
   runs `COLLAR_LENGTH / 2` along the tube on each side of the beam, so the sun cannot shine straight
   onto the phototransistor through the gap around the barrel.
@@ -81,8 +87,11 @@ The beam sits at mid-length of the collar. Where the collar goes on the barrel c
 1. Measure `BARREL_OD` with calipers where the collar will sit, and the bodies of the two components
    (`IR_LED_DIAMETER`, `PHOTOTRANSISTOR_DIAMETER`, `IR_BODY_LENGTH`).
 2. Print `fit_coupon`, set `FIT_TOLERANCE` and `SOCKET_TOLERANCE`.
-3. Check that the barrel lets 940 nm through where the beam crosses it. If it is opaque, drill two
-   holes in line with the windows.
+3. Check that the barrel lets 940 nm through where the beam crosses it. If it is opaque (a metal
+   barrel), clamp the collar where it will sit and drill 1.5 mm straight through one window, through
+   both walls of the barrel, and out of the other window: the window is one straight line, so the
+   collar is the drilling guide. The holes are not opposite each other across the centre, they are
+   2 mm to the side, so do not drill without the collar.
 4. Run `uv run python check.py`, then `uv run python build.py`.
 
 **Printing:** stand the collar on its flat end face (Z = 0, the end the wire grooves open onto).

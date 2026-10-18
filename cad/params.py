@@ -11,6 +11,7 @@ EDGE_FILLET = 0.8  # Rounding of the outer edges along the tube, so nothing is s
 
 # --- Inner barrel (IR collar sits around it) --------------------------------
 BARREL_OD = 8.55  # Outer diameter of the 120 mm inner barrel: a standard AEG inner barrel. Confirm with calipers (#16).
+BARREL_ID = 6.05  # Bore of that barrel, the usual 6.05 mm AEG bore. The beam window must fit inside it.
 
 # --- IR barrier ---------------------------------------------------------------
 IR_LED_DIAMETER = 3.0  # TODO: measure. Body of the 3 mm IR LED.
@@ -25,7 +26,10 @@ SOCKET_DEPTH = 3.5  # Guide length up to the stop shoulder. Below IR_BODY_LENGTH
 SOCKET_WALL = 1.6  # Wall around each socket.
 APERTURE_D = 1.5  # Height of the window between socket and bore, along the tube. Narrower = sharper beam (#12).
 APERTURE_W = 1.5  # Width of that window across the tube. Equal to APERTURE_D: round hole; wider: horizontal slit.
-APERTURE_LEN = 1.2  # Length of the window, i.e. the wall between the stop shoulder and the bore.
+APERTURE_LEN = 1.2  # Length of the window, i.e. the thinnest wall between the stop shoulder and the bore.
+BEAM_OFFSET = 2.0  # Beam moved sideways off the tube axis (#12). BBs travel touching, and where two touch the
+# axis is still solid, so a beam through the axis is never let through. Off-axis it sees the gap between two
+# balls: about 83 % of the light at 2.0 mm, against 4 % on the axis. Keep it + APERTURE_W / 2 inside BARREL_ID.
 COLLAR_WALL = 2.0  # Radial wall around the bore.
 COLLAR_LENGTH = 16.0  # Length along the tube. The beam sits in the middle, half of it shields each side.
 WIRE_CHANNEL_W = 3.4  # Groove for one pair of leads (2.54 mm pitch + wire), from under each socket to the bottom end.

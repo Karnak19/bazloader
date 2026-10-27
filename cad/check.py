@@ -1,4 +1,4 @@
-"""Sanity checks on the IR collar, the encoder knob and the fit coupon.
+"""Sanity checks on the IR collar, the encoder knob, the fit coupon and the box fit gauges.
 
 Run: uv run python check.py
 Probes points just inside and just outside each feature, so a wrong bore, a missing
@@ -317,7 +317,100 @@ def check_coupon(od: float) -> None:
     )
 
 
+def wall_gap(x: float, y: float, z: float) -> float:
+    """Distance from a point inside the box (box frame) to the nearest wall at height z.
+
+    The box is modelled with CORNER_R corners, the worst case: its real corners are tighter,
+    which only leaves more room for an R10 part.
+    """
+    box_l, box_w = build.box_interior(z)
+    r = p.CORNER_R
+    qx, qy = abs(x) - (box_l / 2 - r), abs(y) - (box_w / 2 - r)
+    outside = math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - r  # Signed distance, < 0 inside.
+    return -outside
+
+
+def check_box() -> None:
+    """The hand measurements agree with each other: the ledge opening, measured directly, matches
+    the box at the ledge (from the draft) minus the ledge on both sides, within the +/- 1 mm of each."""
+    assert 0 < p.BOX_LEDGE_Z0 < p.BOX_LEDGE_Z1 < p.BOX_HEIGHT, "ledge heights out of order"
+    box_l, box_w = build.box_interior(p.BOX_LEDGE_Z1)
+    dl = box_l - 2 * p.BOX_LEDGE_DEPTH - p.BOX_LEDGE_OPEN_L
+    dw = box_w - 2 * p.BOX_LEDGE_DEPTH - p.BOX_LEDGE_OPEN_W
+    assert abs(dl) <= 2 and abs(dw) <= 2, f"ledge opening disagrees with box minus ledge by {dl:+.1f} / {dw:+.1f}"
+    print(
+        f"box: floor {p.BOX_FLOOR_L:g} x {p.BOX_FLOOR_W:g}  at ledge top {box_l:.1f} x {box_w:.1f}  "
+        f"draft {p.BOX_TAPER_L:.3f} / {p.BOX_TAPER_W:.3f} per mm  ledge opening measured "
+        f"{p.BOX_LEDGE_OPEN_L:g} x {p.BOX_LEDGE_OPEN_W:g}, derived {dl:+.1f} / {dw:+.1f} off"
+    )
+
+
+def check_gauge(name: str, part, k: dict) -> float:
+    """Common checks: one valid frame, fits the bed, WALL_CLEARANCE to the box all round at its height.
+    Returns the smallest wall gap found."""
+    assert part.is_valid and len(part.solids()) == 1, f"{name} is not one valid solid"
+    bb = part.bounding_box()
+    assert max(bb.size.X, bb.size.Y, bb.size.Z) <= p.BED_SIZE, f"{name} does not fit the bed: {bb.size}"
+    assert abs(bb.size.X - k["outer_l"]) < 1e-3 and abs(bb.size.Y - k["outer_w"]) < 1e-3, f"{name} size {bb.size}"
+    assert abs(bb.min.Z) < 1e-6 and abs(bb.max.Z - p.GAUGE_HEIGHT) < 1e-6, f"{name} height wrong"
+    assert k["z"] + p.GAUGE_HEIGHT < p.BOX_HEIGHT, f"{name} sticks out over the rim"
+    # Every point of its outline, bottom and top, keeps WALL_CLEARANCE to the box at that height.
+    gaps = []
+    for edge in part.edges():
+        for i in range(21):
+            pt = edge.position_at(i / 20)
+            gaps.append(wall_gap(pt.X, pt.Y, k["z"] + pt.Z))
+    gap = min(gaps)
+    assert gap >= p.WALL_CLEARANCE - 1e-6, f"{name} only {gap:.2f} from a wall"
+    # A closed frame: hollow in the middle, solid across each side.
+    z = p.GAUGE_HEIGHT / 2
+    assert not solid_at(part, 0, 0, z), f"{name} is not hollow"
+    mx, my = (k["outer_l"] + k["inner_l"]) / 4, (k["outer_w"] + k["inner_w"]) / 4
+    for x, y in ((mx, 0), (-mx, 0), (0, my), (0, -my), (mx * 0.5, my), (-mx * 0.5, -my)):
+        assert solid_at(part, x, y, z), f"{name} frame open at ({x:.1f}, {y:.1f})"
+    return gap
+
+
+def check_floor_gauge() -> None:
+    part, k = build.floor_gauge(), build.floor_layout()
+    gap = check_gauge("floor_gauge", part, k)
+    assert abs(gap - p.WALL_CLEARANCE) < 0.01, f"floor gauge gap {gap:.2f}, want exactly WALL_CLEARANCE"
+    print(
+        f"floor_gauge: OK  {k['outer_l']:.1f} x {k['outer_w']:.1f} x {p.GAUGE_HEIGHT:g}  "
+        f"wall {p.GAUGE_WALL:g}  min wall gap {gap:.2f}  label {build.gauge_label(k, 'FLOOR')!r}"
+    )
+
+
+def check_ledge_gauge() -> None:
+    part, k = build.ledge_gauge(), build.seat_layout()
+    gap = check_gauge("ledge_gauge", part, k)
+    # Rests on the ledge: on each side the frame reaches at least SEAT_MIN_REST past the ledge edge
+    # toward the wall, so it cannot fall through flat.
+    rest_l = (k["outer_l"] - p.BOX_LEDGE_OPEN_L) / 2
+    rest_w = (k["outer_w"] - p.BOX_LEDGE_OPEN_W) / 2
+    assert min(rest_l, rest_w) >= p.SEAT_MIN_REST, f"rests on only {rest_l:.2f} / {rest_w:.2f} of ledge"
+    # And it is solid over the whole ledge edge, from the opening outward: the frame's inner edge is
+    # inside the opening, all along each side (probed away from the corners, whose radius we do not know).
+    ol, ow = p.BOX_LEDGE_OPEN_L / 2, p.BOX_LEDGE_OPEN_W / 2
+    z = p.GAUGE_HEIGHT / 2
+    for f in (-0.8, -0.4, 0.0, 0.4, 0.8):
+        for d in (-EPS, rest_l / 2):
+            assert solid_at(part, ol + d, f * ow, z) and solid_at(part, -ol - d, f * ow, z), "not resting on an end ledge"
+        for d in (-EPS, rest_w / 2):
+            assert solid_at(part, f * ol, ow + d, z) and solid_at(part, f * ol, -ow - d, z), "not resting on a side ledge"
+    assert k["inner_l"] < p.BOX_LEDGE_OPEN_L and k["inner_w"] < p.BOX_LEDGE_OPEN_W, "inner opening wider than the ledge"
+    print(
+        f"ledge_gauge: OK  {k['outer_l']:.1f} x {k['outer_w']:.1f} x {p.GAUGE_HEIGHT:g}  "
+        f"opening {k['inner_l']:.1f} x {k['inner_w']:.1f}  sits at Z={k['z']:g}  "
+        f"rests on {rest_l:.1f} (ends) / {rest_w:.1f} (sides) of ledge  min wall gap {gap:.2f}  "
+        f"label {build.gauge_label(k, 'LEDGE')!r}"
+    )
+
+
 if __name__ == "__main__":
+    check_box()
+    check_floor_gauge()
+    check_ledge_gauge()
     original = p.BARREL_OD
     for od in BARREL_ODS:
         check_collar(od)

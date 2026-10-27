@@ -5,6 +5,7 @@ placeholder until the real part is in hand.
 """
 
 # --- Printing ---------------------------------------------------------------
+BED_SIZE = 256.0  # Printer build volume, each axis (256 x 256 x 256).
 FIT_TOLERANCE = 0.2  # TODO: calibrate with fit_coupon. Clearance added to every hole that fits around a real part.
 MIN_WALL = 1.6  # Thinnest wall we print (4 perimeters at 0.4 mm nozzle).
 EDGE_FILLET = 0.8  # Rounding of the outer edges along the tube, so nothing is sharp in the hand.
@@ -94,6 +95,48 @@ COUPON_KNOB_THICKNESS = 6.0  # The knob test bores go through a thicker strip, s
 COUPON_GAP = 3.0  # Material between two test holes.
 COUPON_TEXT_SIZE = 3.0  # Height of the engraved labels.
 COUPON_TEXT_DEPTH = 0.4  # Engraving depth (2 layers at 0.2).
+
+# --- Box: Plano interior (Basile's box) --------------------------------------
+# Measured by hand inside the box (+/- 1 mm), 2026-10-27 (#52). Frame: box floor at Z=0,
+# Z up to the rim; X along the length, Y along the width, the interior centred on X=0, Y=0.
+# The walls lean out (draft), so the interior grows linearly with Z. A small notch in the
+# ledge at the front is ignored.
+# THE BOX FLEXES: a part that forces at the bottom spreads the walls and changes the fit higher
+# up. Every part keeps WALL_CLEARANCE to every wall, never a press fit.
+BOX_FLOOR_L = 230.0  # TODO: confirm with the gauge. Interior length at the floor (Z=0).
+BOX_FLOOR_W = 95.0  # TODO: confirm with the gauge. Interior width at the floor.
+BOX_REF_Z = 125.0  # Height of the second measurement, used to get the draft.
+BOX_REF_L = 237.0  # TODO: confirm with the gauge. Interior length at BOX_REF_Z.
+BOX_REF_W = 100.0  # TODO: confirm with the gauge. Interior width at BOX_REF_Z.
+BOX_TAPER_L = (BOX_REF_L - BOX_FLOOR_L) / BOX_REF_Z  # Interior length gained per mm of height (both ends together).
+BOX_TAPER_W = (BOX_REF_W - BOX_FLOOR_W) / BOX_REF_Z  # Interior width gained per mm of height (both sides together).
+BOX_HEIGHT = 153.0  # TODO: confirm with the gauge. Floor to rim.
+CORNER_R = 10.0  # Vertical corner radius of our parts. The box's interior corners are under 10 mm, so a part
+# with R10 always fits; the worst gap left in a corner is about 4 mm, under one BB.
+WALL_CLEARANCE = 1.0  # Gap kept between every part and every box wall, per side. Under one BB, never a press fit.
+
+# Ledge: a sloped rib all round the inside wall, under the rim. It is what the top plate (#18)
+# sits on, and why a floor-wide part cannot go in flat (the opening there is narrower than the floor).
+BOX_LEDGE_Z0 = 129.0  # TODO: confirm with the gauge. Bottom of the ledge, where it leaves the wall (24 mm under the rim).
+BOX_LEDGE_Z1 = 136.0  # TODO: confirm with the gauge. Top of the ledge: the height a part rests at (17 mm under the rim).
+BOX_LEDGE_DEPTH = 6.0  # TODO: confirm with the gauge. How far the ledge sticks out from the wall.
+BOX_LEDGE_OPEN_L = 225.0  # TODO: confirm with the gauge. Length of the opening left between the ledges.
+BOX_LEDGE_OPEN_W = 88.0  # TODO: confirm with the gauge. Width of that opening.
+
+# Seat: the outline of anything that rests on the ledge (ledge_gauge now, the top plate #18 later).
+# Outside: the box at BOX_LEDGE_Z1 minus WALL_CLEARANCE per side. Inside: it reaches SEAT_INSET past
+# the ledge edge, so it covers the whole ledge whatever its exact depth.
+SEAT_INSET = 3.0  # How far the seat reaches into the ledge opening, per side.
+SEAT_MIN_REST = 3.0  # Least width of ledge a seated part must rest on, per side.
+
+# --- Box fit gauges (print them before any large part in the box) -------------
+# Thin closed frames, one at the floor, one on the ledge. They print in minutes and tell us
+# whether the BOX_ numbers above are right before a 200 mm part is printed.
+GAUGE_HEIGHT = 3.0  # Frame height (thickness on the bed).
+GAUGE_WALL = 2.0  # Width of the floor gauge frame (the ledge gauge is as wide as the seat).
+GAUGE_TEXT_SIZE = 5.0  # Height of the engraved label.
+GAUGE_TEXT_DEPTH = 0.6  # Engraving depth (3 layers at 0.2).
+GAUGE_TAB_MARGIN = 2.0  # Material round the label on its tab.
 
 # --- Smoke-test ring (M0 only, proves the build pipeline) --------------------
 RING_WALL = 2.0  # Radial wall thickness of the test ring.

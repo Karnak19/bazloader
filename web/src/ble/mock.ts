@@ -70,7 +70,7 @@ const defaultConfig: DeviceConfig = {
 }
 
 export class MockDevice implements DeviceLink {
-  readonly name = 'BULLOADER (mock)'
+  readonly name = 'BazLoader (mock)'
 
   private readonly clock: Clock
   private readonly tickMs: number

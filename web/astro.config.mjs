@@ -6,7 +6,7 @@ import starlight from '@astrojs/starlight'
 import AstroPWA from '@vite-pwa/astro'
 
 // GitHub Pages serves the site under the repo name.
-const base = '/bulloader-plus/'
+const base = '/bazloader/'
 // The installable app is the single page /app/. The docs stay outside the service worker's
 // scope: they need the network, the app does not.
 const appScope = `${base}app/`
@@ -44,8 +44,8 @@ export default defineConfig({
   redirects: { '/en/app/': appScope, '/es/app/': appScope, '/de/app/': appScope },
   integrations: [
     starlight({
-      title: 'BULLOADER+',
-      description: 'Chargeur de billes BULLOADER+ piloté en Bluetooth',
+      title: 'BazLoader',
+      description: 'Chargeur de billes BazLoader piloté en Bluetooth',
       // French is the original and stays at the root, so its URLs don't change. English, Spanish and
       // German are under /en/, /es/ and /de/, with the same file names: that is how the language
       // picker pairs the pages.
@@ -58,7 +58,7 @@ export default defineConfig({
       },
       favicon: '/favicon.svg',
       social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/Karnak19/bulloader-plus' },
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/Karnak19/bazloader' },
       ],
       sidebar: [
         // The app is one page for every language: it picks its own (see src/i18n/).
@@ -94,9 +94,9 @@ export default defineConfig({
         navigateFallbackAllowlist: [new RegExp(`^${appScope}`)],
       },
       manifest: {
-        name: 'BULLOADER+',
-        short_name: 'BULLOADER+',
-        description: 'Chargeur de billes BULLOADER+ piloté en Bluetooth',
+        name: 'BazLoader',
+        short_name: 'BazLoader',
+        description: 'Chargeur de billes BazLoader piloté en Bluetooth',
         lang: 'fr',
         display: 'standalone',
         orientation: 'portrait',

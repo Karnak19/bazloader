@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-constexpr const char* BLE_DEVICE_NAME = "BULLOADER";
+constexpr const char* BLE_DEVICE_NAME = "BazLoader";
 
 constexpr const char* BLE_SERVICE_UUID = "8adb7600-5374-47c7-9127-d9895246807a";
 

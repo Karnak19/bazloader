@@ -2,7 +2,7 @@
 // Must match web/src/content/docs/protocole-ble.md and firmware/src/ble_uuids.h.
 // All integers are little-endian.
 
-export const DEVICE_NAME = 'BULLOADER'
+export const DEVICE_NAME = 'BazLoader'
 
 export const SERVICE_UUID = '8adb7600-5374-47c7-9127-d9895246807a'
 

@@ -1,46 +1,50 @@
 **English** · [Français](README.fr.md) · [Español](README.es.md) · [Deutsch](README.de.md)
 
-# BULLOADER+
+# BazLoader
 
-BULLOADER+ is an upgrade for the [BULLOADER](https://makerworld.com/models/2680291), a 3D-printed
+BazLoader is based on the original [BULLOADER](https://makerworld.com/models/2680291), a 3D-printed
 electric airsoft BB loader published on MakerWorld by its original author. You pick how many BBs you
 want, and the loader stops on its own once that many have gone through, counted one by one by an
 infrared beam. You set it on the loader itself (a knob and a small OLED screen) or from an Android
 web app over Bluetooth. Everything works offline: no account, no cloud, no network needed on the
 field.
 
-<img src="https://raw.githubusercontent.com/Karnak19/bulloader-plus/pr-media/pr-35/en-US-1-main.png" width="260" alt="The BULLOADER+ app main screen in demo mode: target 50, presets 30, 50, 120 and 300, GO and STOP buttons">
+<img src="https://raw.githubusercontent.com/Karnak19/bazloader/pr-media/pr-35/en-US-1-main.png" width="260" alt="The BazLoader app main screen in demo mode: target 50, presets 30, 50, 120 and 300, GO and STOP buttons">
 
 *The app in demo mode, driving a simulated loader.*
 
 ## Links
 
-- **Docs:** <https://karnak19.github.io/bulloader-plus/en/> (French: <https://karnak19.github.io/bulloader-plus/>)
-- **The app:** <https://karnak19.github.io/bulloader-plus/app/>. No loader yet? Open
-  [`/app/?mock`](https://karnak19.github.io/bulloader-plus/app/?mock) to try it against a
+- **Docs:** <https://karnak19.github.io/bazloader/en/> (French: <https://karnak19.github.io/bazloader/>)
+- **The app:** <https://karnak19.github.io/bazloader/app/>. No loader yet? Open
+  [`/app/?mock`](https://karnak19.github.io/bazloader/app/?mock) to try it against a
   simulated device.
-- **Parts list:** <https://karnak19.github.io/bulloader-plus/en/liste-des-pieces/>
-- **Wiring:** <https://karnak19.github.io/bulloader-plus/en/cablage/>
-- **BLE protocol:** <https://karnak19.github.io/bulloader-plus/en/protocole-ble/>
+- **Parts list:** <https://karnak19.github.io/bazloader/en/liste-des-pieces/>
+- **Wiring:** <https://karnak19.github.io/bazloader/en/cablage/>
+- **BLE protocol:** <https://karnak19.github.io/bazloader/en/protocole-ble/>
+
+> **The app has moved.** The project was renamed BazLoader and the app now lives at the address
+> above. If you installed it from the old address, uninstall it and install it again once from the
+> new link. Your presets and calibration are stored on the loader, so nothing is lost.
 
 ## Where it stands
 
 This is a work in progress, and **it has not been built on real hardware yet.**
 
 - Done: the firmware and the app work end to end in simulation, with fake BBs
-  ([M1](https://github.com/Karnak19/bulloader-plus/milestone/1),
-  [M2](https://github.com/Karnak19/bulloader-plus/milestone/2)).
+  ([M1](https://github.com/Karnak19/bazloader/milestone/1),
+  [M2](https://github.com/Karnak19/bazloader/milestone/2)).
 - In progress: hardware integration, meaning the real servo, the real IR beam and calibration
-  ([M3](https://github.com/Karnak19/bulloader-plus/milestone/3)), and the printed parts plus the
-  build guide ([M4](https://github.com/Karnak19/bulloader-plus/milestone/4)).
+  ([M3](https://github.com/Karnak19/bazloader/milestone/3)), and the printed parts plus the
+  build guide ([M4](https://github.com/Karnak19/bazloader/milestone/4)).
 
 There are no photos of a finished build and no accuracy numbers yet. Follow along in the
-[milestones](https://github.com/Karnak19/bulloader-plus/milestones) and
-[issues](https://github.com/Karnak19/bulloader-plus/issues).
+[milestones](https://github.com/Karnak19/bazloader/milestones) and
+[issues](https://github.com/Karnak19/bazloader/issues).
 
 ## What you need
 
-- A printed BULLOADER to upgrade, and the parts in the [parts list](https://karnak19.github.io/bulloader-plus/en/liste-des-pieces/)
+- A printed BULLOADER to upgrade, and the parts in the [parts list](https://karnak19.github.io/bazloader/en/liste-des-pieces/)
   (ESP32-C3 SuperMini, IR LED and phototransistor, encoder, OLED, and a few small bits).
 - For the app: **Chrome on Android**, because it uses Web Bluetooth. iPhone and iPad aren't
   supported: Safari has no Web Bluetooth. The loader works fine without a phone.

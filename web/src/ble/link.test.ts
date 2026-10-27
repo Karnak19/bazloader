@@ -73,7 +73,7 @@ function fakeDevice() {
       device.dispatchEvent(new Event('gattserverdisconnected'))
     },
   }
-  device.name = 'BULLOADER'
+  device.name = 'BazLoader'
   device.gatt = gatt
   const count = characteristics.get(CHARACTERISTIC_UUID.count)!
   return { device, gatt, count }
@@ -130,7 +130,7 @@ describe('WebBluetoothLink across reconnects', () => {
 })
 
 // A known device that can watch advertisements; `advertise()` makes it show up.
-function knownDevice(name = 'BULLOADER') {
+function knownDevice(name = 'BazLoader') {
   const device = new EventTarget() as EventTarget & {
     name: string
     watchAdvertisements: (options: { signal: AbortSignal }) => Promise<void>
@@ -160,7 +160,7 @@ describe('findKnownDevice', () => {
     const bluetooth = {
       getDevices: async () => {
         asked = true
-        return [{ name: 'BULLOADER' }] as unknown as BluetoothDevice[]
+        return [{ name: 'BazLoader' }] as unknown as BluetoothDevice[]
       },
     }
     expect(await findKnownDevice({ bluetooth, timeoutMs: 1000, clock })).toBeNull()

@@ -15,17 +15,17 @@ export const fr = {
   'app.noBluetooth': 'Web Bluetooth indisponible. Utilise Chrome sur Android.',
 
   'banner.reconnecting': 'Déconnecté — reconnexion…',
-  'banner.lost': 'Connexion perdue. Rallume le BULLOADER ou rapproche-toi.',
+  'banner.lost': 'Connexion perdue. Rallume le BazLoader ou rapproche-toi.',
   'banner.retry': 'Reconnecter',
   'banner.changeDevice': "Changer d'appareil",
   // The device stops a run with its GO button or a push on the knob (firmware/src/controls.cpp).
-  'banner.motorMayRun': "Le moteur tourne peut-être encore. Pour l'arrêter : appuie sur GO ou sur la molette du BULLOADER.",
+  'banner.motorMayRun': "Le moteur tourne peut-être encore. Pour l'arrêter : appuie sur GO ou sur la molette du BazLoader.",
   'banner.stopQueued': 'STOP en attente : envoyé dès la reconnexion.',
 
   'connect.button': 'Connecter',
   'connect.busy': 'Connexion…',
-  'connect.searching': 'Recherche du BULLOADER déjà utilisé…',
-  'connect.incompatible': "Firmware incompatible : mets à jour l'app ou le BULLOADER.",
+  'connect.searching': 'Recherche du BazLoader déjà utilisé…',
+  'connect.incompatible': "Firmware incompatible : mets à jour l'app ou le BazLoader.",
   'connect.mock': 'Mode démo (?mock) : pas de vrai appareil.',
 
   // Same words as the OLED (firmware/src/screen.cpp), so the phone and the device can be matched.
@@ -66,7 +66,7 @@ export const fr = {
   'settings.title': 'Réglages',
   'settings.back': 'Retour',
   'settings.incompatible':
-    "Firmware incompatible : réglages indisponibles. Mets à jour l'app ou le BULLOADER.",
+    "Firmware incompatible : réglages indisponibles. Mets à jour l'app ou le BazLoader.",
   'settings.presets': 'Préréglages',
   'settings.preset': 'Préréglage {n}',
   'settings.presetError': 'Préréglage {n} : {error}',
@@ -90,7 +90,7 @@ export const fr = {
   'settings.notKept': "L'appareil n'a pas tout pris : voici ses valeurs.",
   'settings.motorTest': 'Test du moteur',
   'settings.testOffline':
-    "Connexion perdue : le BULLOADER coupe normalement le moteur de lui-même, et l'app renvoie STOP dès la reconnexion.",
+    "Connexion perdue : le BazLoader coupe normalement le moteur de lui-même, et l'app renvoie STOP dès la reconnexion.",
   'settings.testRunning': 'Test en cours : le moteur tourne.',
   'settings.testSavesFirst': 'Chaque test enregistre d’abord tes changements.',
   'settings.testSaved': 'Tourne avec les valeurs enregistrées.',

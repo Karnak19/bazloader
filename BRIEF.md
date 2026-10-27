@@ -1,4 +1,4 @@
-# BULLOADER+ — Brief projet
+# BazLoader — Brief projet
 
 Upgrade du BULLOADER (chargeur de billes airsoft électrique imprimé en 3D, MakerWorld #2680291) pour **choisir le nombre de billes à charger**, avec comptage réel par capteur IR, commandes physiques (molette + OLED) et une PWA Android pilotant l'appareil en Bluetooth Low Energy.
 
@@ -68,7 +68,7 @@ Upgrade du BULLOADER (chargeur de billes airsoft électrique imprimé en 3D, Mak
 ## Structure du repo
 
 ```
-bulloader-plus/
+bazloader/
 ├── CLAUDE.md              # conventions pour l'agent
 ├── BRIEF.md               # ce document
 ├── firmware/              # PlatformIO, framework Arduino
@@ -125,7 +125,7 @@ Flag de compilation `SIMULATE_IR` qui génère de fausses impulsions IR à un d�
 
 ## Protocole BLE
 
-- Nom d'annonce : `BULLOADER`
+- Nom d'annonce : `BazLoader`
 - Un service custom, UUID 128 bits à générer une fois et à partager entre firmware et PWA (`docs/[ble-protocol.md](http://ble-protocol.md)` + constantes dans chaque projet).
 - Entiers en little-endian.
 

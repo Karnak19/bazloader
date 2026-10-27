@@ -42,7 +42,7 @@ connected together.
 
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="wiring-title">BULLOADER+ wiring diagram</title>
+<title id="wiring-title">BazLoader wiring diagram</title>
 <desc id="wiring-desc">The LiPo battery goes through the switch, then powers the servo directly (with a 470 µF capacitor next to it), the 5 V buck converter that feeds the ESP32's 5V pin, and the 100 kΩ / 20 kΩ divider into GPIO 0 with 100 nF to ground. The servo gets its signal on GPIO 3. On 3.3 V: the IR LED with 220 Ω, the phototransistor with a 10 kΩ pull-up to GPIO 1, the KY-040 encoder (CLK 5, DT 6, SW 7) and the OLED (SDA 10, SCL 20). The GO button connects GPIO 4 to ground. Common ground.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
@@ -274,7 +274,7 @@ Do these in order, before connecting anything else. Write down every value you m
    respond, before putting the mechanics at risk.
 
 To flash and read the serial log, see the
-[firmware README](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/README.md)
+[firmware README](https://github.com/Karnak19/bazloader/blob/main/firmware/README.md)
 (`pio run -e sim -t upload`, then `pio device monitor`).
 
 ## Measurements
@@ -295,6 +295,6 @@ first power-up.
 
 ## See also
 
-- [BLE protocol](/bulloader-plus/en/protocole-ble/): what the board exchanges with the app.
-- [`firmware/src/config.h`](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/src/config.h):
+- [BLE protocol](/bazloader/en/protocole-ble/): what the board exchanges with the app.
+- [`firmware/src/config.h`](https://github.com/Karnak19/bazloader/blob/main/firmware/src/config.h):
   the reference for pins and default settings.

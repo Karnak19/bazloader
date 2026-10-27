@@ -6,7 +6,7 @@ description: UUIDs, types and byte layouts shared by the firmware and the web ap
 The ESP32 is the source of truth. Every change, whether it comes from the encoder or from BLE, is
 notified so the OLED and the PWA stay in sync.
 
-- Advertised name: `BULLOADER`
+- Advertised name: `BazLoader`
 - All integers are **little-endian**.
 - All UUIDs share one random base; only the 3rd and 4th hex digits change:
   `8adb76XX-5374-47c7-9127-d9895246807a`.

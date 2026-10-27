@@ -18,7 +18,7 @@ export const LANG_NAMES: Record<Lang, string> = { fr: 'Français', en: 'English'
 
 export const dictionaries: Record<Lang, Record<Key, string>> = { fr, en }
 
-const STORAGE_KEY = 'bulloader-plus.lang'
+const STORAGE_KEY = 'bazloader.lang'
 
 export function translate(lang: Lang, key: Key, vars?: Vars): string {
   const text = dictionaries[lang][key]

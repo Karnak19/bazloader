@@ -1,5 +1,5 @@
 ---
-name: BULLOADER+
+name: BazLoader
 description: The app as a precision instrument, one huge live count and one signal-orange action on a graphite or paper console.
 colors:
   bg-dark: "#0b0c0e"
@@ -155,7 +155,7 @@ components:
     padding: "20px"
 ---
 
-# Design System: BULLOADER+
+# Design System: BazLoader
 
 <!-- Scope: the app at /app/ (web/src/app.tsx, web/src/style.css). The Starlight docs site does not use this world yet; moving it over is planned. -->
 
@@ -221,7 +221,7 @@ Both are variable woff2 files self-hosted in `web/public/fonts/` (SIL OFL), prel
 ### Hierarchy
 - **Count** (Mono 600, clamp(4.5rem, 28vw, 8rem), line-height 0.95, -0.04em, tabular): the live BB count. "/ target" is the same line at 0.5em, weight 500, in ink 3.
 - **Action** (Geist 700, 2.25rem, +0.06em): GO and STOP. A mono uppercase sub-line (0.9375rem, +0.04em) under it.
-- **Wordmark** (Geist 700, 2.25rem, -0.03em): BULLOADER with an orange « + », on the connect screen.
+- **Wordmark** (Geist 700, 2.25rem, -0.03em): BazLoader, on the connect screen.
 - **State** (Geist 650, 1.625rem, line-height 1.15, -0.02em): the state word in its badge.
 - **Title** (Geist 650, 1.375rem, -0.02em): the Réglages header, dialog titles.
 - **Button** (Geist 600, 1.125rem, -0.01em): default buttons; 1.25rem on the large Réglages buttons.

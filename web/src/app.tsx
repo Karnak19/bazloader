@@ -583,11 +583,11 @@ function Icon({ name }: { name: IconName }) {
   )
 }
 
-// The name, with the « + » in the action colour.
+// The name.
 function Wordmark() {
   return (
     <h1 class="wordmark">
-      BULLOADER<span class="plus">+</span>
+      BazLoader
     </h1>
   )
 }

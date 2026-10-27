@@ -7,7 +7,7 @@ import { createStore, type Store } from '../ble/store.ts'
 export type ThemePref = 'auto' | 'light' | 'dark'
 export const THEME_PREFS: readonly ThemePref[] = ['auto', 'light', 'dark']
 
-export const THEME_KEY = 'bulloader-plus.theme'
+export const THEME_KEY = 'bazloader.theme'
 // The browser bar's colour, the page's ground in each theme. Same values as --bg in style.css and
 // as the inline script in app.astro.
 export const THEME_COLORS = { light: '#f6f4ef', dark: '#0b0c0e' } as const

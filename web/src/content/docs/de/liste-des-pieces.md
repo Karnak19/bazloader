@@ -1,6 +1,6 @@
 ---
 title: Stückliste
-description: Alles, was du für einen BULLOADER+ bestellen musst, mit den Fallen, die du bei der Auswahl vermeiden solltest.
+description: Alles, was du für einen BazLoader bestellen musst, mit den Fallen, die du bei der Auswahl vermeiden solltest.
 ---
 
 Diese Seite ist eine Einkaufsliste. Alles gibt es bei Online-Elektronikhändlern (AliExpress und
@@ -10,9 +10,9 @@ bevor du auf „Kaufen“ klickst. Die Suchbegriffe sind absichtlich auf Englisc
 diesen Seiten am meisten.
 
 Die Werte (Widerstände, Kondensatoren, Pins) stammen von der Seite
-[Verkabelung](/bulloader-plus/de/cablage/). Sollten die beiden Seiten einmal voneinander abweichen,
+[Verkabelung](/bazloader/de/cablage/). Sollten die beiden Seiten einmal voneinander abweichen,
 gilt die Verkabelung und, noch darüber,
-[`firmware/src/config.h`](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/src/config.h).
+[`firmware/src/config.h`](https://github.com/Karnak19/bazloader/blob/main/firmware/src/config.h).
 
 Die vorgeschlagenen Mengen enthalten etwas Reserve: Diese Teile kosten ein paar Cent bis ein paar
 Euro, und drei Wochen auf eine zweite Lieferung für eine beschädigte LED zu warten, kostet viel
@@ -75,7 +75,7 @@ Diese Teile stammen aus dem Original-BULLOADER und werden wiederverwendet. **Nic
 
 | Teil | Bestellmenge | Genaue Spezifikation | Worauf es bei der Auswahl ankommt | Wofür |
 | ---- | ------------ | -------------------- | --------------------------------- | ----- |
-| Drehgeber KY-040 | **2** (1 + 1 Reserve) | Modul **KY-040**: Drehgeber mit Rastung und Drucktaster, auf seiner kleinen Platine mit den Pull-up-Widerständen, 5 Pins (CLK, DT, SW, +, GND). Suche: „KY-040 rotary encoder module“. | Das **Modul auf Platine** nehmen, nicht den nackten Drehgeber. Er läuft an **3,3 V** (nicht 5 V), siehe [Verkabelung](/bulloader-plus/de/cablage/). Springt eine Raste um 2 statt um 1 weiter (oder umgekehrt), lässt sich das in `config.h` einstellen, das Modul muss nicht zurück. | Die Anzahl der BBs einstellen, mit einem Klick bestätigen. |
+| Drehgeber KY-040 | **2** (1 + 1 Reserve) | Modul **KY-040**: Drehgeber mit Rastung und Drucktaster, auf seiner kleinen Platine mit den Pull-up-Widerständen, 5 Pins (CLK, DT, SW, +, GND). Suche: „KY-040 rotary encoder module“. | Das **Modul auf Platine** nehmen, nicht den nackten Drehgeber. Er läuft an **3,3 V** (nicht 5 V), siehe [Verkabelung](/bazloader/de/cablage/). Springt eine Raste um 2 statt um 1 weiter (oder umgekehrt), lässt sich das in `config.h` einstellen, das Modul muss nicht zurück. | Die Anzahl der BBs einstellen, mit einem Klick bestätigen. |
 | Knopf für den Drehgeber | **2** | Drehknopf für eine **6-mm**-Achse, groß (25 mm Durchmesser oder mehr), gerändelt oder gummiert. Suche: „knob 6mm shaft knurled“. | Schau dir die Achse deines KY-040 an: **geriffelt** (Rillen rundherum) oder **D-förmig** (eine abgeflachte Seite). Der Knopf muss dazu passen. Groß und gerändelt, damit er sich **mit Handschuhen** bedienen lässt. Manche KY-040 kommen mit einem kleinen Knopf, meist zu klein. | Auf dem Spielfeld am Knopf drehen. |
 | OLED-Display 0,96" | **2** (1 + 1 Reserve) | OLED **0,96"**, **128 × 64**, Controller **SSD1306**, **4-Pin-I2C**-Schnittstelle (VCC, GND, SCL, SDA). Suche: „0.96 OLED SSD1306 I2C 4 pin 128x64“. | **4 Pins, I2C.** Die **7-Pin**-Versionen (SPI) sind die falschen. **Die Reihenfolge von VCC / GND ist je nach Händler verschieden** (GND-VCC-SCL-SDA oder VCC-GND-SCL-SDA): Vor dem Löten die Beschriftung lesen, vertauscht ist das Display hinüber. I2C-Adresse meist **0x3C**, manchmal **0x3D**. Lieber einfarbig (weiß oder blau): Die „gelb/blauen“ haben oben einen fest gelben Streifen. | Zeigt den Zustand, den Zählerstand und den Akku an. |
 
@@ -108,10 +108,10 @@ Diese Teile stammen aus dem Original-BULLOADER und werden wiederverwendet. **Nic
 
 | Teil | Bestellmenge | Genaue Spezifikation | Worauf es bei der Auswahl ankommt | Wofür |
 | ---- | ------------ | -------------------- | --------------------------------- | ----- |
-| PETG- oder PLA-Filament | **1 Rolle** (der Ring braucht nur ein paar Gramm) | PETG oder PLA in **Schwarz** (oder sehr dunkel), **blickdicht**. | Eine helle oder durchscheinende Farbe lässt Infrarot durch die Wände und blendet den Sensor in der Sonne. **Schwarz und blickdicht**, kein „transparent“ und kein „Silk“. | Der [IR-Ring](https://github.com/Karnak19/bulloader-plus/tree/main/cad) und sein Teststück (`fit_coupon`). |
+| PETG- oder PLA-Filament | **1 Rolle** (der Ring braucht nur ein paar Gramm) | PETG oder PLA in **Schwarz** (oder sehr dunkel), **blickdicht**. | Eine helle oder durchscheinende Farbe lässt Infrarot durch die Wände und blendet den Sensor in der Sonne. **Schwarz und blickdicht**, kein „transparent“ und kein „Silk“. | Der [IR-Ring](https://github.com/Karnak19/bazloader/tree/main/cad) und sein Teststück (`fit_coupon`). |
 
 Die Druckdateien und wie man sie anpasst, liegen im Ordner
-[`cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad) des Repos.
+[`cad/`](https://github.com/Karnak19/bazloader/tree/main/cad) des Repos.
 
 ## Werkzeug
 
@@ -131,17 +131,17 @@ Die Druckdateien und wie man sie anpasst, liegen im Ordner
 Bevor du irgendetwas lötest:
 
 1. **OLED-Display: die Reihenfolge der Pins ablesen** (Beschriftung auf der Platine). VCC und GND
-   können gegenüber dem [Schaltplan](/bulloader-plus/de/cablage/#schaltplan) vertauscht sein.
+   können gegenüber dem [Schaltplan](/bazloader/de/cablage/#schaltplan) vertauscht sein.
    Notier sie dir.
 2. **LED und Fototransistor: die Kennzeichnung 940 nm** auf den Beuteln prüfen und beide getrennt
    aufbewahren, damit sie nicht durcheinandergeraten (sie sehen sich ähnlich).
 3. **Wandler: mit dem Multimeter auf 5,0 V einstellen, ESP32 abgeklemmt**, vor allem anderen.
-   Siehe [Erste Inbetriebnahme](/bulloader-plus/de/cablage/#erste-inbetriebnahme).
+   Siehe [Erste Inbetriebnahme](/bazloader/de/cablage/#erste-inbetriebnahme).
 4. **Den Durchmesser des Auslaufrohrs messen**, mit dem Messschieber an der Stelle, wo der Ring
    sitzen wird, dazu den Körper der LED und des Fototransistors. Die Werte in
-   [`cad/params.py`](https://github.com/Karnak19/bulloader-plus/blob/main/cad/params.py) eintragen.
+   [`cad/params.py`](https://github.com/Karnak19/bazloader/blob/main/cad/params.py) eintragen.
 5. **Das Teststück drucken** (`fit_coupon`), um das richtige Spiel zu finden, wie im
-   [README des Ordners `cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad#fit_coupon)
+   [README des Ordners `cad/`](https://github.com/Karnak19/bazloader/tree/main/cad#fit_coupon)
    beschrieben, bevor du den Ring druckst.
 
 ## Rohr schneiden und Ring montieren
@@ -165,4 +165,4 @@ Strahl geht durch diese Lücke, durch den gedruckten Ring, der die Kugeln führt
    Abstand und Ausrichtung fest, nicht du.
 6. **Festziehen:** beide M3-Schrauben, eine pro Hälfte.
 
-Danach geht es an die [Verkabelung](/bulloader-plus/de/cablage/).
+Danach geht es an die [Verkabelung](/bazloader/de/cablage/).

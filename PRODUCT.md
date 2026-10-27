@@ -15,7 +15,7 @@ Their job: load an exact number of BBs into a magazine quickly, without counting
 
 ## Product Purpose
 
-BULLOADER+ upgrades the BULLOADER, an electric airsoft BB loader printed in 3D (MakerWorld #2680291). With it, you choose how many BBs to load and the loader stops on its own once that many have gone through, counted by an infrared beam. It's driven either from the device (encoder + small OLED) or from an Android PWA over Bluetooth Low Energy.
+BazLoader is based on the original BULLOADER, an electric airsoft BB loader printed in 3D (MakerWorld #2680291). With it, you choose how many BBs to load and the loader stops on its own once that many have gone through, counted by an infrared beam. It's driven either from the device (encoder + small OLED) or from an Android PWA over Bluetooth Low Energy.
 
 Success: the right number of BBs lands in the mag, set in a few seconds, with or without the phone.
 
@@ -38,7 +38,7 @@ The project ships three things in one public repo: the firmware, the web app, an
 ## Capabilities and Constraints
 
 - **App:** Chrome on Android only (Web Bluetooth). iOS is out of scope, because Safari has no Web Bluetooth. A clear message is shown when Bluetooth is unavailable. The app is installable and works offline after the first visit.
-- **Web stack:** one Astro site on GitHub Pages under `/bulloader-plus/`. Starlight docs are at the root. The app is the single page `/app/`, one Preact island holding every screen, because a page change would drop the Bluetooth connection.
+- **Web stack:** one Astro site on GitHub Pages under `/bazloader/`. Starlight docs are at the root. The app is the single page `/app/`, one Preact island holding every screen, because a page change would drop the Bluetooth connection.
 - **App screens:**
   - Connect.
   - Main: target, presets, GO/STOP, live count/target, state, battery.
@@ -52,7 +52,7 @@ The project ships three things in one public repo: the firmware, the web app, an
 
 ## Brand Commitments
 
-- **Name:** BULLOADER+.
+- **Name:** BazLoader.
 - **Attribution:** always credit the original BULLOADER on MakerWorld.
 - **License boundary:** the original model is under the MakerWorld Exclusive License. Its files and the remixed control panel must never appear in this repo or on the site; the remix is published only on MakerWorld.
 - **Voice:** plain and friendly, maker to maker, no jargon without a short explanation.

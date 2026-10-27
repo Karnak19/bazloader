@@ -13,16 +13,16 @@ export const en: Record<keyof typeof fr, string> = {
   'app.noBluetooth': "Web Bluetooth isn't available. Use Chrome on Android.",
 
   'banner.reconnecting': 'Disconnected — reconnecting…',
-  'banner.lost': 'Connection lost. Turn the BULLOADER back on or move closer.',
+  'banner.lost': 'Connection lost. Turn the BazLoader back on or move closer.',
   'banner.retry': 'Reconnect',
   'banner.changeDevice': 'Change device',
-  'banner.motorMayRun': 'The motor may still be running. To stop it, press GO or push the knob on the BULLOADER.',
+  'banner.motorMayRun': 'The motor may still be running. To stop it, press GO or push the knob on the BazLoader.',
   'banner.stopQueued': 'STOP pending: sent as soon as the link is back.',
 
   'connect.button': 'Connect',
   'connect.busy': 'Connecting…',
-  'connect.searching': 'Looking for the BULLOADER you used before…',
-  'connect.incompatible': 'Incompatible firmware: update the app or the BULLOADER.',
+  'connect.searching': 'Looking for the BazLoader you used before…',
+  'connect.incompatible': 'Incompatible firmware: update the app or the BazLoader.',
   'connect.mock': 'Demo mode (?mock): no real device.',
 
   // The OLED stays in French; these say the same thing in English.
@@ -60,7 +60,7 @@ export const en: Record<keyof typeof fr, string> = {
 
   'settings.title': 'Settings',
   'settings.back': 'Back',
-  'settings.incompatible': 'Incompatible firmware: settings unavailable. Update the app or the BULLOADER.',
+  'settings.incompatible': 'Incompatible firmware: settings unavailable. Update the app or the BazLoader.',
   'settings.presets': 'Presets',
   'settings.preset': 'Preset {n}',
   'settings.presetError': 'Preset {n}: {error}',
@@ -84,7 +84,7 @@ export const en: Record<keyof typeof fr, string> = {
   'settings.notKept': "The device didn't take everything: these are its values.",
   'settings.motorTest': 'Motor test',
   'settings.testOffline':
-    'Connection lost: the BULLOADER normally cuts the motor by itself, and the app sends STOP again once reconnected.',
+    'Connection lost: the BazLoader normally cuts the motor by itself, and the app sends STOP again once reconnected.',
   'settings.testRunning': 'Test running: the motor is spinning.',
   'settings.testSavesFirst': 'Each test saves your changes first.',
   'settings.testSaved': 'Spins with the saved values.',

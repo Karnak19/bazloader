@@ -42,7 +42,7 @@ da el pin 3V3 del ESP32. Todos los símbolos de masa están unidos entre sí.
 
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="wiring-title">Esquema de cableado del BULLOADER+</title>
+<title id="wiring-title">Esquema de cableado del BazLoader</title>
 <desc id="wiring-desc">La batería LiPo pasa por el interruptor y luego alimenta directamente el servo (con un condensador de 470 µF al lado), el convertidor de 5 V que alimenta el pin 5V del ESP32, y el divisor de 100 kΩ / 20 kΩ hacia GPIO 0 con 100 nF a masa. El servo recibe su señal en GPIO 3. A 3,3 V: el LED IR con 220 Ω, el fototransistor con una resistencia de pull-up de 10 kΩ hacia GPIO 1, el encoder KY-040 (CLK 5, DT 6, SW 7) y la OLED (SDA 10, SCL 20). El botón GO une GPIO 4 a masa. Masa común.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
@@ -274,7 +274,7 @@ Hazlo en este orden, antes de conectar nada más. Apunta cada valor que midas en
    botón y la lectura de la batería responden, antes de arriesgar la mecánica.
 
 Para flashear y leer el registro serie, consulta el
-[README del firmware](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/README.md)
+[README del firmware](https://github.com/Karnak19/bazloader/blob/main/firmware/README.md)
 (`pio run -e sim -t upload` y después `pio device monitor`).
 
 ## Mediciones
@@ -295,7 +295,7 @@ encendido.
 
 ## Ver también
 
-- [Protocolo BLE](/bulloader-plus/es/protocole-ble/): lo que la placa intercambia con la
+- [Protocolo BLE](/bazloader/es/protocole-ble/): lo que la placa intercambia con la
   aplicación.
-- [`firmware/src/config.h`](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/src/config.h):
+- [`firmware/src/config.h`](https://github.com/Karnak19/bazloader/blob/main/firmware/src/config.h):
   la referencia para los pines y los ajustes por defecto.

@@ -53,6 +53,8 @@ M3_CLEARANCE = 3.4  # Through-hole for an M3 screw.
 M3_NUT_AF = 5.5  # M3 hex nut, across flats.
 M3_NUT_THICKNESS = 2.4  # M3 hex nut thickness.
 NUT_TOLERANCE = 0.3  # Clearance on the nut trap, so the nut presses in by hand.
+M3_HEAD_D = 5.5  # M3 socket head diameter (ISO 4762). Button heads are 5.7: the head chambers take either.
+M3_HEAD_H = 3.0  # M3 socket head height.
 
 # --- Rotary encoder (KY-040 module, EC11-type encoder) ----------------------
 # Defaults come from the common EC11 datasheet values (Alps EC11 series and its
@@ -137,6 +139,96 @@ GAUGE_WALL = 2.0  # Width of the floor gauge frame (the ledge gauge is as wide a
 GAUGE_TEXT_SIZE = 5.0  # Height of the engraved label.
 GAUGE_TEXT_DEPTH = 0.6  # Engraving depth (3 layers at 0.2).
 GAUGE_TAB_MARGIN = 2.0  # Material round the label on its tab.
+
+# --- BBs ----------------------------------------------------------------------
+BB_D = 6.0  # Nominal BB. Also the largest we plan for: every BB passage is checked at BB_D + FIT_TOLERANCE.
+BB_MIN_D = 5.95  # Smallest BB we expect (cheap 0.20 g). Checked so it can never sit two-deep.
+
+# --- Servo (the existing BULLOADER 35 kg continuous servo, #54) ----------------
+# Measured on the original's pocket, taken as starting values. Frame: output spline on
+# the origin, body along +X, so the spline sits SERVO_SPLINE_OFFSET from the -X end.
+SERVO_BODY_L = 40.0  # TODO: measure. Body length, without the ears.
+SERVO_BODY_W = 20.0  # TODO: measure. Body width.
+SERVO_SPLINE_OFFSET = 10.2  # TODO: measure. Output spline axis to the near end of the body.
+SERVO_EAR_PITCH_L = 48.6  # TODO: measure. Ear holes, centre to centre, along the body.
+SERVO_EAR_PITCH_W = 9.9  # TODO: measure. Ear holes, centre to centre, across the body.
+SERVO_EAR_SPAN = 54.5  # TODO: measure. Overall length over the ears (only sizes the bracket).
+SERVO_FACE_TO_EARS = 11.0  # TODO: measure. From the output face of the case to the face of the ears on that side.
+SERVO_HORN_GAP = 2.0  # TODO: measure. From the output face of the case to the back of the horn, horn pushed on.
+FEED_HORN_D = 20.0  # TODO: measure. Round metal horn diameter (the original pocket has a 20 mm recess for it).
+FEED_HORN_T = 3.0  # TODO: measure. Horn thickness.
+FEED_HORN_HOLE_D = 3.5  # Holes for the 4 horn screws (M3 into the horn's threads), as on the original pocket.
+FEED_HORN_HOLE_CIRCLE = 14.0  # TODO: measure. Diameter of the circle the 4 horn holes sit on.
+FEED_HORN_SCREW_HEAD_D = 7.0  # TODO: measure. Clearance for the head of the screw holding the horn on the spline.
+
+# --- Feed mechanism (#54, concept B): horizontal pocket disc ------------------------
+# The disc lies on the floor and turns counter-clockwise seen from above. BBs drop into
+# its notches through a window in the cover, are carried under the cover past the cut-off
+# edge, and a tongue under the cover pushes each one out into a tangent channel.
+FEED_POCKETS = 14  # Notches on the disc. 360/14 = 25.7 deg per BB.
+FEED_BB_CIRCLE_R = 22.0  # Radius of the BB centres in the notches. Pitch 2*pi*22/14 = 9.9 mm.
+FEED_DISC_OD = 49.5  # Disc diameter. The notches run out through the rim, so a BB can leave radially.
+FEED_DISC_T = 3.7  # Disc thickness: under a BB, so the top ~2.3 mm of each BB sticks up for the tongue.
+FEED_NOTCH_W = 6.5  # Notch width (U-slot, round end on the BB circle side). BB_D + FIT_TOLERANCE must pass.
+FEED_MIN_LAND = 3.0  # Least land between two notches, measured on the BB circle.
+FEED_SLOT_H = 6.4  # TODO: calibrate with feed_coupon. Floor to cover underside: one layer of BBs, never two.
+FEED_RUN_GAP = 0.4  # Running clearance between the turning parts (disc, hub) and the fixed ones. >= FIT_TOLERANCE.
+FEED_SHROUD_GAP = 0.4  # Shroud radius = BB circle + BB_D/2 + this: a BB in a notch cannot move out more than that.
+FEED_PIN_D = 5.0  # Centre pin on the base floor, the disc's bearing (the servo spline only drives).
+FEED_PIN_H = 4.0  # Pin height above the floor.
+FEED_PIN_CLEARANCE = 0.3  # TODO: calibrate with feed_coupon. Disc centre bore = FEED_PIN_D + this.
+FEED_HUB_R = 9.0  # Raised hub at the disc centre: holds the pin bore under and the hex socket for the shaft over.
+FEED_SHAFT_AF = 12.0  # Hex drive shaft, across flats. Printed lying: strong in torsion, straight.
+FEED_HEX_TOLERANCE = 0.3  # TODO: calibrate with feed_coupon. Hex sockets = FEED_SHAFT_AF + this.
+FEED_HEX_DEPTH = 6.0  # Depth of the hex socket in the disc hub.
+FEED_SHAFT_ENGAGE = 8.0  # Depth of the hex socket in the drive hub, i.e. how far the shaft goes up into it.
+FEED_SHAFT_FLOAT = 2.0  # Gap left over the shaft top in the drive hub: takes the servo height error.
+FEED_HUB_PLATE_T = 3.0  # Plate of the drive hub the horn screws go through.
+
+# Cover and window. Angles in degrees, counter-clockwise from +X (the exit channel's side).
+FEED_COVER_T = 4.0  # Cover thickness: its top is the inlet, FEED_SLOT_H + this above the floor (10.4).
+FEED_WINDOW_ARC = 150.0  # Window over the notches, measured on the BB circle.
+FEED_CARRY_ARC = 45.0  # From the cut-off edge to the strip point: the BB rides under the cover this far.
+FEED_WINDOW_R_IN = 12.0  # Window inner radius: it also opens the land, so a BB pushed in along a skewed edge has
+# somewhere to go. Leaves a solid ring round the hub hole for the hopper sleeve to stand over.
+FEED_CUTOFF_SKEWS = (0.0, 30.0, 45.0)  # One cover per value: the cut-off edge, tilted from radial, inner end ahead.
+FEED_EDGE_JOINT_R = 18.0  # Inside this radius (the land, no notch) the skewed edges turn radial.
+FEED_LIFT_CHAMFER = 3.0  # 45 deg chamfer under both window edges: a BB riding high is lifted back into the window.
+FEED_TONGUE_ARC = 90.0  # Stripper tongue, from the strip point on. Then full slot height until the window, so a
+# 1-2 pocket reverse carries BBs back under the cover without meeting the tongue.
+FEED_BLOCK_HALF = 40.0  # Half side of the square base block and the cover. Also where the exit channel ends.
+FEED_BASE_T = 3.0  # Base plate under everything (the elbow stands on it).
+FEED_COVER_SCREW_INSET = 8.0  # Corner M3 screws holding the cover, this far in from each side.
+FEED_TEXT_SIZE = 5.0  # Engraved variant label on the cover.
+FEED_TEXT_DEPTH = 0.6  # Its depth.
+
+# Hopper and servo bracket: the bench stand-in for the tower. The servo sits on top, the shaft
+# runs down to the disc inside a fixed sleeve, and the BBs pile round the sleeve.
+FEED_PILE_H = 110.0  # Hopper wall height over the cover: room for a ~10 cm pile.
+FEED_HOPPER_WALL = 2.0  # Hopper wall thickness (stiff enough at 110 mm).
+FEED_HOPPER_SEAT = 1.0  # Depth of the groove in the cover top the hopper wall stands in.
+FEED_SLEEVE_GAP = 0.5  # Gap under the sleeve, over the cover top. Far under a BB.
+FEED_BRACKET_T = 4.0  # Servo plate thickness.
+FEED_HOUSE_GAP = 1.0  # Clearance inside the bracket's house, round the servo case and the drive hub.
+FEED_SELF_TAP_D = 2.5  # Pilot hole for an M3 screw cutting its own thread in the plastic (servo ears).
+FEED_BRACKET_LIP = 6.0  # Corner tabs under the plate that locate it in the hopper (and stop it turning).
+
+# Exit channel and elbow (in two halves split on the plane of the bend).
+FEED_ELBOW_RADII = (25.0, 30.0, 40.0)  # One elbow per value, radius at the BB path.
+FEED_ELBOW_MIN_R = 25.0  # Gentlest bend we accept: the BB column buckles in a tight bend (#54: well over 20).
+FEED_ELBOW_RUN = 4.0  # Straight horizontal run in the elbow before the bend starts.
+FEED_ELBOW_RISE = 4.0  # Straight vertical run after the bend, before the barrel socket.
+FEED_ELBOW_HALF_W = 13.0  # Elbow body, from the BB path to its edge in the plane: room for the screws and nuts.
+FEED_ELBOW_WALL = 2.0  # Wall round the barrel socket, across the split.
+FEED_ELBOW_CLAMP_GAP = 0.6  # The split faces are set back by half this round the socket, so the screws squeeze it.
+FEED_MOUTH_CHAMFER = 0.6  # 45 deg lead-in at the elbow mouth: covers a FIT_TOLERANCE misfit with the channel.
+FEED_DOCK_T = 3.0  # Cheeks on the base either side of the elbow, holding it to the channel exit.
+
+# Feed coupon (print it with the first parts, then update the FEED_ tolerances above).
+FEED_COUPON_SLOT_OFFSETS = (-0.2, 0.0, 0.2)  # Groove depth = FEED_SLOT_H + offset.
+FEED_COUPON_PIN_OFFSETS = (0.1, 0.2, 0.3, 0.4)  # Bore = FEED_PIN_D + offset. Best fit gives FEED_PIN_CLEARANCE.
+FEED_COUPON_HEX_OFFSETS = (0.1, 0.2, 0.3, 0.4)  # Hex = FEED_SHAFT_AF + offset. Best fit gives FEED_HEX_TOLERANCE.
+FEED_COUPON_T = 8.5  # Coupon thickness: the deepest slot groove plus MIN_WALL under it; the bores go through.
 
 # --- Smoke-test ring (M0 only, proves the build pipeline) --------------------
 RING_WALL = 2.0  # Radial wall thickness of the test ring.

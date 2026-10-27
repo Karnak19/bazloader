@@ -1,4 +1,4 @@
-"""Sanity checks on the IR collar, the encoder knob, the fit coupon and the box fit gauges.
+"""Sanity checks on the IR collar, the encoder knob, the fit coupon, the box fit gauges and the feed rig.
 
 Run: uv run python check.py
 Probes points just inside and just outside each feature, so a wrong bore, a missing
@@ -8,7 +8,7 @@ its axis fail loudly.
 
 import math
 
-from build123d import GeomType, Vector
+from build123d import Align, Box, GeomType, Pos, Vector
 
 import build
 import params as p
@@ -407,6 +407,365 @@ def check_ledge_gauge() -> None:
     )
 
 
+# --- Feed mechanism bench rig (#54) ------------------------------------------------------
+
+
+def feed_bridges(name: str) -> tuple:
+    """Documented bridges of a feed part: heights, in its print orientation, of the horizontal
+    ceilings the printer has to span (all short). Anything else facing down flatter than 45 deg fails."""
+    k = build.feed_layout()
+    nut_d = p.M3_NUT_THICKNESS + p.NUT_TOLERANCE
+    if name == "feed_base":
+        return (nut_d,)  # Nut trap ceilings.
+    if name == "feed_drive_hub":
+        return (p.FEED_SHAFT_ENGAGE + k["chamber_h"],)  # Ceiling of the screw-head chamber.
+    if name.startswith("feed_cover_"):
+        return (p.FEED_HOPPER_SEAT, p.FEED_TEXT_DEPTH)  # Hopper groove and label, on the bed side.
+    if name == "feed_servo_bracket":
+        return (p.FEED_BRACKET_T,)  # Ends of the 2.5 mm ear holes where they meet the house wall.
+    if name.startswith("feed_elbow_") and name.endswith("_b"):
+        return (nut_d,)  # Nut trap ceilings.
+    return ()
+
+
+def overhangs(part, bridges: tuple = (), small_hole_r: float = 2.0) -> list:
+    """Points of downward faces flatter than 45 deg, off the bed, that are neither a documented
+    bridge (horizontal face at one of the `bridges` heights) nor the top of a small horizontal hole.
+    Each face is sampled on a 5 x 5 grid."""
+    bad = []
+    for f in part.faces():
+        small = f.geom_type == GeomType.CYLINDER and f.radius is not None and f.radius <= small_hole_r
+        for i in range(5):
+            for j in range(5):
+                n = f.normal_at(0.1 + 0.2 * i, 0.1 + 0.2 * j)
+                q = f.position_at(0.1 + 0.2 * i, 0.1 + 0.2 * j)
+                if n.Z > -0.7072 or q.Z < 0.01 or small:
+                    continue
+                if f.geom_type == GeomType.PLANE and n.Z < -0.999 and any(abs(q.Z - z) < 0.02 for z in bridges):
+                    continue
+                bad.append((str(f.geom_type), round(q.X, 1), round(q.Y, 1), round(q.Z, 2), round(n.Z, 3)))
+    return bad
+
+
+def check_feed_numbers() -> None:
+    """One BB per notch, one layer under the cover, nothing a BB can bind in."""
+    k = build.feed_layout()
+    big = p.BB_D + p.FIT_TOLERANCE  # Largest BB, or a passage printed FIT_TOLERANCE small.
+    R, N, w = p.FEED_BB_CIRCLE_R, p.FEED_POCKETS, p.FEED_NOTCH_W
+    pitch = 2 * math.pi * R / N
+    land_angle = 2 * math.pi / N - 2 * math.asin(w / 2 / R)
+    land = 2 * R * math.sin(land_angle / 2)  # Straight across the land, on the BB circle.
+    assert land >= p.FEED_MIN_LAND, f"land only {land:.2f} between notches"
+    assert w >= big, f"notch {w} binds a {big:.2f} BB"
+    assert w < 2 * p.BB_MIN_D, "two BBs fit side by side in a notch"
+    assert k["shroud_r"] - k["notch_end_r"] < 2 * p.BB_MIN_D, "two BBs fit one behind the other in a notch"
+    assert k["shroud_r"] >= R + big / 2, "the shroud pinches the largest BB in its notch"
+    assert k["shroud_r"] - k["disc_r"] >= p.FIT_TOLERANCE, "disc rim rubs the shroud"
+    assert k["disc_r"] > R, "notch centres beyond the rim"
+    assert p.FEED_SLOT_H - p.FIT_TOLERANCE >= p.BB_D, f"slot {p.FEED_SLOT_H} binds a BB if it prints low"
+    assert p.FEED_SLOT_H + p.FIT_TOLERANCE < 2 * p.BB_MIN_D, "two small BBs could stack under the cover"
+    # A BB riding on the disc (not in a notch) never gets under the cover: the cut-off edge holds it.
+    assert p.FEED_DISC_T + p.BB_MIN_D > p.FEED_SLOT_H + p.FIT_TOLERANCE, "a BB on the disc fits under the cover"
+    # The notch walls push the BB at its centre, the tongue catches its top.
+    assert p.FEED_DISC_T > p.BB_D / 2, "disc too thin: its notch walls push the BB below the centre"
+    grip = p.BB_MIN_D - (k["tongue_bottom"] - k["floor"])
+    assert grip >= 1.0, f"the tongue catches only {grip:.2f} of the smallest BB"
+    assert p.FEED_RUN_GAP >= p.FIT_TOLERANCE, "running gap under FIT_TOLERANCE"
+    assert p.BB_GUIDE_D - p.FIT_TOLERANCE >= p.BB_D, "channel and elbow bore bind a BB if they print small"
+    # Reverse: past the tongue, full slot height for at least 2 pockets before the window starts.
+    free = (k["start"] + 360) - p.FEED_TONGUE_ARC
+    assert free >= 2 * 360 / N, f"only {free:.0f} deg of full slot before the window, a reverse meets the tongue"
+    assert abs(p.FEED_WINDOW_ARC + p.FEED_CARRY_ARC + free + p.FEED_TONGUE_ARC - 360) < 1e-9
+    assert p.FEED_WINDOW_R_IN > k["sleeve_ro"] + p.MIN_WALL / 2, "the sleeve does not stand over solid cover"
+    assert p.FEED_WINDOW_R_IN < k["notch_end_r"], "window does not open the notches down to their end"
+    print(
+        f"feed numbers: OK  {N} notches w={w} on R{R:g}, pitch {pitch:.2f}, land {land:.2f}  "
+        f"slot {p.FEED_SLOT_H} (2 x min BB = {2 * p.BB_MIN_D:.1f})  tongue grips {grip:.2f}  "
+        f"shroud R{k['shroud_r']:.2f} (disc R{k['disc_r']:.2f})  inlet {k['inlet']:.1f} over the floor, "
+        f"{k['cover_top']:.1f} over the table  full slot before the window {free:.0f} deg"
+    )
+
+
+def check_feed_disc() -> None:
+    part = build.feed_disc()
+    k = build.feed_layout()
+    assert part.is_valid and len(part.solids()) == 1, "disc is not one valid solid"
+    R, N, w, z = p.FEED_BB_CIRCLE_R, p.FEED_POCKETS, p.FEED_NOTCH_W, k["floor"] + p.FEED_DISC_T / 2
+    # Count the notches round the BB circle, and check they are evenly spaced.
+    runs, prev = [], solid_at(part, R, 0, z)
+    for i in range(1, 3601):
+        a = math.radians(i / 10)
+        now = solid_at(part, R * math.cos(a), R * math.sin(a), z)
+        if prev and not now:
+            runs.append(i / 10)
+        prev = now
+    assert len(runs) == N, f"{len(runs)} notches, want {N}"
+    steps = [(runs[(i + 1) % N] - runs[i]) % 360 for i in range(N)]
+    assert max(steps) - min(steps) < 0.25, f"notches unevenly spaced: {steps}"
+    for i in range(N):
+        a = 2 * math.pi * i / N
+        c, s = math.cos(a), math.sin(a)
+        # Hollow across the notch up to w/2, solid past it; hollow up to the round end, solid past it.
+        for side in (-1, 1):
+            x, y = R * c - side * (w / 2 - EPS) * s, R * s + side * (w / 2 - EPS) * c
+            assert not solid_at(part, x, y, z), f"notch {i} narrower than {w}"
+            x, y = R * c - side * (w / 2 + EPS) * s, R * s + side * (w / 2 + EPS) * c
+            assert solid_at(part, x, y, z), f"notch {i} wider than {w}"
+        re = k["notch_end_r"]
+        assert not solid_at(part, (re + EPS) * c, (re + EPS) * s, z), f"notch {i} end too close in"
+        assert solid_at(part, (re - EPS) * c, (re - EPS) * s, z), f"notch {i} end too deep"
+        # Notch walls vertical: through from just over the floor to just under the top.
+        for zz in (k["floor"] + EPS, k["disc_top"] - EPS):
+            assert not solid_at(part, R * c, R * s, zz), f"notch {i} not through at z={zz:.2f}"
+    # Hub: pin bore underneath, hex socket on top, solid between.
+    pr = k["pin_bore_r"]
+    zp = k["floor"] + 1
+    assert not solid_at(part, pr - EPS, 0, zp) and solid_at(part, pr + EPS, 0, zp), "pin bore size"
+    assert solid_at(part, 0, 0, k["floor"] + k["pin_bore_depth"] + pr + EPS), "no wall between pin bore and hex socket"
+    zh = k["hub_top"] - p.FEED_HEX_DEPTH / 2
+    af = (p.FEED_SHAFT_AF + p.FEED_HEX_TOLERANCE) / 2
+    assert not solid_at(part, af - EPS, 0, zh) and solid_at(part, af + EPS, 0, zh), "hex socket across flats"
+    bb = part.bounding_box()
+    assert abs(max(bb.size.X, bb.size.Y) - p.FEED_DISC_OD) < 0.01, f"disc OD {bb.size}"
+    print(
+        f"feed_disc: OK  {N} notches every {360 / N:.2f} deg, OD {p.FEED_DISC_OD}, t {p.FEED_DISC_T}, "
+        f"hub {k['hub_h']:.1f} tall"
+    )
+
+
+def check_feed_cover(skew: float, assembly: dict) -> None:
+    k = build.feed_layout()
+    cover, base, disc = assembly["cover"], assembly["base"], assembly["disc"]
+    assert cover.is_valid and len(cover.solids()) == 1, f"cover {skew} is not one valid solid"
+    R, zu = p.FEED_BB_CIRCLE_R, k["block_top"]
+
+    def pt(a: float, r: float = R) -> tuple:
+        return (r * math.cos(math.radians(a)), r * math.sin(math.radians(a)))
+
+    # Slot: floor to cover underside is FEED_SLOT_H, under the cover past the cut-off edge.
+    x, y = pt(k["cut"] + 20)
+    assert solid_at(base, x, y, k["floor"] - EPS) and not solid_at(base, x, y, k["floor"] + EPS), "floor height"
+    assert solid_at(cover, x, y, zu + EPS) and not solid_at(cover, x, y, zu - EPS), "cover underside height"
+    # Window: open through the cover over the whole notch band, at its middle.
+    mid = k["cut"] - p.FEED_WINDOW_ARC / 2
+    for r in (p.FEED_WINDOW_R_IN + EPS, k["notch_end_r"], R, k["shroud_r"] - EPS):
+        for zz in (zu + EPS, k["cover_top"] - EPS):
+            assert not solid_at(cover, *pt(mid, r), zz), f"window closed at r={r:.2f}"
+    # Edges through the BB circle at their angles, at the underside (where the chamfer is nil).
+    for a, inside in ((k["cut"], -1), (k["start"], 1)):
+        assert not solid_at(cover, *pt(a + inside * 1.0), zu + EPS), f"window short of its edge at {a}"
+        assert solid_at(cover, *pt(a - inside * 1.0), zu + EPS), f"window past its edge at {a}"
+    # Lift chamfer: half way in, solid low down, cut away higher up. And the tilt of each edge.
+    c = p.FEED_LIFT_CHAMFER
+    for a, side in ((k["cut"], 1), (k["start"], -1)):
+        e = build.feed_edge(a, skew, side)
+        d = (e[2][0] - e[1][0], e[2][1] - e[1][1])
+        L = math.hypot(*d)
+        n = (-side * d[1] / L, side * d[0] / L)
+        x, y = pt(a)
+        assert solid_at(cover, x + n[0] * c / 2, y + n[1] * c / 2, zu + c / 4), f"chamfer too big at {a}"
+        assert not solid_at(cover, x + n[0] * c / 2, y + n[1] * c / 2, zu + 3 * c / 4), f"no lift chamfer at {a}"
+        tilt = math.degrees(math.atan2(abs(d[0] * y - d[1] * x), d[0] * x + d[1] * y))
+        assert abs(tilt - skew) < 1e-6, f"edge tilt {tilt:.2f}, want {skew}"
+        # Tilted the right way: the outer end set back toward the window.
+        diff = (math.degrees(math.atan2(e[2][1], e[2][0])) - a + 180) % 360 - 180
+        assert skew == 0 or diff * side < 0, f"edge at {a} tilted the wrong way"
+    # Tongue: hangs to FEED_RUN_GAP over the disc, its edge on the channel's inner wall.
+    x0, zt = k["channel_x0"], k["tongue_bottom"]
+    assert solid_at(cover, x0 - EPS, 5, zt + EPS) and not solid_at(cover, x0 + EPS, 5, zt + EPS), "tongue edge"
+    assert not solid_at(cover, x0 - 1, 5, zt - EPS), "tongue too low"
+    assert not solid_at(cover, *pt(p.FEED_TONGUE_ARC + 5), zt + EPS), "tongue runs past FEED_TONGUE_ARC"
+    # The sleeve stands over solid cover all round; the hopper wall sits in its groove.
+    rs = (k["sleeve_ri"] + k["sleeve_ro"]) / 2
+    for a in range(0, 360, 10):
+        assert solid_at(cover, *pt(a, rs), k["cover_top"] - EPS), f"no cover under the sleeve at {a} deg"
+    gm = (k["hop_in"] + k["hop_out"]) / 2
+    assert not solid_at(cover, gm, 0, k["cover_top"] - EPS), "no hopper groove"
+    assert solid_at(cover, gm, 0, k["hop_bottom"] - EPS), "hopper groove too deep"
+    # Clear of the turning disc by FEED_RUN_GAP, never touching it.
+    gap = cover.distance_to(disc)
+    assert gap >= p.FIT_TOLERANCE - 1e-6, f"cover only {gap:.3f} from the disc"
+    assert (cover & base).volume < 1e-3, "cover and base overlap"
+    print(
+        f"feed_cover skew {skew:g}: OK  window {p.FEED_WINDOW_ARC:g} deg, edges tilted {skew:g} deg, "
+        f"chamfer {c}, disc gap {gap:.2f}"
+    )
+
+
+def check_feed_assembly(assembly: dict) -> None:
+    k = build.feed_layout()
+    a = assembly
+    for n, s in a.items():
+        assert s.is_valid and len(s.solids()) == 1, f"{n} is not one valid solid"
+
+    def overlap(m: str, n: str) -> None:
+        v = (a[m] & a[n]).volume
+        assert v < 1e-3, f"{m} and {n} overlap by {v:.3f} mm3"
+
+    def clear(m: str, n: str, want: float) -> float:
+        d = a[m].distance_to(a[n])
+        assert d >= want - 1e-6, f"{m} only {d:.3f} from {n}, want {want}"
+        return d
+
+    pairs = (
+        ("disc", "base"),
+        ("shaft", "disc"),
+        ("shaft", "drive_hub"),
+        ("hopper", "cover"),
+        ("hopper", "bracket"),
+        ("elbow_a", "base"),
+        ("elbow_b", "base"),
+        ("elbow_a", "elbow_b"),
+        ("elbow_a", "cover"),
+        ("elbow_b", "cover"),
+    )
+    for m, n in pairs:
+        overlap(m, n)
+    clear("shaft", "cover", p.FIT_TOLERANCE)
+    clear("shaft", "bracket", p.FIT_TOLERANCE)
+    clear("disc", "bracket", p.FIT_TOLERANCE)
+    clear("drive_hub", "bracket", p.FIT_TOLERANCE)
+    clear("disc", "hopper", p.FIT_TOLERANCE)
+    # The disc's rim clears the shroud all round (outside the exit, where the shroud opens).
+    r = k["shroud_r"]
+    for deg in range(0, 360, 5):
+        c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+        if not solid_at(a["base"], (r + EPS) * c, (r + EPS) * s, k["floor"] + 1):
+            continue  # The channel.
+        assert not solid_at(a["base"], (r - EPS) * c, (r - EPS) * s, k["floor"] + 1), f"shroud inside R{r} at {deg}"
+    # Servo case: through the plate with FIT_TOLERANCE, clear of the house below.
+    xc = (k["case_x0"] + k["case_x1"]) / 2
+    h = k["ears"] - k["case_face"]
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    case = Pos(xc, 0, k["case_face"]) * Box(p.SERVO_BODY_L, p.SERVO_BODY_W, h, align=up)
+    d = case.distance_to(a["bracket"])
+    assert d >= p.FIT_TOLERANCE - 1e-6, f"servo case {d:.2f} from the bracket"
+    # Shaft: sits on the floor of the disc's socket, goes up into the drive hub with room to float.
+    engage = k["shaft_top"] - k["dhub_bottom"]
+    assert engage >= p.FEED_SHAFT_ENGAGE / 2, f"shaft only {engage:.1f} into the drive hub"
+    assert p.FEED_SHAFT_FLOAT > 0
+    assert 0 < p.FEED_SLEEVE_GAP < p.BB_MIN_D / 2, "a BB gets under the sleeve"
+    assert k["hop_top"] - k["cover_top"] >= 100, "hopper under 10 cm"
+    print(
+        f"feed assembly: OK  no overlaps  servo case gap {d:.2f}  shaft {k['shaft_top'] - k['shaft_bottom']:.1f} long, "
+        f"{engage:.1f} into the drive hub (float {p.FEED_SHAFT_FLOAT})  "
+        f"hopper {k['hop_top'] - k['cover_top']:.0f} over the cover"
+    )
+
+
+def check_feed_elbow(R: float) -> None:
+    k = build.feed_layout()
+    e = build.elbow_layout(R)
+    a, b = build.feed_elbow_half(R, "a", placed=False), build.feed_elbow_half(R, "b", placed=False)
+    for h in (a, b):
+        assert h.is_valid and len(h.solids()) == 1, f"elbow R{R} half is not one valid solid"
+    both = a + b
+    assert R >= p.FEED_ELBOW_MIN_R, f"elbow R{R} under FEED_ELBOW_MIN_R {p.FEED_ELBOW_MIN_R}"
+    r, cu, cv = e["bore_r"], e["cu"], e["cv"]
+
+    def ring(center, n1, n2, radius: float, hollow: bool, skip_split: bool = False) -> None:
+        for deg in range(0, 360, 30):
+            if skip_split and deg % 180 == 0:
+                continue
+            c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+            q = Vector(*center) + Vector(*n1) * (radius * c) + Vector(*n2) * (radius * s)
+            what = "closed" if hollow else "open"
+            assert both.is_inside(q) != hollow, f"elbow R{R}: bore {what} at {center} {deg} deg"
+
+    # Bore continuous along the path: hollow just inside bore_r, solid just outside, all along.
+    stations = [((u, 0, 0), (0, 1, 0), (0, 0, 1)) for u in (p.FEED_MOUTH_CHAMFER + 0.3, p.FEED_ELBOW_RUN / 2)]
+    for deg in range(0, 91, 10):
+        t = math.radians(-90 + deg)
+        stations.append(((cu + R * math.cos(t), cv + R * math.sin(t), 0), (math.cos(t), math.sin(t), 0), (0, 0, 1)))
+    stations.append(((e["ue"], (cv + e["vs"]) / 2, 0), (1, 0, 0), (0, 0, 1)))
+    for ctr, n1, n2 in stations:
+        ring(ctr, n1, n2, r - EPS, True)
+        ring(ctr, n1, n2, r + EPS, False)
+    # Mouth: every point a BB can reach at the channel exit (resting on the floor, anywhere across the
+    # channel) is open just inside the elbow, even with the elbow FIT_TOLERANCE off in any direction.
+    off_z = p.BB_D / 2 - p.BB_GUIDE_D / 2  # BB centre below the bore axis.
+    for dx in (-(p.BB_GUIDE_D - p.BB_D) / 2, (p.BB_GUIDE_D - p.BB_D) / 2):
+        for mx in (-p.FIT_TOLERANCE, 0, p.FIT_TOLERANCE):
+            for mz in (-p.FIT_TOLERANCE, 0, p.FIT_TOLERANCE):
+                for deg in range(0, 360, 15):
+                    c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+                    q = Vector(0.05, off_z + mz + (p.BB_D / 2) * s, dx + mx + (p.BB_D / 2) * c)
+                    where = f"({dx:+.1f},{mx:+.1f},{mz:+.1f})"
+                    assert not both.is_inside(q), f"elbow R{R}: a BB catches on the mouth {where}"
+    # And it lines up: bore bottom on the channel floor, bore as wide as the channel, on its axis.
+    assert abs(e["z0"] - r - k["floor"]) < 1e-9, "elbow bore bottom not on the channel floor"
+    assert abs(2 * r - (k["channel_x1"] - k["channel_x0"])) < 1e-9, "elbow bore not as wide as the channel"
+    assert abs(e["x"] - (k["channel_x0"] + k["channel_x1"]) / 2) < 1e-9, "elbow off the channel axis"
+    # Barrel socket and its shoulder.
+    vm = (e["vs"] + e["vt"]) / 2
+    ring((e["ue"], vm, 0), (1, 0, 0), (0, 0, 1), e["sock_r"] - EPS, True)
+    ring((e["ue"], vm, 0), (1, 0, 0), (0, 0, 1), e["sock_r"] + EPS, False, skip_split=True)
+    rs = (r + e["sock_r"]) / 2
+    assert both.is_inside(Vector(e["ue"], e["vs"] - EPS, rs)), "no shoulder under the barrel"
+    assert not both.is_inside(Vector(e["ue"], e["vs"] + EPS, rs)), "shoulder too high"
+    # The clamp gap: the halves stand apart round the socket.
+    assert not both.is_inside(Vector(e["ue"] + e["sock_r"] + 1, vm, 0)), "no clamp gap round the socket"
+    # Screws keep MIN_WALL to every edge; nut traps in half b, MIN_WALL round them too.
+    for u, v, nut in e["screws"]:
+        for deg in range(0, 360, 30):
+            c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+            rr = p.M3_CLEARANCE / 2 + p.MIN_WALL - EPS
+            q = Vector(u + rr * c, v + rr * s, e["t"] / 2)
+            assert a.is_inside(q), f"elbow R{R}: screw at ({u:.1f},{v:.1f}) near an edge"
+            if nut:
+                rn = e["nut_r"] + p.MIN_WALL - EPS
+                q = Vector(u + rn * c, v + rn * s, -e["t"] + e["nut_d"] / 2)
+                assert b.is_inside(q), f"elbow R{R}: nut trap at ({u:.1f},{v:.1f}) near an edge"
+        assert not b.is_inside(Vector(u, v, -e["t"] + 0.5)), "screw hole missing"
+    print(
+        f"feed_elbow R{R:g}: OK  bore d={2 * r:.2f} continuous, mouth takes a {p.FIT_TOLERANCE} misfit  "
+        f"barrel socket d={2 * e['sock_r']:.2f} from Z={e['socket_z']:.1f} to {e['top_z']:.1f} over the table, "
+        f"barrel {e['barrel_y'] - p.FEED_BLOCK_HALF:.1f} out from the base block"
+    )
+
+
+def check_feed_coupon() -> None:
+    part = build.feed_coupon()
+    k = build.feed_coupon_layout()
+    assert part.is_valid and len(part.solids()) == 1, "feed coupon is not one valid solid"
+    T, W = p.FEED_COUPON_T, k["width"]
+
+    def xs(n: int) -> list:
+        return [-W / 2 + W / n * (i + 0.5) for i in range(n)]
+
+    for x, o in zip(xs(len(p.FEED_COUPON_SLOT_OFFSETS)), p.FEED_COUPON_SLOT_OFFSETS):
+        depth = p.FEED_SLOT_H + o
+        assert not solid_at(part, x, k["y_pocket"], T - depth + EPS), f"slot pocket {o} too shallow"
+        assert solid_at(part, x, k["y_pocket"], T - depth - EPS), f"slot pocket {o} too deep"
+        assert T - depth >= p.MIN_WALL - 1e-9, "slot pocket floor thinner than MIN_WALL"
+    for x, o in zip(xs(len(p.FEED_COUPON_PIN_OFFSETS)), p.FEED_COUPON_PIN_OFFSETS):
+        r = (p.FEED_PIN_D + o) / 2
+        y = k["y_pin"]
+        assert not solid_at(part, x + r - EPS, y, T / 2) and solid_at(part, x + r + EPS, y, T / 2), f"pin bore {o}"
+    for x, o in zip(xs(len(p.FEED_COUPON_HEX_OFFSETS)), p.FEED_COUPON_HEX_OFFSETS):
+        af, y = (p.FEED_SHAFT_AF + o) / 2, k["y_hex"]
+        assert not solid_at(part, x + af - EPS, y, T / 2) and solid_at(part, x + af + EPS, y, T / 2), f"hex {o}"
+    print(
+        f"feed_coupon: OK  slot pockets {[round(p.FEED_SLOT_H + o, 2) for o in p.FEED_COUPON_SLOT_OFFSETS]}  "
+        f"pin bores {[round(p.FEED_PIN_D + o, 2) for o in p.FEED_COUPON_PIN_OFFSETS]}  "
+        f"hex {[round(p.FEED_SHAFT_AF + o, 2) for o in p.FEED_COUPON_HEX_OFFSETS]}"
+    )
+
+
+def check_feed_print() -> None:
+    """Every feed part, as exported: fits the bed, sits on it, and nothing needs supports."""
+    for name, make in build.PARTS.items():
+        if not name.startswith("feed_"):
+            continue
+        part = make()
+        bb = part.bounding_box()
+        assert max(bb.size.X, bb.size.Y, bb.size.Z) <= p.BED_SIZE, f"{name} does not fit the bed: {bb.size}"
+        assert abs(bb.min.Z) < 1e-6, f"{name} not on the bed"
+        bad = overhangs(part, feed_bridges(name))
+        assert not bad, f"{name} has overhangs flatter than 45 deg: {bad[:5]}"
+    print("feed print: OK  every feed part fits the bed, no overhang flatter than 45 deg except the documented bridges")
+
+
 if __name__ == "__main__":
     check_box()
     check_floor_gauge()
@@ -420,4 +779,14 @@ if __name__ == "__main__":
     for kind in ("dflat", "round"):
         check_knob(kind)
     p.KNOB_BORE = bore
+    check_feed_numbers()
+    check_feed_disc()
+    check_feed_coupon()
+    for skew in p.FEED_CUTOFF_SKEWS:
+        assembly = build.feed_assembly(skew=skew)
+        check_feed_cover(skew, assembly)
+    check_feed_assembly(assembly)
+    for radius in p.FEED_ELBOW_RADII:
+        check_feed_elbow(radius)
+    check_feed_print()
     print("all checks passed")

@@ -125,10 +125,6 @@ p {
   line-height: 1;
 }
 
-.wordmark .plus {
-  color: var(--accent-ink);
-}
-
 .hint {
   color: var(--ink-2);
   font-size: 1rem;

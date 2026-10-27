@@ -1,6 +1,6 @@
 ---
 title: Lista de piezas
-description: Todo lo que hay que pedir para montar un BULLOADER+, con las trampas que evitar al elegir cada pieza.
+description: Todo lo que hay que pedir para montar un BazLoader, con las trampas que evitar al elegir cada pieza.
 ---
 
 Esta página es una lista de la compra. Todo se encuentra en tiendas de electrónica en línea
@@ -10,9 +10,9 @@ ficha del producto** antes de pulsar «comprar». Los términos de búsqueda est
 propósito: es lo que mejor funciona en esas tiendas.
 
 Los valores (resistencias, condensadores, pines) son los de la página
-[Cableado](/bulloader-plus/es/cablage/). Si algún día las dos páginas no coinciden, manda la de
+[Cableado](/bazloader/es/cablage/). Si algún día las dos páginas no coinciden, manda la de
 cableado y, por encima de ella,
-[`firmware/src/config.h`](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/src/config.h).
+[`firmware/src/config.h`](https://github.com/Karnak19/bazloader/blob/main/firmware/src/config.h).
 
 Las cantidades propuestas incluyen algo de margen: estas piezas cuestan de unos céntimos a unos
 pocos euros, y esperar tres semanas un segundo envío por un LED estropeado sale mucho más caro.
@@ -74,7 +74,7 @@ Estas piezas vienen del BULLOADER original y se reutilizan. **No las pidas.**
 
 | Pieza | Cantidad a pedir | Especificación exacta | Lo que importa al elegir | Para qué sirve |
 | ----- | ---------------- | --------------------- | ------------------------ | -------------- |
-| Encoder rotativo KY-040 | **2** (1 + 1 de repuesto) | Módulo **KY-040**: encoder con pasos y pulsador, montado en su pequeña placa con sus resistencias de pull-up, 5 pines (CLK, DT, SW, +, GND). Búsqueda: «KY-040 rotary encoder module». | Coge el **módulo en placa**, no el encoder suelto. Se conecta a **3,3 V** (no a 5 V), mira el [cableado](/bulloader-plus/es/cablage/). Si un paso avanza 2 en lugar de 1 (o al revés), se ajusta en `config.h`, no hace falta devolver el módulo. | Ajustar el número de bolas y confirmar con un clic. |
+| Encoder rotativo KY-040 | **2** (1 + 1 de repuesto) | Módulo **KY-040**: encoder con pasos y pulsador, montado en su pequeña placa con sus resistencias de pull-up, 5 pines (CLK, DT, SW, +, GND). Búsqueda: «KY-040 rotary encoder module». | Coge el **módulo en placa**, no el encoder suelto. Se conecta a **3,3 V** (no a 5 V), mira el [cableado](/bazloader/es/cablage/). Si un paso avanza 2 en lugar de 1 (o al revés), se ajusta en `config.h`, no hace falta devolver el módulo. | Ajustar el número de bolas y confirmar con un clic. |
 | Mando para el encoder | **2** | Mando para eje de **6 mm**, de diámetro grande (25 mm o más), moleteado o de goma. Búsqueda: «knob 6mm shaft knurled». | Mira el eje de tu KY-040: **estriado** (con ranuras alrededor) o **en D** (con una cara plana). El mando tiene que ser para el mismo tipo. Grande y moleteado para usarlo **con guantes**. Algunos KY-040 vienen con un mando pequeño, normalmente demasiado pequeño. | Girar el mando en el campo. |
 | Pantalla OLED de 0,96" | **2** (1 + 1 de repuesto) | OLED de **0,96"**, **128 × 64**, controlador **SSD1306**, interfaz **I2C de 4 pines** (VCC, GND, SCL, SDA). Búsqueda: «0.96 OLED SSD1306 I2C 4 pin 128x64». | **4 pines, I2C.** Las versiones de **7 pines** (SPI) no sirven. **El orden VCC / GND cambia según el vendedor** (GND-VCC-SCL-SDA o VCC-GND-SCL-SDA): lee la serigrafía antes de soldar, invertirlos quema la pantalla. Dirección I2C **0x3C** casi siempre, a veces **0x3D**. Mejor de un solo color (blanco o azul): las «amarillo/azul» tienen una franja amarilla fija arriba. | Mostrar el estado, la cuenta y la batería. |
 
@@ -107,10 +107,10 @@ Estas piezas vienen del BULLOADER original y se reutilizan. **No las pidas.**
 
 | Pieza | Cantidad a pedir | Especificación exacta | Lo que importa al elegir | Para qué sirve |
 | ----- | ---------------- | --------------------- | ------------------------ | -------------- |
-| Filamento PETG o PLA | **1 bobina** (el collar solo usa unos gramos) | PETG o PLA **negro** (o muy oscuro), **opaco**. | Un color claro o translúcido deja pasar el infrarrojo a través de las paredes y deslumbra al sensor al sol. **Negro opaco**, nada de «transparente» ni «silk». | El [collar IR](https://github.com/Karnak19/bulloader-plus/tree/main/cad) y su pieza de prueba (`fit_coupon`). |
+| Filamento PETG o PLA | **1 bobina** (el collar solo usa unos gramos) | PETG o PLA **negro** (o muy oscuro), **opaco**. | Un color claro o translúcido deja pasar el infrarrojo a través de las paredes y deslumbra al sensor al sol. **Negro opaco**, nada de «transparente» ni «silk». | El [collar IR](https://github.com/Karnak19/bazloader/tree/main/cad) y su pieza de prueba (`fit_coupon`). |
 
 Los archivos para imprimir y cómo ajustarlos están en la carpeta
-[`cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad) del repositorio.
+[`cad/`](https://github.com/Karnak19/bazloader/tree/main/cad) del repositorio.
 
 ## Herramientas
 
@@ -130,16 +130,16 @@ Los archivos para imprimir y cómo ajustarlos están en la carpeta
 Antes de soldar nada:
 
 1. **Pantalla OLED: lee el orden de los pines** en la serigrafía (VCC y GND pueden estar invertidos
-   respecto al [esquema](/bulloader-plus/es/cablage/#esquema-de-cableado)). Apúntalo.
+   respecto al [esquema](/bazloader/es/cablage/#esquema-de-cableado)). Apúntalo.
 2. **LED y fototransistor: comprueba la marca 940 nm** en las bolsas y guárdalos por separado para
    no mezclarlos (se parecen).
 3. **Convertidor: ajústalo a 5,0 V con el multímetro, con el ESP32 desconectado**, antes que nada.
-   Mira el [primer encendido](/bulloader-plus/es/cablage/#primer-encendido).
+   Mira el [primer encendido](/bazloader/es/cablage/#primer-encendido).
 4. **Mide el diámetro del tubo de salida** con el pie de rey, donde irá el collar, y también el
    cuerpo del LED y del fototransistor. Anota los valores en
-   [`cad/params.py`](https://github.com/Karnak19/bulloader-plus/blob/main/cad/params.py).
+   [`cad/params.py`](https://github.com/Karnak19/bazloader/blob/main/cad/params.py).
 5. **Imprime la pieza de prueba** (`fit_coupon`) para encontrar la holgura adecuada, como se explica
-   en el [README de la carpeta `cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad#fit_coupon),
+   en el [README de la carpeta `cad/`](https://github.com/Karnak19/bazloader/tree/main/cad#fit_coupon),
    antes de imprimir el collar.
 
 ## Cortar el tubo y montar el collar
@@ -163,4 +163,4 @@ el haz pasa por ese hueco, a través del anillo impreso que guía las bolas.
    hueco y la alineación, no tú.
 6. **Aprieta** los dos tornillos M3, uno por mitad.
 
-Y después, al [cableado](/bulloader-plus/es/cablage/).
+Y después, al [cableado](/bazloader/es/cablage/).

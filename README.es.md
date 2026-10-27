@@ -1,47 +1,52 @@
 [English](README.md) · [Français](README.fr.md) · **Español** · [Deutsch](README.de.md)
 
-# BULLOADER+
+# BazLoader
 
-BULLOADER+ mejora el [BULLOADER](https://makerworld.com/models/2680291), un cargador eléctrico de
+BazLoader se basa en el [BULLOADER](https://makerworld.com/models/2680291) original, un cargador eléctrico de
 bolas de airsoft impreso en 3D, publicado en MakerWorld por su autor original. Eliges cuántas bolas
 quieres y el cargador se para solo cuando han pasado todas, contadas una a una por una barrera
 infrarroja. Se ajusta en el propio cargador (un mando giratorio y una pequeña pantalla OLED) o
 desde una aplicación web en Android, por Bluetooth. Todo funciona sin conexión: sin cuenta, sin
 nube, sin necesidad de red en el campo.
 
-<img src="https://raw.githubusercontent.com/Karnak19/bulloader-plus/pr-media/pr-35/en-US-1-main.png" width="260" alt="La pantalla principal de la aplicación BULLOADER+ en modo demo: objetivo 50, preajustes 30, 50, 120 y 300, botones GO y STOP">
+<img src="https://raw.githubusercontent.com/Karnak19/bazloader/pr-media/pr-35/en-US-1-main.png" width="260" alt="La pantalla principal de la aplicación BazLoader en modo demo: objetivo 50, preajustes 30, 50, 120 y 300, botones GO y STOP">
 
 *La aplicación en modo demo, conectada a un cargador simulado. La aplicación está en inglés o en
 francés; la documentación, también en español.*
 
 ## Enlaces
 
-- **Documentación:** <https://karnak19.github.io/bulloader-plus/es/>
-- **La aplicación:** <https://karnak19.github.io/bulloader-plus/app/>. ¿Todavía no tienes el
-  cargador? Abre [`/app/?mock`](https://karnak19.github.io/bulloader-plus/app/?mock) para probarla
+- **Documentación:** <https://karnak19.github.io/bazloader/es/>
+- **La aplicación:** <https://karnak19.github.io/bazloader/app/>. ¿Todavía no tienes el
+  cargador? Abre [`/app/?mock`](https://karnak19.github.io/bazloader/app/?mock) para probarla
   con un dispositivo simulado.
-- **Lista de piezas:** <https://karnak19.github.io/bulloader-plus/es/liste-des-pieces/>
-- **Cableado:** <https://karnak19.github.io/bulloader-plus/es/cablage/>
-- **Protocolo BLE (en inglés):** <https://karnak19.github.io/bulloader-plus/es/protocole-ble/>
+- **Lista de piezas:** <https://karnak19.github.io/bazloader/es/liste-des-pieces/>
+- **Cableado:** <https://karnak19.github.io/bazloader/es/cablage/>
+- **Protocolo BLE (en inglés):** <https://karnak19.github.io/bazloader/es/protocole-ble/>
+
+> **La aplicación se ha mudado.** El proyecto ahora se llama BazLoader y la aplicación está en la
+> dirección de arriba. Si la instalaste desde la dirección antigua, desinstálala y vuelve a
+> instalarla una vez desde el nuevo enlace. Tus preajustes y tu calibración se guardan en el
+> cargador, así que no se pierde nada.
 
 ## En qué punto está
 
 El proyecto está en curso y **todavía no se ha montado en hardware real.**
 
 - Hecho: el firmware y la aplicación funcionan de principio a fin en simulación, con bolas
-  falsas ([M1](https://github.com/Karnak19/bulloader-plus/milestone/1),
-  [M2](https://github.com/Karnak19/bulloader-plus/milestone/2)).
+  falsas ([M1](https://github.com/Karnak19/bazloader/milestone/1),
+  [M2](https://github.com/Karnak19/bazloader/milestone/2)).
 - En curso: la integración del hardware, es decir, el servo real, la barrera IR real y la
-  calibración ([M3](https://github.com/Karnak19/bulloader-plus/milestone/3)), y después las piezas
-  impresas y la guía de montaje ([M4](https://github.com/Karnak19/bulloader-plus/milestone/4)).
+  calibración ([M3](https://github.com/Karnak19/bazloader/milestone/3)), y después las piezas
+  impresas y la guía de montaje ([M4](https://github.com/Karnak19/bazloader/milestone/4)).
 
 Todavía no hay fotos de un montaje terminado ni cifras de precisión. Puedes seguir el avance en
-los [hitos](https://github.com/Karnak19/bulloader-plus/milestones) y las
-[issues](https://github.com/Karnak19/bulloader-plus/issues).
+los [hitos](https://github.com/Karnak19/bazloader/milestones) y las
+[issues](https://github.com/Karnak19/bazloader/issues).
 
 ## Qué necesitas
 
-- Un BULLOADER impreso que mejorar, y las piezas de la [lista de piezas](https://karnak19.github.io/bulloader-plus/es/liste-des-pieces/)
+- Un BULLOADER impreso que mejorar, y las piezas de la [lista de piezas](https://karnak19.github.io/bazloader/es/liste-des-pieces/)
   (ESP32-C3 SuperMini, LED IR y fototransistor, encoder, pantalla OLED y algunas piezas pequeñas).
 - Para la aplicación: **Chrome en Android**, porque usa Web Bluetooth. iPhone y iPad no son
   compatibles: Safari no tiene Web Bluetooth. El cargador funciona perfectamente sin móvil.

@@ -1,4 +1,4 @@
-# BULLOADER+
+# BazLoader
 
 Electric airsoft BB loader upgrade: load an exact number of BBs, counted by an IR beam, driven by an
 encoder + OLED on the device and by an Android PWA over Bluetooth Low Energy. `BRIEF.md` is the

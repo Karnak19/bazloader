@@ -381,6 +381,8 @@ static void printSettings() {
 }
 
 static void loadSettings() {
+  // "bulloader" is the project's historical name, kept on purpose: renaming the namespace would
+  // wipe the saved presets and calibration on the next flash.
   if (!nvs.begin("bulloader")) Serial.println("  nvs: can't open, using defaults");
   LoadReport r = settings.load();
   const char* names[] = {KEY_CONFIG, KEY_PRESETS, KEY_TARGET};

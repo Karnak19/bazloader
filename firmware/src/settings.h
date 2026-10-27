@@ -17,7 +17,8 @@ struct Store {
   virtual void write(const char* key, const void* buf, size_t len) = 0;
 };
 
-// Storage keys, in the `bulloader` namespace.
+// Storage keys, in the `bulloader` namespace (the historical name, kept on purpose so a flash
+// does not wipe saved settings).
 constexpr const char* KEY_CONFIG = "config";
 constexpr const char* KEY_PRESETS = "presets";
 constexpr const char* KEY_TARGET = "target";

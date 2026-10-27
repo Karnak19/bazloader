@@ -112,7 +112,7 @@ describe('connect', () => {
     const s = store.get()
     expect(s.connection).toBe('connected')
     expect(s.error).toBeNull()
-    expect(s.deviceName).toBe('BULLOADER (mock)')
+    expect(s.deviceName).toBe('BazLoader (mock)')
     expect(s.target).toBe(120)
     expect(s.count).toBe(0)
     expect(s.state).toBe(State.Idle)

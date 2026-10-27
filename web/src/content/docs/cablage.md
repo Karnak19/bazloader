@@ -42,7 +42,7 @@ Tous les symboles de masse sont reliés entre eux.
 
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="wiring-title">Schéma de câblage du BULLOADER+</title>
+<title id="wiring-title">Schéma de câblage du BazLoader</title>
 <desc id="wiring-desc">La batterie LiPo passe par l'interrupteur, puis alimente directement le servo (avec un condensateur de 470 µF à côté), le convertisseur 5 V qui alimente la broche 5V de l'ESP32, et le pont diviseur 100 kΩ / 20 kΩ vers GPIO 0 avec 100 nF vers la masse. Le servo reçoit son signal sur GPIO 3. En 3,3 V : la LED IR avec 220 Ω, le phototransistor avec une résistance de tirage de 10 kΩ vers GPIO 1, l'encodeur KY-040 (CLK 5, DT 6, SW 7) et l'OLED (SDA 10, SCL 20). Le bouton GO relie GPIO 4 à la masse. Masse commune.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
@@ -276,7 +276,7 @@ le [tableau des mesures](#mesures-relevées) plus bas.
    lecture batterie répondent, avant de risquer la mécanique.
 
 Pour flasher et lire le journal série, voir le
-[README du firmware](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/README.md)
+[README du firmware](https://github.com/Karnak19/bazloader/blob/main/firmware/README.md)
 (`pio run -e sim -t upload`, puis `pio device monitor`).
 
 ## Mesures relevées
@@ -297,6 +297,6 @@ première mise sous tension.
 
 ## Voir aussi
 
-- [Protocole BLE](/bulloader-plus/protocole-ble/) : ce que la carte échange avec l'application.
-- [`firmware/src/config.h`](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/src/config.h) :
+- [Protocole BLE](/bazloader/protocole-ble/) : ce que la carte échange avec l'application.
+- [`firmware/src/config.h`](https://github.com/Karnak19/bazloader/blob/main/firmware/src/config.h) :
   la référence pour les broches et les réglages par défaut.

@@ -42,7 +42,7 @@ Massesymbole sind miteinander verbunden.
 
 <div class="wiring-scroll">
 <svg class="wiring" viewBox="0 0 1000 750" role="img" aria-labelledby="wiring-title wiring-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="wiring-title">Schaltplan des BULLOADER+</title>
+<title id="wiring-title">Schaltplan des BazLoader</title>
 <desc id="wiring-desc">Der LiPo-Akku geht über den Schalter und versorgt dann direkt das Servo (mit einem 470-µF-Kondensator daneben), den 5-V-Wandler, der den 5V-Pin des ESP32 speist, und den Spannungsteiler 100 kΩ / 20 kΩ an GPIO 0 mit 100 nF gegen Masse. Das Servo bekommt sein Signal an GPIO 3. An 3,3 V: die IR-LED mit 220 Ω, der Fototransistor mit einem 10-kΩ-Pull-up an GPIO 1, der Drehgeber KY-040 (CLK 5, DT 6, SW 7) und das OLED (SDA 10, SCL 20). Der GO-Taster verbindet GPIO 4 mit Masse. Gemeinsame Masse.</desc>
 <style>
 .wiring { --vbat: #ff6b6b; --v5: #ffa94d; --v33: #51cf66; --warn: #ff8787; color: var(--sl-color-white, currentColor); }
@@ -277,7 +277,7 @@ die [Tabelle der Messwerte](#messwerte) ein.
    Taster und Akkumessung reagieren, bevor du die Mechanik riskierst.
 
 Wie man flasht und das serielle Log liest, steht im
-[README der Firmware](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/README.md)
+[README der Firmware](https://github.com/Karnak19/bazloader/blob/main/firmware/README.md)
 (`pio run -e sim -t upload`, dann `pio device monitor`).
 
 ## Messwerte
@@ -298,6 +298,6 @@ Inbetriebnahme ausgefüllt.
 
 ## Siehe auch
 
-- [BLE-Protokoll](/bulloader-plus/de/protocole-ble/): was das Board mit der App austauscht.
-- [`firmware/src/config.h`](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/src/config.h):
+- [BLE-Protokoll](/bazloader/de/protocole-ble/): was das Board mit der App austauscht.
+- [`firmware/src/config.h`](https://github.com/Karnak19/bazloader/blob/main/firmware/src/config.h):
   die Referenz für Pins und Standardeinstellungen.

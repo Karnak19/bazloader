@@ -23,11 +23,11 @@ const fontFaces = `
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0c0e" />
-    <meta name="description" content="Chargeur de billes BULLOADER+ piloté en Bluetooth" />
+    <meta name="description" content="Chargeur de billes BazLoader piloté en Bluetooth" />
     <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={`${base}apple-touch-icon-180x180.png`} />
     <link rel="manifest" href={`${base}manifest.webmanifest`} />
-    <title>BULLOADER+</title>
+    <title>BazLoader</title>
     <!-- Geist and Geist Mono (SIL OFL, see public/fonts/OFL.txt), served from the site and
          precached by the service worker, so they are there on a field with no network. -->
     <link rel="preload" href={`${base}fonts/Geist.woff2`} as="font" type="font/woff2" crossorigin />
@@ -37,7 +37,7 @@ const fontFaces = `
          one. Same key and colours as src/ui/theme.ts, which takes over once the island runs. -->
     <script is:inline>
       try {
-        var pref = localStorage.getItem('bulloader-plus.theme')
+        var pref = localStorage.getItem('bazloader.theme')
         if (pref === 'light' || pref === 'dark') document.documentElement.setAttribute('data-theme', pref)
         var dark = pref === 'dark' || (pref !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
         document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0b0c0e' : '#f6f4ef')

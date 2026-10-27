@@ -1,4 +1,4 @@
-# BULLOADER+ firmware
+# BazLoader firmware
 
 ESP32-C3 SuperMini, PlatformIO + Arduino. Pins and defaults live in `src/config.h`; BLE constants
 in `src/ble_uuids.h` (must match `web/src/content/docs/protocole-ble.md`).
@@ -93,7 +93,7 @@ a hopper of `SIM_HOPPER_CAPACITY` refilled at each `g`. A target above it ends i
 ## Bluetooth (BLE)
 
 The GATT service is the one in `web/src/content/docs/protocole-ble.md` (NimBLE-Arduino 2.x). The
-device advertises as `BULLOADER`: the service UUID in the advertising packet, the name in the scan
+device advertises as `BazLoader`: the service UUID in the advertising packet, the name in the scan
 response (both together are 32 bytes, one over the limit). One client at a time; advertising
 restarts on disconnect. No pairing: anyone in range can drive it, a deliberate choice for now. Wi-Fi
 is never started.
@@ -129,7 +129,8 @@ guard is off. Set `BATT_CALIBRATION` after comparing with a multimeter.
 
 The presets, the last target and the config (servo neutral, full and slow offsets, reverse,
 slowdown N, jam timeout: the BLE `ConfigV1` blob, version byte included) live in the `bulloader`
-`Preferences` namespace and are loaded at boot. Anything missing, of the wrong length or version,
+`Preferences` namespace (the project's old name, kept on purpose: changing it would wipe the saved
+settings on the next flash) and are loaded at boot. Anything missing, of the wrong length or version,
 or out of range falls back to the defaults in `config.h`, with a `nvs:` log line. Accepted ranges:
 neutral 1000–2000 µs, offsets ±500 µs, reverse 0/1, slowdown N 0–255, jam timeout 300–10000 ms,
 presets and target 1–9999.

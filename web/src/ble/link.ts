@@ -47,7 +47,7 @@ export class WebBluetoothLink implements DeviceLink {
   }
 
   get name(): string {
-    return this.device.name ?? 'BULLOADER'
+    return this.device.name ?? 'BazLoader'
   }
 
   async connect(): Promise<void> {

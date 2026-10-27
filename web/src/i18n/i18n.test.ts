@@ -84,7 +84,7 @@ describe('initialLang / storeLang', () => {
 
   test('ignores a stored value it does not know', () => {
     const storage = memoryStorage()
-    storage.setItem('bulloader-plus.lang', 'de')
+    storage.setItem('bazloader.lang', 'de')
     expect(initialLang(storage, 'en-US')).toBe('en')
   })
 

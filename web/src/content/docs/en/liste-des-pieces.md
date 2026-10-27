@@ -1,15 +1,15 @@
 ---
 title: Parts list
-description: Everything to order to build a BULLOADER+, with the traps to avoid when picking each part.
+description: Everything to order to build a BazLoader, with the traps to avoid when picking each part.
 ---
 
 This page is a shopping list. Everything can be found at online electronics sellers (AliExpress and
 the like). No links or prices here, they change too fast: instead you get **search terms** to copy
 and paste, and above all **what to check on the product page** before you hit "buy".
 
-The values (resistors, capacitors, pins) are the ones from the [Wiring](/bulloader-plus/en/cablage/)
+The values (resistors, capacitors, pins) are the ones from the [Wiring](/bazloader/en/cablage/)
 page. If the two pages ever disagree, the wiring page wins, and above it
-[`firmware/src/config.h`](https://github.com/Karnak19/bulloader-plus/blob/main/firmware/src/config.h).
+[`firmware/src/config.h`](https://github.com/Karnak19/bazloader/blob/main/firmware/src/config.h).
 
 The suggested quantities include a little spare: these parts cost a few cents to a few euros, and
 waiting three weeks for a second delivery because of one damaged LED costs far more.
@@ -70,7 +70,7 @@ These parts come from the original BULLOADER and are reused. **Don't order them.
 
 | Part | Quantity to order | Exact spec | What matters when picking | Used for |
 | ---- | ----------------- | ---------- | ------------------------- | -------- |
-| KY-040 rotary encoder | **2** (1 + 1 spare) | **KY-040** module: a detented encoder with a push click, on its small board with its pull-up resistors, 5 pins (CLK, DT, SW, +, GND). Search: "KY-040 rotary encoder module". | Get the **module on its board**, not the bare encoder. It runs on **3.3 V** (not 5 V), see the [wiring](/bulloader-plus/en/cablage/). If one detent moves by 2 instead of 1 (or the other way round), that's a setting in `config.h`, no need to send the module back. | Setting the number of BBs, confirming with a click. |
+| KY-040 rotary encoder | **2** (1 + 1 spare) | **KY-040** module: a detented encoder with a push click, on its small board with its pull-up resistors, 5 pins (CLK, DT, SW, +, GND). Search: "KY-040 rotary encoder module". | Get the **module on its board**, not the bare encoder. It runs on **3.3 V** (not 5 V), see the [wiring](/bazloader/en/cablage/). If one detent moves by 2 instead of 1 (or the other way round), that's a setting in `config.h`, no need to send the module back. | Setting the number of BBs, confirming with a click. |
 | Encoder knob | **2** | Knob for a **6 mm** shaft, large (25 mm across or more), knurled or rubberised. Search: "knob 6mm shaft knurled". | Look at your KY-040's shaft: **splined** (ridges all round) or **D-shaped** (one flat side). The knob must match. Big and knurled, so you can use it **with gloves**. Some KY-040s come with a small knob, usually too small. | Turning the knob on the field. |
 | 0.96" OLED screen | **2** (1 + 1 spare) | **0.96"** OLED, **128 × 64**, **SSD1306** controller, **4-pin I2C** interface (VCC, GND, SCL, SDA). Search: "0.96 OLED SSD1306 I2C 4 pin 128x64". | **4 pins, I2C.** The **7-pin** versions (SPI) are the wrong ones. **The VCC / GND order varies between sellers** (GND-VCC-SCL-SDA or VCC-GND-SCL-SDA): read the labels on the board before soldering, swapping them kills the screen. I2C address **0x3C** most of the time, sometimes **0x3D**. Prefer a single colour (white or blue): "yellow/blue" ones have a fixed yellow strip at the top. | Showing the state, the count and the battery. |
 
@@ -103,10 +103,10 @@ These parts come from the original BULLOADER and are reused. **Don't order them.
 
 | Part | Quantity to order | Exact spec | What matters when picking | Used for |
 | ---- | ----------------- | ---------- | ------------------------- | -------- |
-| PETG or PLA filament | **1 spool** (the collar only takes a few grams) | **Black** (or very dark), **opaque** PETG or PLA. | A light or translucent colour lets infrared through the walls and blinds the sensor in the sun. **Opaque black**, no "transparent" or "silk". | The [IR collar](https://github.com/Karnak19/bulloader-plus/tree/main/cad) and its test piece (`fit_coupon`). |
+| PETG or PLA filament | **1 spool** (the collar only takes a few grams) | **Black** (or very dark), **opaque** PETG or PLA. | A light or translucent colour lets infrared through the walls and blinds the sensor in the sun. **Opaque black**, no "transparent" or "silk". | The [IR collar](https://github.com/Karnak19/bazloader/tree/main/cad) and its test piece (`fit_coupon`). |
 
 The files to print and how to tune them are in the repo's
-[`cad/`](https://github.com/Karnak19/bulloader-plus/tree/main/cad) folder.
+[`cad/`](https://github.com/Karnak19/bazloader/tree/main/cad) folder.
 
 ## Tools
 
@@ -126,16 +126,16 @@ The files to print and how to tune them are in the repo's
 Before soldering anything:
 
 1. **OLED screen: read the pin order** on the board's labels (VCC and GND may be swapped compared
-   with the [diagram](/bulloader-plus/en/cablage/#wiring-diagram)). Write it down.
+   with the [diagram](/bazloader/en/cablage/#wiring-diagram)). Write it down.
 2. **LED and phototransistor: check the 940 nm marking** on the bags, and keep the two apart so
    they don't get mixed up (they look alike).
 3. **Converter: set it to 5.0 V with a multimeter, ESP32 unplugged**, before anything else. See
-   the [first power-up](/bulloader-plus/en/cablage/#first-power-up).
+   the [first power-up](/bazloader/en/cablage/#first-power-up).
 4. **Measure the outlet tube's diameter** with the calipers, where the collar will go, as well as
    the body of the LED and the phototransistor. Put the values into
-   [`cad/params.py`](https://github.com/Karnak19/bulloader-plus/blob/main/cad/params.py).
+   [`cad/params.py`](https://github.com/Karnak19/bazloader/blob/main/cad/params.py).
 5. **Print the test piece** (`fit_coupon`) to find the right clearance, as explained in the
-   [`cad/` folder's README](https://github.com/Karnak19/bulloader-plus/tree/main/cad#fit_coupon),
+   [`cad/` folder's README](https://github.com/Karnak19/bazloader/tree/main/cad#fit_coupon),
    before printing the collar.
 
 ## Cut the tube and fit the collar
@@ -157,4 +157,4 @@ crosses that gap, through the printed ring that guides the BBs.
    gap and the alignment, not you.
 6. **Tighten** both M3 screws, one per half.
 
-Then, on to the [wiring](/bulloader-plus/en/cablage/).
+Then, on to the [wiring](/bazloader/en/cablage/).

@@ -17,6 +17,7 @@ from build123d import (
     Plane,
     Pos,
     Rectangle,
+    RectangleRounded,
     RegularPolygon,
     Rot,
     SlotOverall,
@@ -367,11 +368,89 @@ def fit_coupon() -> Part:
     return part
 
 
+def box_interior(z: float) -> tuple[float, float]:
+    """Interior length and width of the Plano box at height z above its floor (the walls lean out)."""
+    return p.BOX_FLOOR_L + p.BOX_TAPER_L * z, p.BOX_FLOOR_W + p.BOX_TAPER_W * z
+
+
+def seat_layout() -> dict[str, float]:
+    """Outline of a part resting on the box ledge: ledge_gauge now, the top plate (#18) later.
+
+    Box frame: floor at Z=0, interior centred on X=0, Y=0, X along the length. The part's
+    underside is at z = BOX_LEDGE_Z1. Outside: the box there minus WALL_CLEARANCE per side.
+    Inside: the ledge opening minus SEAT_INSET per side, so it covers the whole ledge.
+    """
+    box_l, box_w = box_interior(p.BOX_LEDGE_Z1)
+    return {
+        "z": p.BOX_LEDGE_Z1,
+        "outer_l": box_l - 2 * p.WALL_CLEARANCE,
+        "outer_w": box_w - 2 * p.WALL_CLEARANCE,
+        "inner_l": p.BOX_LEDGE_OPEN_L - 2 * p.SEAT_INSET,
+        "inner_w": p.BOX_LEDGE_OPEN_W - 2 * p.SEAT_INSET,
+    }
+
+
+def floor_layout() -> dict[str, float]:
+    """Outline of floor_gauge, in the box frame: on the floor (z=0), WALL_CLEARANCE off every wall."""
+    box_l, box_w = box_interior(0.0)
+    outer_l, outer_w = box_l - 2 * p.WALL_CLEARANCE, box_w - 2 * p.WALL_CLEARANCE
+    return {
+        "z": 0.0,
+        "outer_l": outer_l,
+        "outer_w": outer_w,
+        "inner_l": outer_l - 2 * p.GAUGE_WALL,
+        "inner_w": outer_w - 2 * p.GAUGE_WALL,
+    }
+
+
+def _mm(v: float) -> str:
+    """228.0 -> "228", 235.64 -> "235.6"."""
+    return f"{v:.1f}".removesuffix(".0")
+
+
+def gauge_label(k: dict[str, float], name: str) -> str:
+    return f"{name} {_mm(k['outer_l'])}x{_mm(k['outer_w'])}"
+
+
+def box_gauge(k: dict[str, float], name: str) -> Part:
+    """Thin closed frame: outer outline k["outer_l"] x k["outer_w"] with CORNER_R corners, hollow
+    k["inner_l"] x k["inner_w"]. A tab inside the -Y long side carries the engraved name and outer
+    size. Printed flat, Z=0 on the bed; in the box it sits at k["z"].
+    """
+    wall = min(k["outer_l"] - k["inner_l"], k["outer_w"] - k["inner_w"]) / 2
+    assert wall >= p.MIN_WALL, f"{name} gauge wall only {wall:.2f}"
+    inner_r = max(p.CORNER_R - wall, 1.0)
+    outline = RectangleRounded(k["outer_l"], k["outer_w"], p.CORNER_R) - RectangleRounded(
+        k["inner_l"], k["inner_w"], inner_r
+    )
+    label = Text(gauge_label(k, name), p.GAUGE_TEXT_SIZE)
+    size = label.bounding_box().size
+    tab_l, tab_w = size.X + 2 * p.GAUGE_TAB_MARGIN, size.Y + 2 * p.GAUGE_TAB_MARGIN
+    assert tab_l < k["inner_l"] - 2 * inner_r and tab_w < k["inner_w"] / 2, f"{name} label too big for the frame"
+    tab_y = -k["inner_w"] / 2 + tab_w / 2
+    outline += Pos(0, tab_y - 0.5) * Rectangle(tab_l, tab_w + 1)  # Runs 1 mm into the wall, so they fuse.
+    body = extrude(outline, p.GAUGE_HEIGHT)
+    body -= Pos(0, tab_y, p.GAUGE_HEIGHT - p.GAUGE_TEXT_DEPTH) * extrude(label, p.GAUGE_TEXT_DEPTH + 0.1)
+    return body
+
+
+def floor_gauge() -> Part:
+    """Frame the size of the box floor minus WALL_CLEARANCE: dropped on the floor, it lies flat, loose."""
+    return box_gauge(floor_layout(), "FLOOR")
+
+
+def ledge_gauge() -> Part:
+    """Frame resting on the box ledge: the outline of the future top plate seat (#18)."""
+    return box_gauge(seat_layout(), "LEDGE")
+
+
 PARTS = {
     "test_ring": test_ring,
     "ir_collar": ir_collar,
     "fit_coupon": fit_coupon,
     "encoder_knob": encoder_knob,
+    "floor_gauge": floor_gauge,
+    "ledge_gauge": ledge_gauge,
 }
 
 

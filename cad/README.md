@@ -27,7 +27,10 @@ On the collar it probes both grip bores, the clamp slots (and that they stop at 
 ring's two shoulders and its BB guide, both sockets, their shoulders and the window, the walls
 around them, the screws and the wire grooves, and fails if the sockets are not on one line
 `BEAM_OFFSET` off the axis. On the knob it probes the bore (size, flat, depth, on the
-axis), the recess, the ridges and the top chamfer.
+axis), the recess, the ridges and the top chamfer. On the box gauges it checks that the hand
+measurements agree with each other, that both gauges fit the bed and keep `WALL_CLEARANCE` to
+the box at their height, and that the ledge gauge rests on the ledge all round and cannot fall
+through its opening.
 
 ## Parts
 
@@ -36,6 +39,8 @@ axis), the recess, the ridges and the top chamfer.
 | `fit_coupon`   | Print this first. Test bores and sockets at several tolerances, labelled.   |
 | `ir_collar`    | Joins the two halves of the cut barrel and holds the IR LED and phototransistor. |
 | `encoder_knob` | Big ridged knob for the KY-040 encoder, to turn with gloves on.             |
+| `floor_gauge`  | Thin frame the size of the box floor. Checks the `BOX_` numbers at the bottom. |
+| `ledge_gauge`  | Thin frame that rests on the box ledge. Checks the seat of the top plate (#18). |
 | `test_ring`    | M0 smoke test of the build pipeline.                                        |
 
 ### `fit_coupon`
@@ -146,6 +151,43 @@ with rounded edges so they do not dig in. The top edge has a 1.2 mm chamfer.
 both open upward, so every layer sits on the one below; the only slope is the 45° top chamfer at the
 bed, which also hides elephant's foot. No supports. Any filament; four perimeters make the ridges
 solid.
+
+### Box fit gauges (`floor_gauge`, `ledge_gauge`)
+
+The box numbers in `params.py` (section "Box: Plano interior") were measured by hand, ±1 mm, and
+the box flexes. Before printing anything big for the box, print these two frames (3 mm tall, a few
+minutes each, any filament, no supports) and try them in the real box. Box frame used in the code:
+floor at Z = 0, X along the length, Y along the width, centred on the box. Every part keeps
+`WALL_CLEARANCE` (1 mm) to every wall and has `CORNER_R` (R10) vertical corners, never a press fit.
+
+- **`floor_gauge`**, engraved `FLOOR 228x93`: the floor minus 1 mm per side, 2 mm wall. It is the
+  full floor size, so it does not go through the ledge flat: twist it in on edge, it bends back.
+  Drop it on the floor.
+- **`ledge_gauge`**, engraved `LEDGE 235.6x98.4`: the box at the top of the ledge (Z = 136, from
+  the draft) minus 1 mm per side, with an opening 3 mm narrower than the ledge opening on each
+  side. Lay it on the ledge from above. Its outline is `seat_layout()` in `build.py`, which the top
+  plate (#18) will reuse.
+
+A good fit: it lies flat on its own, rocks or slides a little, and shows an even gap of about 1 mm
+all round (a BB does not fall through anywhere). Push the walls in and out: nothing should move
+the gauge or bend it. On the ledge gauge, the frame rests on the ledge all round, and it does not
+tip into the opening when you press on any side.
+
+If it is wrong, report:
+
+- **Too big** (it has to be forced, it bows up, or it spreads the walls): which way (length or
+  width) and by how much it overlaps or bows. Do not push it down; the box flexes and hides the
+  error.
+- **Too small**: the gap at each of the four walls, measured with calipers or feeler gauges (or
+  count the BBs that fit), at the middle of each side.
+- **Ledge gauge only**: the height of its top above the floor at each side (it should be
+  `BOX_LEDGE_Z1` + 3 = 139), and whether it rests on the ledge at its outer edge or rocks on the
+  inner edge of the ledge (the ledge is sloped).
+- **Corners**: whether a gauge corner touches the box corner before the sides do (then the box
+  corners are bigger than R10, raise `CORNER_R`).
+
+Those go back into the `BOX_` values (and the `TODO: confirm with the gauge` notes come off), then
+`uv run python check.py` and reprint if anything moved by more than 0.5 mm.
 
 ## License rule
 

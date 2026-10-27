@@ -29,8 +29,8 @@ around them, the screws and the wire grooves, and fails if the sockets are not o
 `BEAM_OFFSET` off the axis. On the knob it probes the bore (size, flat, depth, on the
 axis), the recess, the ridges and the top chamfer. On the box gauges it checks that the hand
 measurements agree with each other, that both gauges fit the bed and keep `WALL_CLEARANCE` to
-the box at their height, and that the ledge gauge rests on the ledge all round and cannot fall
-through its opening.
+the box at their height, and that the ledge gauge rests on the step all round and cannot drop
+into the lower part of the box.
 
 ## Parts
 
@@ -160,18 +160,31 @@ minutes each, any filament, no supports) and try them in the real box. Box frame
 floor at Z = 0, X along the length, Y along the width, centred on the box. Every part keeps
 `WALL_CLEARANCE` (1 mm) to every wall and has `CORNER_R` (R10) vertical corners, never a press fit.
 
-- **`floor_gauge`**, engraved `FLOOR 228x93`: the floor minus 1 mm per side, 2 mm wall. It is the
-  full floor size, so it does not go through the ledge flat: twist it in on edge, it bends back.
-  Drop it on the floor.
-- **`ledge_gauge`**, engraved `LEDGE 235.6x98.4`: the box at the top of the ledge (Z = 136, from
-  the draft) minus 1 mm per side, with an opening 3 mm narrower than the ledge opening on each
-  side. Lay it on the ledge from above. Its outline is `seat_layout()` in `build.py`, which the top
-  plate (#18) will reuse.
+The box has two parts, one above the other: a wide upper part under the rim (254 × 121 at the rim,
+measured mid-wall) and a narrower lower part down to the floor. Where they meet, about 129 to
+136 mm above the floor, the wall steps in by about 8 mm at each end and 10 mm at each side: that
+step is the ledge, a sloped shelf facing up. Nothing sticks into the box, so anything that fits the
+floor goes in flat. The walls bow out in the middle, so the upper part is tighter at the corners
+than the mid-wall numbers say.
+
+- **`floor_gauge`**, engraved `FLOOR 231x94.5`: the floor minus 1 mm per side, 2 mm wall, R8
+  corners (`FLOOR_CORNER_R`). Drop it flat onto the floor. The first print (228 × 93, R10) had
+  3 mm to spare in length, 1.5 mm in width and gaps in the corners.
+- **`ledge_gauge`**, engraved `LEDGE 252x117`: the first print (246 × 115) had 6 mm to spare in
+  length and 2 mm in width, so it is now bigger than the original BULLOADER top plate (249 × 117).
+  Its opening is 3 mm smaller than the lower part on each side. Lay it on the step from above: it
+  rests on about 7 mm of step at the ends and 8 mm at the sides. Its outline is `seat_layout()` in
+  `build.py`, which the top plate (#18) will reuse. It fits the 256 mm bed straight (2 mm to spare
+  at each end); `check.py` would also accept it turned on the diagonal.
+- **`corner_gauge_r2` … `corner_gauge_r8`**: one file per radius in `CORNER_GAUGE_RADII`, each a
+  18 mm tab with one rounded corner and its radius engraved. Push each into a bottom corner of the box: a tab whose radius is too small
+  stops short of both walls; too big, it touches both walls with a gap in the corner. The right one
+  touches both walls with no gap. Report that number: it becomes `FLOOR_CORNER_R`.
 
 A good fit: it lies flat on its own, rocks or slides a little, and shows an even gap of about 1 mm
 all round (a BB does not fall through anywhere). Push the walls in and out: nothing should move
-the gauge or bend it. On the ledge gauge, the frame rests on the ledge all round, and it does not
-tip into the opening when you press on any side.
+the gauge or bend it. On the ledge gauge, the frame rests on the step all round, and it does not
+tip into the lower part when you press on any side.
 
 If it is wrong, report:
 
@@ -181,8 +194,9 @@ If it is wrong, report:
 - **Too small**: the gap at each of the four walls, measured with calipers or feeler gauges (or
   count the BBs that fit), at the middle of each side.
 - **Ledge gauge only**: the height of its top above the floor at each side (it should be
-  `BOX_LEDGE_Z1` + 3 = 139), and whether it rests on the ledge at its outer edge or rocks on the
-  inner edge of the ledge (the ledge is sloped).
+  `BOX_LEDGE_Z1` + 3 = 139), whether it rests flat on the step or rocks on its inner edge (the
+  step is sloped), and the gap to the wall at the corners and at mid-wall (the walls bow out in the
+  middle). If the corners touch first, raise `SEAT_CORNER_R` or lower `SEAT_L` / `SEAT_W`.
 - **Corners**: whether a gauge corner touches the box corner before the sides do (then the box
   corners are bigger than R10, raise `CORNER_R`).
 

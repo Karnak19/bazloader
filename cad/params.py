@@ -99,12 +99,14 @@ COUPON_TEXT_DEPTH = 0.4  # Engraving depth (2 layers at 0.2).
 # --- Box: Plano interior (Basile's box) --------------------------------------
 # Measured by hand inside the box (+/- 1 mm), 2026-10-27 (#52). Frame: box floor at Z=0,
 # Z up to the rim; X along the length, Y along the width, the interior centred on X=0, Y=0.
-# The walls lean out (draft), so the interior grows linearly with Z. A small notch in the
-# ledge at the front is ignored.
+# Two parts, one above the other: a wide upper part under the rim and a narrower lower part down
+# to the floor. Where they meet, the wall steps in: that step is the ledge, a shelf facing up.
+# Nothing sticks into the box, so nothing narrows the way in. Both parts lean out (draft), so
+# each grows linearly with Z. A small notch in the ledge at the front is ignored.
 # THE BOX FLEXES: a part that forces at the bottom spreads the walls and changes the fit higher
 # up. Every part keeps WALL_CLEARANCE to every wall, never a press fit.
-BOX_FLOOR_L = 230.0  # TODO: confirm with the gauge. Interior length at the floor (Z=0).
-BOX_FLOOR_W = 95.0  # TODO: confirm with the gauge. Interior width at the floor.
+BOX_FLOOR_L = 233.0  # Interior length at the floor (Z=0). Measured 230; the first floor gauge (228) had 3 mm to spare.
+BOX_FLOOR_W = 96.5  # Interior width at the floor. Measured 95; the first floor gauge (93) had 1.5 mm to spare.
 BOX_REF_Z = 125.0  # Height of the second measurement, used to get the draft.
 BOX_REF_L = 237.0  # TODO: confirm with the gauge. Interior length at BOX_REF_Z.
 BOX_REF_W = 100.0  # TODO: confirm with the gauge. Interior width at BOX_REF_Z.
@@ -113,21 +115,36 @@ BOX_TAPER_W = (BOX_REF_W - BOX_FLOOR_W) / BOX_REF_Z  # Interior width gained per
 BOX_HEIGHT = 153.0  # TODO: confirm with the gauge. Floor to rim.
 CORNER_R = 10.0  # Vertical corner radius of our parts. The box's interior corners are under 10 mm, so a part
 # with R10 always fits; the worst gap left in a corner is about 4 mm, under one BB.
+FLOOR_CORNER_R = 8.0  # TODO: confirm with the gauge. Corner radius of parts on the floor: the floor gauge at R10 left
+# visible gaps in the corners, so the box corners are tighter down there. Also the box model's corners below the ledge.
 WALL_CLEARANCE = 1.0  # Gap kept between every part and every box wall, per side. Under one BB, never a press fit.
 
-# Ledge: a sloped rib all round the inside wall, under the rim. It is what the top plate (#18)
-# sits on, and why a floor-wide part cannot go in flat (the opening there is narrower than the floor).
-BOX_LEDGE_Z0 = 129.0  # TODO: confirm with the gauge. Bottom of the ledge, where it leaves the wall (24 mm under the rim).
+# Ledge: the step all round the inside wall where the wide upper part meets the narrower lower part.
+# It is sloped, and it is what the top plate (#18) sits on. Below it, the lower part (the BOX_FLOOR_
+# and BOX_REF_ numbers above); above it, the upper part, up to the rim.
+BOX_LEDGE_Z0 = 129.0  # TODO: confirm with the gauge. Bottom of the ledge, where the lower wall ends (24 mm under the rim).
 BOX_LEDGE_Z1 = 136.0  # TODO: confirm with the gauge. Top of the ledge: the height a part rests at (17 mm under the rim).
-BOX_LEDGE_DEPTH = 6.0  # TODO: confirm with the gauge. How far the ledge sticks out from the wall.
-BOX_LEDGE_OPEN_L = 225.0  # TODO: confirm with the gauge. Length of the opening left between the ledges.
-BOX_LEDGE_OPEN_W = 88.0  # TODO: confirm with the gauge. Width of that opening.
+BOX_RIM_L = 255.0  # Interior length of the upper part at the rim (Z = BOX_HEIGHT). Measured 254 mid-wall; raised to
+# 255 because the ledge gauge showed room for a 252 seat, which needs ~254 at the ledge with WALL_CLEARANCE.
+BOX_RIM_W = 121.0  # TODO: confirm with the gauge. Interior width of the upper part at the rim, mid-wall.
+# Those two were measured at the MIDDLE of the walls. The walls bow out there, so the upper part is
+# tighter at the corners: they give the step's width, not the size of a part that sits on it.
+# Upper part's draft: taken equal to the lower part's (BOX_TAPER_L / _W), as only the rim was measured
+# up there. Then the step (mid-wall) is the same width at any height:
+BOX_STEP_L = (BOX_RIM_L - BOX_FLOOR_L - BOX_TAPER_L * BOX_HEIGHT) / 2  # Step width at each end, mid-wall (about 7.7).
+BOX_STEP_W = (BOX_RIM_W - BOX_FLOOR_W - BOX_TAPER_W * BOX_HEIGHT) / 2  # Step width at each side, mid-wall (about 9.9).
 
 # Seat: the outline of anything that rests on the ledge (ledge_gauge now, the top plate #18 later).
-# Outside: the box at BOX_LEDGE_Z1 minus WALL_CLEARANCE per side. Inside: it reaches SEAT_INSET past
-# the ledge edge, so it covers the whole ledge whatever its exact depth.
-SEAT_INSET = 3.0  # How far the seat reaches into the ledge opening, per side.
-SEAT_MIN_REST = 3.0  # Least width of ledge a seated part must rest on, per side.
+# Sized for the corners, not the mid-wall numbers above. Reference: the original BULLOADER top plate
+# rests on this ledge in two pieces, 117 x 172 and 117 x 77 (249 x 117 in all), and already forces
+# at the corners (the two pieces overlap a little once fitted). So the seat is a bit under it both
+# ways. Inside: it reaches SEAT_INSET past the step's inner edge (the lower wall), so it covers the
+# whole step whatever its exact width.
+SEAT_L = 252.0  # Outer length of the seat. The first ledge gauge (246) had 6 mm to spare; TODO: confirm with the reprint.
+SEAT_W = 117.0  # Outer width of the seat. The first ledge gauge (115) had 2 mm to spare; TODO: confirm with the reprint.
+SEAT_CORNER_R = CORNER_R  # Vertical corner radius of the seat. Raise it if the box corners are tighter up there.
+SEAT_INSET = 3.0  # How far the seat reaches in past the lower wall, per side.
+SEAT_MIN_REST = 3.0  # Least width of step a seated part must rest on, per side.
 
 # --- Box fit gauges (print them before any large part in the box) -------------
 # Thin closed frames, one at the floor, one on the ledge. They print in minutes and tell us
@@ -137,6 +154,8 @@ GAUGE_WALL = 2.0  # Width of the floor gauge frame (the ledge gauge is as wide a
 GAUGE_TEXT_SIZE = 5.0  # Height of the engraved label.
 GAUGE_TEXT_DEPTH = 0.6  # Engraving depth (3 layers at 0.2).
 GAUGE_TAB_MARGIN = 2.0  # Material round the label on its tab.
+CORNER_GAUGE_RADII = (2, 4, 6, 8)  # One corner tab per radius, to find the box's bottom corner radius (R10 is too big).
+CORNER_GAUGE_SIZE = 18.0  # Side of each square corner tab: over twice the largest radius, room for the label.
 
 # --- Smoke-test ring (M0 only, proves the build pipeline) --------------------
 RING_WALL = 2.0  # Radial wall thickness of the test ring.

@@ -368,25 +368,39 @@ def fit_coupon() -> Part:
     return part
 
 
-def box_interior(z: float) -> tuple[float, float]:
-    """Interior length and width of the Plano box at height z above its floor (the walls lean out)."""
+def box_lower(z: float) -> tuple[float, float]:
+    """Interior length and width of the box's lower part (under the ledge) at height z, from its draft."""
     return p.BOX_FLOOR_L + p.BOX_TAPER_L * z, p.BOX_FLOOR_W + p.BOX_TAPER_W * z
+
+
+def box_interior(z: float) -> tuple[float, float]:
+    """Interior length and width of the Plano box at height z above its floor (the walls lean out).
+
+    Above the top of the ledge (z >= BOX_LEDGE_Z1), the wide upper part; under it, the narrower
+    lower part. On the sloped ledge itself the lower part is returned, the safe (narrower) answer.
+    """
+    l, w = box_lower(z)
+    if z >= p.BOX_LEDGE_Z1:
+        return l + 2 * p.BOX_STEP_L, w + 2 * p.BOX_STEP_W
+    return l, w
 
 
 def seat_layout() -> dict[str, float]:
     """Outline of a part resting on the box ledge: ledge_gauge now, the top plate (#18) later.
 
     Box frame: floor at Z=0, interior centred on X=0, Y=0, X along the length. The part's
-    underside is at z = BOX_LEDGE_Z1. Outside: the box there minus WALL_CLEARANCE per side.
-    Inside: the ledge opening minus SEAT_INSET per side, so it covers the whole ledge.
+    underside is at z = BOX_LEDGE_Z1. Outside: SEAT_L x SEAT_W with SEAT_CORNER_R corners, sized
+    for the box corners. Inside: the lower part there minus SEAT_INSET per side, so it covers the
+    whole step.
     """
-    box_l, box_w = box_interior(p.BOX_LEDGE_Z1)
+    low_l, low_w = box_lower(p.BOX_LEDGE_Z1)
     return {
         "z": p.BOX_LEDGE_Z1,
-        "outer_l": box_l - 2 * p.WALL_CLEARANCE,
-        "outer_w": box_w - 2 * p.WALL_CLEARANCE,
-        "inner_l": p.BOX_LEDGE_OPEN_L - 2 * p.SEAT_INSET,
-        "inner_w": p.BOX_LEDGE_OPEN_W - 2 * p.SEAT_INSET,
+        "outer_l": p.SEAT_L,
+        "outer_w": p.SEAT_W,
+        "corner_r": p.SEAT_CORNER_R,
+        "inner_l": low_l - 2 * p.SEAT_INSET,
+        "inner_w": low_w - 2 * p.SEAT_INSET,
     }
 
 
@@ -398,6 +412,7 @@ def floor_layout() -> dict[str, float]:
         "z": 0.0,
         "outer_l": outer_l,
         "outer_w": outer_w,
+        "corner_r": p.FLOOR_CORNER_R,
         "inner_l": outer_l - 2 * p.GAUGE_WALL,
         "inner_w": outer_w - 2 * p.GAUGE_WALL,
     }
@@ -413,14 +428,14 @@ def gauge_label(k: dict[str, float], name: str) -> str:
 
 
 def box_gauge(k: dict[str, float], name: str) -> Part:
-    """Thin closed frame: outer outline k["outer_l"] x k["outer_w"] with CORNER_R corners, hollow
+    """Thin closed frame: outer outline k["outer_l"] x k["outer_w"] with k["corner_r"] corners, hollow
     k["inner_l"] x k["inner_w"]. A tab inside the -Y long side carries the engraved name and outer
     size. Printed flat, Z=0 on the bed; in the box it sits at k["z"].
     """
     wall = min(k["outer_l"] - k["inner_l"], k["outer_w"] - k["inner_w"]) / 2
     assert wall >= p.MIN_WALL, f"{name} gauge wall only {wall:.2f}"
-    inner_r = max(p.CORNER_R - wall, 1.0)
-    outline = RectangleRounded(k["outer_l"], k["outer_w"], p.CORNER_R) - RectangleRounded(
+    inner_r = max(k["corner_r"] - wall, 1.0)
+    outline = RectangleRounded(k["outer_l"], k["outer_w"], k["corner_r"]) - RectangleRounded(
         k["inner_l"], k["inner_w"], inner_r
     )
     label = Text(gauge_label(k, name), p.GAUGE_TEXT_SIZE)
@@ -444,6 +459,19 @@ def ledge_gauge() -> Part:
     return box_gauge(seat_layout(), "LEDGE")
 
 
+def corner_gauge(r: float) -> Part:
+    """A square tab with one corner rounded to r and "R<r>" engraved. Pushed into a bottom corner of
+    the box, the tab that touches both walls with no gap in the corner gives the box's corner radius.
+    One part per radius in CORNER_GAUGE_RADII, so they can be laid out freely on the bed."""
+    s = p.CORNER_GAUGE_SIZE
+    # Rounded corner at +X+Y: a square with that corner cut and replaced by a quarter circle.
+    outline = Rectangle(s, s) - Pos(s / 2 - r / 2, s / 2 - r / 2) * Rectangle(r, r)
+    outline += Pos(s / 2 - r, s / 2 - r) * Circle(r)
+    tab = extrude(outline, p.GAUGE_HEIGHT)
+    label = Text(f"R{r:g}", p.GAUGE_TEXT_SIZE)
+    return tab - Pos(-s / 6, -s / 6, p.GAUGE_HEIGHT - p.GAUGE_TEXT_DEPTH) * extrude(label, p.GAUGE_TEXT_DEPTH + 0.1)
+
+
 PARTS = {
     "test_ring": test_ring,
     "ir_collar": ir_collar,
@@ -451,6 +479,7 @@ PARTS = {
     "encoder_knob": encoder_knob,
     "floor_gauge": floor_gauge,
     "ledge_gauge": ledge_gauge,
+    **{f"corner_gauge_r{r:g}": (lambda r=r: corner_gauge(r)) for r in p.CORNER_GAUGE_RADII},
 }
 
 

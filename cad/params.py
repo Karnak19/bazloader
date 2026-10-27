@@ -155,7 +155,7 @@ GAUGE_TEXT_SIZE = 5.0  # Height of the engraved label.
 GAUGE_TEXT_DEPTH = 0.6  # Engraving depth (3 layers at 0.2).
 GAUGE_TAB_MARGIN = 2.0  # Material round the label on its tab.
 CORNER_GAUGE_RADII = (2, 4, 6, 8)  # One corner tab per radius, to find the box's bottom corner radius (R10 is too big).
-CORNER_GAUGE_SIZE = 30.0  # Side of each square corner tab.
+CORNER_GAUGE_SIZE = 18.0  # Side of each square corner tab: over twice the largest radius, room for the label.
 
 # --- Smoke-test ring (M0 only, proves the build pipeline) --------------------
 RING_WALL = 2.0  # Radial wall thickness of the test ring.

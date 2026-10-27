@@ -177,7 +177,7 @@ than the mid-wall numbers say.
   `build.py`, which the top plate (#18) will reuse. It fits the 256 mm bed straight (2 mm to spare
   at each end); `check.py` would also accept it turned on the diagonal.
 - **`corner_gauge_r2` … `corner_gauge_r8`**: one file per radius in `CORNER_GAUGE_RADII`, each a
-  30 mm tab with one rounded corner and its radius engraved. Push each into a bottom corner of the box: a tab whose radius is too small
+  18 mm tab with one rounded corner and its radius engraved. Push each into a bottom corner of the box: a tab whose radius is too small
   stops short of both walls; too big, it touches both walls with a gap in the corner. The right one
   touches both walls with no gap. Report that number: it becomes `FLOOR_CORNER_R`.
 

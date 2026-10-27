@@ -412,7 +412,7 @@ def floor_layout() -> dict[str, float]:
         "z": 0.0,
         "outer_l": outer_l,
         "outer_w": outer_w,
-        "corner_r": p.CORNER_R,
+        "corner_r": p.FLOOR_CORNER_R,
         "inner_l": outer_l - 2 * p.GAUGE_WALL,
         "inner_w": outer_w - 2 * p.GAUGE_WALL,
     }
@@ -459,6 +459,24 @@ def ledge_gauge() -> Part:
     return box_gauge(seat_layout(), "LEDGE")
 
 
+def corner_gauges() -> Part:
+    """A row of square tabs, each with one corner rounded to a radius from CORNER_GAUGE_RADII and that
+    radius engraved. Pushed into a bottom corner of the box, the one that touches both walls with no
+    gap in the corner gives the box's corner radius."""
+    s = p.CORNER_GAUGE_SIZE
+    tabs = []
+    for i, r in enumerate(p.CORNER_GAUGE_RADII):
+        x = i * (s + p.CORNER_GAUGE_GAP)
+        # Rounded corner at +X+Y: a square with that corner cut and replaced by a quarter circle.
+        outline = Pos(x, 0) * Rectangle(s, s) - Pos(x + s / 2 - r / 2, s / 2 - r / 2) * Rectangle(r, r)
+        outline += Pos(x + s / 2 - r, s / 2 - r) * Circle(r)
+        tab = extrude(outline, p.GAUGE_HEIGHT)
+        label = Text(f"R{r}", p.GAUGE_TEXT_SIZE)
+        tab -= Pos(x - s / 6, -s / 6, p.GAUGE_HEIGHT - p.GAUGE_TEXT_DEPTH) * extrude(label, p.GAUGE_TEXT_DEPTH + 0.1)
+        tabs.append(tab)
+    return Part(children=tabs)
+
+
 PARTS = {
     "test_ring": test_ring,
     "ir_collar": ir_collar,
@@ -466,6 +484,7 @@ PARTS = {
     "encoder_knob": encoder_knob,
     "floor_gauge": floor_gauge,
     "ledge_gauge": ledge_gauge,
+    "corner_gauges": corner_gauges,
 }
 
 

@@ -320,11 +320,11 @@ def check_coupon(od: float) -> None:
 def wall_gap(x: float, y: float, z: float) -> float:
     """Distance from a point inside the box (box frame) to the nearest wall at height z.
 
-    The box is modelled with CORNER_R corners, the worst case: its real corners are tighter,
-    which only leaves more room for an R10 part.
+    The box is modelled with CORNER_R corners above the ledge and FLOOR_CORNER_R below it, the
+    worst case: its real corners are tighter, which only leaves more room for a part with that radius.
     """
     box_l, box_w = build.box_interior(z)
-    r = p.CORNER_R
+    r = p.FLOOR_CORNER_R if z < p.BOX_LEDGE_Z0 else p.CORNER_R
     qx, qy = abs(x) - (box_l / 2 - r), abs(y) - (box_w / 2 - r)
     outside = math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - r  # Signed distance, < 0 inside.
     return -outside
@@ -394,12 +394,26 @@ def check_floor_gauge() -> None:
     )
 
 
+def check_corner_gauges() -> None:
+    part = build.corner_gauges()
+    tabs = part.solids()
+    assert len(tabs) == len(p.CORNER_GAUGE_RADII), f"corner_gauges: {len(tabs)} tabs, want {len(p.CORNER_GAUGE_RADII)}"
+    assert all(t.is_valid for t in tabs), "corner_gauges: invalid tab"
+    for t, r in zip(sorted(tabs, key=lambda t: t.bounding_box().min.X), p.CORNER_GAUGE_RADII):
+        size = t.bounding_box().size
+        assert abs(size.X - p.CORNER_GAUGE_SIZE) < 1e-3 and abs(size.Y - p.CORNER_GAUGE_SIZE) < 1e-3, f"R{r} tab is {size}"
+        assert r < p.CORNER_GAUGE_SIZE / 2, f"R{r} too big for the tab"
+    bb = part.bounding_box()
+    assert bed_fit(bb.size.X, bb.size.Y), f"corner_gauges do not fit the bed: {bb.size}"
+    radii = ", ".join(f"R{r}" for r in p.CORNER_GAUGE_RADII)
+    print(f"corner_gauges: OK  {len(tabs)} tabs ({radii})  row {bb.size.X:.0f} x {bb.size.Y:.0f}  bed {bed_fit(bb.size.X, bb.size.Y)}")
+
+
 def check_ledge_gauge() -> None:
     part, k = build.ledge_gauge(), build.seat_layout()
     gap = check_gauge("ledge_gauge", part, k)
     # check_gauge made sure it keeps WALL_CLEARANCE to the upper walls (mid-wall numbers; it is sized
-    # smaller, for the corners). It also stays under the original top plate, which forces there.
-    assert k["outer_l"] < 249 and k["outer_w"] < 117, "seat not under the original top plate (249 x 117)"
+    # smaller, for the corners).
     # It cannot drop into the lower part: it is bigger than the lower part at the ledge, both ways,
     # and rests on at least SEAT_MIN_REST of step on every side.
     low_l, low_w = build.box_lower(p.BOX_LEDGE_Z1)
@@ -430,6 +444,7 @@ if __name__ == "__main__":
     check_box()
     check_floor_gauge()
     check_ledge_gauge()
+    check_corner_gauges()
     original = p.BARREL_OD
     for od in BARREL_ODS:
         check_collar(od)

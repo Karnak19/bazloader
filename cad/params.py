@@ -107,8 +107,8 @@ COUPON_TEXT_DEPTH = 0.4  # Engraving depth (2 layers at 0.2).
 # each grows linearly with Z. A small notch in the ledge at the front is ignored.
 # THE BOX FLEXES: a part that forces at the bottom spreads the walls and changes the fit higher
 # up. Every part keeps WALL_CLEARANCE to every wall, never a press fit.
-BOX_FLOOR_L = 233.0  # Interior length at the floor (Z=0). Measured 230; the first floor gauge (228) had 3 mm to spare.
-BOX_FLOOR_W = 96.5  # Interior width at the floor. Measured 95; the first floor gauge (93) had 1.5 mm to spare.
+BOX_FLOOR_L = 233.0  # Interior length at the floor (Z=0). Measured 230; the first floor gauge (228) had 3 mm to spare, the reprint (231) fits.
+BOX_FLOOR_W = 96.5  # Interior width at the floor. Measured 95; the first floor gauge (93) had 1.5 mm to spare, the reprint (94.5) fits.
 BOX_REF_Z = 125.0  # Height of the second measurement, used to get the draft.
 BOX_REF_L = 237.0  # TODO: confirm with the gauge. Interior length at BOX_REF_Z.
 BOX_REF_W = 100.0  # TODO: confirm with the gauge. Interior width at BOX_REF_Z.
@@ -117,8 +117,8 @@ BOX_TAPER_W = (BOX_REF_W - BOX_FLOOR_W) / BOX_REF_Z  # Interior width gained per
 BOX_HEIGHT = 153.0  # TODO: confirm with the gauge. Floor to rim.
 CORNER_R = 10.0  # Vertical corner radius of our parts. The box's interior corners are under 10 mm, so a part
 # with R10 always fits; the worst gap left in a corner is about 4 mm, under one BB.
-FLOOR_CORNER_R = 8.0  # TODO: confirm with the gauge. Corner radius of parts on the floor: the floor gauge at R10 left
-# visible gaps in the corners, so the box corners are tighter down there. Also the box model's corners below the ledge.
+FLOOR_CORNER_R = 4.0  # Corner radius of parts on the floor, from the corner gauges (R4 fits the bottom corners; R10
+# left visible gaps). Also the box model's corners below the ledge.
 WALL_CLEARANCE = 1.0  # Gap kept between every part and every box wall, per side. Under one BB, never a press fit.
 
 # Ledge: the step all round the inside wall where the wide upper part meets the narrower lower part.
@@ -142,8 +142,8 @@ BOX_STEP_W = (BOX_RIM_W - BOX_FLOOR_W - BOX_TAPER_W * BOX_HEIGHT) / 2  # Step wi
 # at the corners (the two pieces overlap a little once fitted). So the seat is a bit under it both
 # ways. Inside: it reaches SEAT_INSET past the step's inner edge (the lower wall), so it covers the
 # whole step whatever its exact width.
-SEAT_L = 252.0  # Outer length of the seat. The first ledge gauge (246) had 6 mm to spare; TODO: confirm with the reprint.
-SEAT_W = 117.0  # Outer width of the seat. The first ledge gauge (115) had 2 mm to spare; TODO: confirm with the reprint.
+SEAT_L = 252.0  # Outer length of the seat. The first ledge gauge (246) had 6 mm to spare; the reprint at 252 fits.
+SEAT_W = 117.0  # Outer width of the seat. The first ledge gauge (115) had 2 mm to spare; the reprint at 117 fits, maybe 1 mm to spare.
 SEAT_CORNER_R = CORNER_R  # Vertical corner radius of the seat. Raise it if the box corners are tighter up there.
 SEAT_INSET = 3.0  # How far the seat reaches in past the lower wall, per side.
 SEAT_MIN_REST = 3.0  # Least width of step a seated part must rest on, per side.

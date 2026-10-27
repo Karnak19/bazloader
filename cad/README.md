@@ -168,11 +168,13 @@ step is the ledge, a sloped shelf facing up. Nothing sticks into the box, so any
 floor goes in flat. The walls bow out in the middle, so the upper part is tighter at the corners
 than the mid-wall numbers say.
 
-- **`floor_gauge`**, engraved `FLOOR 231x94.5`: the floor minus 1 mm per side, 2 mm wall, R8
-  corners (`FLOOR_CORNER_R`). Drop it flat onto the floor. The first print (228 × 93, R10) had
-  3 mm to spare in length, 1.5 mm in width and gaps in the corners.
+- **`floor_gauge`**, engraved `FLOOR 231x94.5`: the floor minus 1 mm per side, 2 mm wall,
+  `FLOOR_CORNER_R` corners. Drop it flat onto the floor. The first print (228 × 93, R10) had
+  3 mm to spare in length, 1.5 mm in width and gaps in the corners; the second (231 × 94.5, R8)
+  fits.
 - **`ledge_gauge`**, engraved `LEDGE 252x117`: the first print (246 × 115) had 6 mm to spare in
   length and 2 mm in width, so it is now bigger than the original BULLOADER top plate (249 × 117).
+  The second print (252 × 117) fits, with maybe 1 mm to spare.
   Its opening is 3 mm smaller than the lower part on each side. Lay it on the step from above: it
   rests on about 7 mm of step at the ends and 8 mm at the sides. Its outline is `seat_layout()` in
   `build.py`, which the top plate (#18) will reuse. It fits the 256 mm bed straight (2 mm to spare
@@ -180,7 +182,8 @@ than the mid-wall numbers say.
 - **`corner_gauge_r2` … `corner_gauge_r8`**: one file per radius in `CORNER_GAUGE_RADII`, each a
   18 mm tab with one rounded corner and its radius engraved. Push each into a bottom corner of the box: a tab whose radius is too small
   stops short of both walls; too big, it touches both walls with a gap in the corner. The right one
-  touches both walls with no gap. Report that number: it becomes `FLOOR_CORNER_R`.
+  touches both walls with no gap. Report that number: it becomes `FLOOR_CORNER_R`. The first
+  round gave R4.
 
 A good fit: it lies flat on its own, rocks or slides a little, and shows an even gap of about 1 mm
 all round (a BB does not fall through anywhere). Push the walls in and out: nothing should move

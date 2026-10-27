@@ -501,9 +501,14 @@ def feed_layout() -> dict[str, float]:
     case_x0 = -p.SERVO_SPLINE_OFFSET  # Servo body along +X from the spline.
     case_x1 = p.SERVO_BODY_L - p.SERVO_SPLINE_OFFSET
     corner_r = math.hypot(max(-case_x0, case_x1) + g, p.SERVO_BODY_W / 2 + g)
+    ear_play = (p.SERVO_EAR_HOLE_D - p.M3_D) / 2  # The servo slides this far on loose ear screws.
+    # The real spline can be FEED_SERVO_TRAVEL_X off along the servo, and the case and the hub
+    # FEED_SERVO_TRAVEL_Z lower: the house is drawn round the hub in all those places.
+    hub_room = dhub_r + g + p.FEED_SERVO_TRAVEL_X + ear_play  # Radius of the house round the hub.
+    tz = p.FEED_SERVO_TRAVEL_Z
     # The house under the plate is closed by a 45 deg cone round the axis (printed upside down, it is a
     # roof that needs no support). Its inside must clear the drive hub's bottom edge and the case.
-    z_ci = min(dhub_bottom - g - (dhub_r + g), case_face - corner_r)  # Apex of the inner cone.
+    z_ci = min(dhub_bottom - tz - g - hub_room, case_face - tz - corner_r)  # Apex of the inner cone.
     z_co = z_ci - p.MIN_WALL * math.sqrt(2)  # Outer cone, MIN_WALL thick at 45 deg.
     return {
         "floor": floor,
@@ -539,6 +544,8 @@ def feed_layout() -> dict[str, float]:
         "dhub_r": dhub_r,
         "dhub_h": dhub_h,
         "dhub_bottom": dhub_bottom,
+        "ear_play": ear_play,
+        "hub_room": hub_room,
         "chamber_r": p.FEED_HORN_HOLE_CIRCLE / 2 + p.M3_HEAD_D / 2 + p.FIT_TOLERANCE,
         "chamber_h": chamber_h,
         "shaft_bottom": shaft_bottom,
@@ -548,7 +555,7 @@ def feed_layout() -> dict[str, float]:
         "sleeve_bottom": cover_top + p.FEED_SLEEVE_GAP,
         "z_ci": z_ci,
         "z_co": z_co,
-        "house_hy": max(p.SERVO_BODY_W / 2, dhub_r) + g + p.MIN_WALL,  # Half width of the house.
+        "house_hy": max(p.SERVO_BODY_W / 2 + g, hub_room) + p.MIN_WALL,  # Half width of the house.
         "screw_xy": p.FEED_BLOCK_HALF - p.FEED_COVER_SCREW_INSET,  # Cover screws at (+-, +-) this.
     }
 
@@ -919,7 +926,7 @@ def _house_outline(grow: float) -> Sketch:
     k = feed_layout()
     g = p.FEED_HOUSE_GAP + grow
     xc = (k["case_x0"] + k["case_x1"]) / 2
-    return Pos(xc, 0) * Rectangle(p.SERVO_BODY_L + 2 * g, p.SERVO_BODY_W + 2 * g) + Circle(k["dhub_r"] + g)
+    return Pos(xc, 0) * Rectangle(p.SERVO_BODY_L + 2 * g, p.SERVO_BODY_W + 2 * g) + Circle(k["hub_room"] + grow)
 
 
 def feed_servo_bracket() -> Part:
@@ -950,9 +957,10 @@ def feed_servo_bracket() -> Part:
     body += Pos(0, 0, zs) * Cylinder(k["sleeve_ro"], zo - zs + 1, align=up)
     body -= Pos(0, 0, zi) * extrude(_house_outline(0), z - zi) & cone_i
     body -= Pos(0, 0, zs - 1) * Cylinder(k["sleeve_ri"], zi - zs + 2, align=up)
-    # Servo: the case drops through the plate, the ears screw into it.
+    # Servo: the case drops through the plate, the ears screw into it. The cut-out leaves the case
+    # the play of the ear holes, so the servo can slide that far before the screws are tight.
     xc = (k["case_x0"] + k["case_x1"]) / 2
-    ft = p.FIT_TOLERANCE
+    ft = p.FIT_TOLERANCE + k["ear_play"]
     body -= Pos(xc, 0, z - 1) * Box(p.SERVO_BODY_L + 2 * ft, p.SERVO_BODY_W + 2 * ft, p.FEED_BRACKET_T + 2, align=up)
     xe = p.SERVO_EAR_PITCH_L / 2
     for ex in (xc - xe, xc + xe):

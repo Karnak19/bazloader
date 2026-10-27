@@ -49,6 +49,7 @@ WIRE_CHANNEL_DEPTH = 1.5  # Depth of that groove.
 CLAMP_SLOT = 1.5  # Gap of each C-clamp, closed by its M3 screw. Far more than the bore clearance it has to take up.
 
 # --- Hardware ---------------------------------------------------------------
+M3_D = 3.0  # M3 screw, outer diameter of the thread.
 M3_CLEARANCE = 3.4  # Through-hole for an M3 screw.
 M3_NUT_AF = 5.5  # M3 hex nut, across flats.
 M3_NUT_THICKNESS = 2.4  # M3 hex nut thickness.
@@ -164,20 +165,27 @@ BB_D = 6.0  # Nominal BB. Also the largest we plan for: every BB passage is chec
 BB_MIN_D = 5.95  # Smallest BB we expect (cheap 0.20 g). Checked so it can never sit two-deep.
 
 # --- Servo (the existing BULLOADER 35 kg continuous servo, #54) ----------------
-# Measured on the original's pocket, taken as starting values. Frame: output spline on
-# the origin, body along +X, so the spline sits SERVO_SPLINE_OFFSET from the -X end.
-SERVO_BODY_L = 40.0  # TODO: measure. Body length, without the ears.
-SERVO_BODY_W = 20.0  # TODO: measure. Body width.
-SERVO_SPLINE_OFFSET = 10.2  # TODO: measure. Output spline axis to the near end of the body.
-SERVO_EAR_PITCH_L = 48.6  # TODO: measure. Ear holes, centre to centre, along the body.
-SERVO_EAR_PITCH_W = 9.9  # TODO: measure. Ear holes, centre to centre, across the body.
-SERVO_EAR_SPAN = 54.5  # TODO: measure. Overall length over the ears (only sizes the bracket).
-SERVO_FACE_TO_EARS = 11.0  # TODO: measure. From the output face of the case to the face of the ears on that side.
-SERVO_HORN_GAP = 2.0  # TODO: measure. From the output face of the case to the back of the horn, horn pushed on.
-FEED_HORN_D = 20.0  # TODO: measure. Round metal horn diameter (the original pocket has a 20 mm recess for it).
-FEED_HORN_T = 3.0  # TODO: measure. Horn thickness.
+# DIYmall TD-8135MG, 360 deg continuous, standard size. Measured with calipers except where
+# marked. Frame: output spline on the origin, body along +X, so the spline sits
+# SERVO_SPLINE_OFFSET from the -X end.
+SERVO_BODY_L = 40.0  # Body length, without the ears.
+SERVO_BODY_W = 20.0  # Body width.
+SERVO_SPLINE_OFFSET = 10.2  # TODO: measure. Output spline axis to the near end of the body. The rig takes
+# FEED_SERVO_TRAVEL_X of error here (the ear holes' play and the shaft's hex joints), see the feed rig notes.
+SERVO_EAR_PITCH_L = 48.3  # Ear holes, centre to centre, along the body (44 inner edge to inner edge + 4.3).
+SERVO_EAR_PITCH_W = 9.4  # Ear holes, centre to centre, across the body (5.1 inner edge to inner edge + 4.3).
+SERVO_EAR_HOLE_D = 4.3  # Ear holes. Wider than the M3 screws: the servo slides that play before they are tight.
+SERVO_EAR_SPAN = 54.5  # Overall length over the ears (only sizes the bracket).
+SERVO_FACE_TO_EARS = 11.0  # TODO: measure. From the output face of the case to the face of the ears on that
+# side. Only moves the drive hub up or down: the shaft's float takes FEED_SERVO_TRAVEL_Z of error.
+SERVO_HORN_GAP = 2.0  # TODO: measure. From the output face of the case to the back of the horn, horn pushed
+# on. At least FEED_HORN_HUB_H, the hub being on the servo side. Same as above: the shaft's float takes it.
+FEED_HORN_D = 20.0  # Round metal horn (disc) diameter.
+FEED_HORN_T = 2.5  # Horn plate thickness, without the hub.
+FEED_HORN_HUB_H = 1.9  # The horn's 9 mm hub, on the servo side over the spline, stands this proud of the plate
+# (4.4 overall). Nothing on the rig reaches its diameter, so only its height is kept.
 FEED_HORN_HOLE_D = 3.5  # Holes for the 4 horn screws (M3 into the horn's threads), as on the original pocket.
-FEED_HORN_HOLE_CIRCLE = 14.0  # TODO: measure. Diameter of the circle the 4 horn holes sit on.
+FEED_HORN_HOLE_CIRCLE = 13.8  # Diameter of the circle the 4 threaded M3 horn holes sit on.
 FEED_HORN_SCREW_HEAD_D = 7.0  # TODO: measure. Clearance for the head of the screw holding the horn on the spline.
 
 # --- Feed mechanism (#54, concept B): horizontal pocket disc ------------------------
@@ -200,8 +208,13 @@ FEED_HUB_R = 9.0  # Raised hub at the disc centre: holds the pin bore under and 
 FEED_SHAFT_AF = 12.0  # Hex drive shaft, across flats. Printed lying: strong in torsion, straight.
 FEED_HEX_TOLERANCE = 0.3  # TODO: calibrate with feed_coupon. Hex sockets = FEED_SHAFT_AF + this.
 FEED_HEX_DEPTH = 6.0  # Depth of the hex socket in the disc hub.
-FEED_SHAFT_ENGAGE = 8.0  # Depth of the hex socket in the drive hub, i.e. how far the shaft goes up into it.
-FEED_SHAFT_FLOAT = 2.0  # Gap left over the shaft top in the drive hub: takes the servo height error.
+FEED_SHAFT_ENGAGE = 10.5  # Depth of the hex socket in the drive hub.
+FEED_SHAFT_FLOAT = 3.5  # Gap left over the shaft top in the drive hub: the servo can sit that much lower.
+FEED_SHAFT_MIN_ENGAGE = 4.0  # Least the shaft goes into the drive hub, with the servo FEED_SERVO_TRAVEL_Z high.
+FEED_SERVO_TRAVEL_Z = 3.0  # Servo height error the rig takes either way (SERVO_FACE_TO_EARS, SERVO_HORN_GAP):
+# the shaft slides in the drive hub, and the disc keeps lying on the floor whatever the servo height.
+FEED_SERVO_TRAVEL_X = 2.0  # Spline position error the rig takes either way, along the servo (SERVO_SPLINE_OFFSET):
+# the ear holes' play, then the shaft leaning in its two loose hex sockets. The house clears the hub that far.
 FEED_HUB_PLATE_T = 3.0  # Plate of the drive hub the horn screws go through.
 
 # Cover and window. Angles in degrees, counter-clockwise from +X (the exit channel's side).

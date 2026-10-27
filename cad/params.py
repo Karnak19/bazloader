@@ -154,9 +154,8 @@ GAUGE_WALL = 2.0  # Width of the floor gauge frame (the ledge gauge is as wide a
 GAUGE_TEXT_SIZE = 5.0  # Height of the engraved label.
 GAUGE_TEXT_DEPTH = 0.6  # Engraving depth (3 layers at 0.2).
 GAUGE_TAB_MARGIN = 2.0  # Material round the label on its tab.
-CORNER_GAUGE_RADII = (4, 5, 6, 7, 8, 9, 10)  # One corner tab per radius, to find the box's bottom corner radius.
+CORNER_GAUGE_RADII = (2, 4, 6, 8)  # R10 is known to be too big.  # One corner tab per radius, to find the box's bottom corner radius.
 CORNER_GAUGE_SIZE = 30.0  # Side of each square corner tab.
-CORNER_GAUGE_GAP = 5.0  # Space between tabs on the bed.
 
 # --- Smoke-test ring (M0 only, proves the build pipeline) --------------------
 RING_WALL = 2.0  # Radial wall thickness of the test ring.

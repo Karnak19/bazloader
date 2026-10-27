@@ -395,18 +395,14 @@ def check_floor_gauge() -> None:
 
 
 def check_corner_gauges() -> None:
-    part = build.corner_gauges()
-    tabs = part.solids()
-    assert len(tabs) == len(p.CORNER_GAUGE_RADII), f"corner_gauges: {len(tabs)} tabs, want {len(p.CORNER_GAUGE_RADII)}"
-    assert all(t.is_valid for t in tabs), "corner_gauges: invalid tab"
-    for t, r in zip(sorted(tabs, key=lambda t: t.bounding_box().min.X), p.CORNER_GAUGE_RADII):
-        size = t.bounding_box().size
-        assert abs(size.X - p.CORNER_GAUGE_SIZE) < 1e-3 and abs(size.Y - p.CORNER_GAUGE_SIZE) < 1e-3, f"R{r} tab is {size}"
-        assert r < p.CORNER_GAUGE_SIZE / 2, f"R{r} too big for the tab"
-    bb = part.bounding_box()
-    assert bed_fit(bb.size.X, bb.size.Y), f"corner_gauges do not fit the bed: {bb.size}"
-    radii = ", ".join(f"R{r}" for r in p.CORNER_GAUGE_RADII)
-    print(f"corner_gauges: OK  {len(tabs)} tabs ({radii})  row {bb.size.X:.0f} x {bb.size.Y:.0f}  bed {bed_fit(bb.size.X, bb.size.Y)}")
+    for r in p.CORNER_GAUGE_RADII:
+        part = build.corner_gauge(r)
+        assert part.is_valid and len(part.solids()) == 1, f"corner_gauge_r{r:g}: not one valid solid"
+        size = part.bounding_box().size
+        assert abs(size.X - p.CORNER_GAUGE_SIZE) < 1e-3 and abs(size.Y - p.CORNER_GAUGE_SIZE) < 1e-3, f"R{r:g} tab is {size}"
+        assert r < p.CORNER_GAUGE_SIZE / 2, f"R{r:g} too big for the tab"
+    radii = ", ".join(f"R{r:g}" for r in p.CORNER_GAUGE_RADII)
+    print(f"corner gauges: OK  {len(p.CORNER_GAUGE_RADII)} tabs ({radii}), {p.CORNER_GAUGE_SIZE:g} mm square, one file each")
 
 
 def check_ledge_gauge() -> None:

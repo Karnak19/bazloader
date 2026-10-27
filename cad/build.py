@@ -459,22 +459,17 @@ def ledge_gauge() -> Part:
     return box_gauge(seat_layout(), "LEDGE")
 
 
-def corner_gauges() -> Part:
-    """A row of square tabs, each with one corner rounded to a radius from CORNER_GAUGE_RADII and that
-    radius engraved. Pushed into a bottom corner of the box, the one that touches both walls with no
-    gap in the corner gives the box's corner radius."""
+def corner_gauge(r: float) -> Part:
+    """A square tab with one corner rounded to r and "R<r>" engraved. Pushed into a bottom corner of
+    the box, the tab that touches both walls with no gap in the corner gives the box's corner radius.
+    One part per radius in CORNER_GAUGE_RADII, so they can be laid out freely on the bed."""
     s = p.CORNER_GAUGE_SIZE
-    tabs = []
-    for i, r in enumerate(p.CORNER_GAUGE_RADII):
-        x = i * (s + p.CORNER_GAUGE_GAP)
-        # Rounded corner at +X+Y: a square with that corner cut and replaced by a quarter circle.
-        outline = Pos(x, 0) * Rectangle(s, s) - Pos(x + s / 2 - r / 2, s / 2 - r / 2) * Rectangle(r, r)
-        outline += Pos(x + s / 2 - r, s / 2 - r) * Circle(r)
-        tab = extrude(outline, p.GAUGE_HEIGHT)
-        label = Text(f"R{r}", p.GAUGE_TEXT_SIZE)
-        tab -= Pos(x - s / 6, -s / 6, p.GAUGE_HEIGHT - p.GAUGE_TEXT_DEPTH) * extrude(label, p.GAUGE_TEXT_DEPTH + 0.1)
-        tabs.append(tab)
-    return Part(children=tabs)
+    # Rounded corner at +X+Y: a square with that corner cut and replaced by a quarter circle.
+    outline = Rectangle(s, s) - Pos(s / 2 - r / 2, s / 2 - r / 2) * Rectangle(r, r)
+    outline += Pos(s / 2 - r, s / 2 - r) * Circle(r)
+    tab = extrude(outline, p.GAUGE_HEIGHT)
+    label = Text(f"R{r:g}", p.GAUGE_TEXT_SIZE)
+    return tab - Pos(-s / 6, -s / 6, p.GAUGE_HEIGHT - p.GAUGE_TEXT_DEPTH) * extrude(label, p.GAUGE_TEXT_DEPTH + 0.1)
 
 
 PARTS = {
@@ -484,7 +479,7 @@ PARTS = {
     "encoder_knob": encoder_knob,
     "floor_gauge": floor_gauge,
     "ledge_gauge": ledge_gauge,
-    "corner_gauges": corner_gauges,
+    **{f"corner_gauge_r{r:g}": (lambda r=r: corner_gauge(r)) for r in p.CORNER_GAUGE_RADII},
 }
 
 

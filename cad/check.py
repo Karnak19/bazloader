@@ -662,22 +662,60 @@ def check_feed_assembly(assembly: dict) -> None:
         if not solid_at(a["base"], (r + EPS) * c, (r + EPS) * s, k["floor"] + 1):
             continue  # The channel.
         assert not solid_at(a["base"], (r - EPS) * c, (r - EPS) * s, k["floor"] + 1), f"shroud inside R{r} at {deg}"
-    # Servo case: through the plate with FIT_TOLERANCE, clear of the house below.
+    # The servo, wherever the unmeasured numbers put it. The case slides the ear holes' play either
+    # way and sits up to FEED_SERVO_TRAVEL_Z low or high; the hub also moves FEED_SERVO_TRAVEL_X along
+    # the servo (the spline offset). In every corner of that box, nothing touches the bracket.
     xc = (k["case_x0"] + k["case_x1"]) / 2
     h = k["ears"] - k["case_face"]
     up = (Align.CENTER, Align.CENTER, Align.MIN)
     case = Pos(xc, 0, k["case_face"]) * Box(p.SERVO_BODY_L, p.SERVO_BODY_W, h, align=up)
-    d = case.distance_to(a["bracket"])
-    assert d >= p.FIT_TOLERANCE - 1e-6, f"servo case {d:.2f} from the bracket"
-    # Shaft: sits on the floor of the disc's socket, goes up into the drive hub with room to float.
+    play, tx, tz = k["ear_play"], p.FEED_SERVO_TRAVEL_X, p.FEED_SERVO_TRAVEL_Z
+    d = min(
+        (Pos(sx * play, sy * play, sz * tz) * case).distance_to(a["bracket"])
+        for sx in (-1, 0, 1)
+        for sy in (-1, 0, 1)
+        for sz in (-1, 0)  # Higher, the case only leaves the house; through the plate it is the same box.
+    )
+    assert d >= p.FIT_TOLERANCE - 1e-6, f"servo case {d:.2f} from the bracket somewhere in its travel"
+    dh = min(
+        (Pos(sx * (tx + play), sy * play, sz * tz) * a["drive_hub"]).distance_to(a["bracket"])
+        for sx in (-1, 1)
+        for sy in (-1, 1)
+        for sz in (-1, 1)
+    )
+    assert dh >= p.FIT_TOLERANCE - 1e-6, f"drive hub {dh:.2f} from the bracket somewhere in its travel"
+    # The ear pilot holes sit on the measured pitch, round the case cut-out's centre.
+    z = k["hop_top"] + p.FEED_BRACKET_T / 2
+    for ex in (xc - p.SERVO_EAR_PITCH_L / 2, xc + p.SERVO_EAR_PITCH_L / 2):
+        for ey in (-p.SERVO_EAR_PITCH_W / 2, p.SERVO_EAR_PITCH_W / 2):
+            r = p.FEED_SELF_TAP_D / 2
+            assert not solid_at(a["bracket"], ex, ey, z), f"no ear hole at ({ex:.2f}, {ey:.2f})"
+            for q in ((r + EPS, 0), (-r - EPS, 0), (0, r + EPS), (0, -r - EPS)):
+                assert solid_at(a["bracket"], ex + q[0], ey + q[1], z), f"ear hole at ({ex:.2f}, {ey:.2f}) too big"
+    assert p.SERVO_HORN_GAP >= p.FEED_HORN_HUB_H, "the horn's hub does not fit between the case and the hub"
+    # Height: the shaft stands in the disc's socket and slides in the drive hub. Servo FEED_SERVO_TRAVEL_Z
+    # low, the shaft top still clears the hub's socket floor (so it never pushes the disc down); high,
+    # it still goes FEED_SHAFT_MIN_ENGAGE in.
     engage = k["shaft_top"] - k["dhub_bottom"]
-    assert engage >= p.FEED_SHAFT_ENGAGE / 2, f"shaft only {engage:.1f} into the drive hub"
-    assert p.FEED_SHAFT_FLOAT > 0
+    assert p.FEED_SHAFT_FLOAT > tz, f"servo {tz} low would bottom the shaft in the hub (float {p.FEED_SHAFT_FLOAT})"
+    assert engage - tz >= p.FEED_SHAFT_MIN_ENGAGE, f"servo {tz} high, the shaft is only {engage - tz:.1f} in the hub"
+    # Along the servo: the ear holes' play takes the first part of FEED_SERVO_TRAVEL_X, the shaft leans
+    # in its two hex sockets for the rest. A hex leans HEX_TOLERANCE / depth in a socket before it binds.
+    span = k["dhub_bottom"] - k["hub_top"]  # Between the two socket mouths.
+    lean = max(0.0, tx - play) / span
+    can = p.FEED_HEX_TOLERANCE / max(p.FEED_HEX_DEPTH, engage + tz)
+    assert lean <= can, (
+        f"a {tx} spline offset leans the shaft {math.degrees(lean):.2f} deg, its sockets take "
+        f"{math.degrees(can):.2f}: raise FEED_HEX_TOLERANCE or lower FEED_SERVO_TRAVEL_X"
+    )
     assert 0 < p.FEED_SLEEVE_GAP < p.BB_MIN_D / 2, "a BB gets under the sleeve"
     assert k["hop_top"] - k["cover_top"] >= 100, "hopper under 10 cm"
     print(
-        f"feed assembly: OK  no overlaps  servo case gap {d:.2f}  shaft {k['shaft_top'] - k['shaft_bottom']:.1f} long, "
-        f"{engage:.1f} into the drive hub (float {p.FEED_SHAFT_FLOAT})  "
+        f"feed assembly: OK  no overlaps  shaft {k['shaft_top'] - k['shaft_bottom']:.1f} long, "
+        f"{engage:.1f} into the drive hub (float {p.FEED_SHAFT_FLOAT})  servo travel: height +-{tz:g} "
+        f"(shaft {engage - tz:.1f} to {engage + tz:.1f} in), along +-{tx:g} (ear play +-{play:.2f}, "
+        f"shaft leans {math.degrees(lean):.2f} of {math.degrees(can):.2f} deg)  min gap to the bracket: "
+        f"case {d:.2f}, hub {dh:.2f}  "
         f"hopper {k['hop_top'] - k['cover_top']:.0f} over the cover"
     )
 

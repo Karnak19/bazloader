@@ -263,21 +263,50 @@ The disc turns **counter-clockwise seen from above**. The exit channel leaves on
   Round the socket the split faces are set back 0.3 mm each, so the two screws there clamp the
   barrel. Barrel shoulder at 32.1 / 37.1 / 47.1 mm over the floor (36.7 / 41.7 / 51.7 over the
   table), barrel axis 29 / 34 / 44 mm out from the base block.
-- **`feed_shaft`**: 12 mm hex, 90.8 mm long. It stands in the disc's hex socket and goes up 6 mm
-  into the drive hub, with 2 mm to spare over its top: the servo height can be off by that much.
-- **`feed_drive_hub`**: screwed to the servo horn. From the top: the 20 mm recess the horn sits in,
-  a plate with the 4 horn holes (3.5 mm, on a 14 mm circle) and a hole for the spline screw head,
-  a chamber for the 4 screw heads, then the hex socket.
+- **`feed_shaft`**: 12 mm hex, 89.8 mm long. It stands in the disc's hex socket and goes up 7 mm
+  into the drive hub, with 3.5 mm to spare over its top: the servo can sit 3 mm higher or lower
+  than drawn (see [Where the servo ends up](#where-the-servo-ends-up)).
+- **`feed_drive_hub`**: screwed to the servo horn. From the top: the 20 × 2.5 mm recess the horn
+  plate sits in, a plate with the 4 horn holes (3.5 mm, on a 13.8 mm circle) and a hole for the
+  spline screw head, a chamber for the 4 screw heads, then the hex socket. The horn's 9 mm hub
+  stands 1.9 mm proud on the servo side, so it stays out of the drive hub.
 - **`feed_hopper`**: an open square tube, 110 mm tall over the cover, standing in a groove in the
   cover's top. The BBs pile in it, round the sleeve.
 - **`feed_servo_bracket`**: a plate on top of the hopper that holds the servo upside down over the
-  disc axis (case through a cut-out, ears screwed into 2.5 mm pilot holes). Under the plate, a
+  disc axis (case through a cut-out, ears screwed into 2.5 mm pilot holes on the measured 48.3 ×
+  9.4 mm pitch). The cut-out leaves the case the 0.65 mm play of the ear holes. Under the plate, a
   closed house round the servo case and the drive hub, closed at the bottom by a 45° cone onto a
   sleeve that runs down to 0.5 mm over the cover round the shaft. The BBs never reach a turning
   part. Corner tabs locate it in the hopper and take the servo's reaction. Two openings either side
   of the house are where you pour the BBs in.
 - **`feed_coupon`**: three slot pockets (`FEED_SLOT_H` −0.2, 0, +0.2), four pin bores
   (`FEED_PIN_D` +0.1 to +0.4) and four hex sockets (`FEED_SHAFT_AF` +0.1 to +0.4), labelled.
+
+### Where the servo ends up
+
+The servo is a DIYmall TD-8135MG (35 kg, 360° continuous, standard size). Measured: body 40 × 20,
+54.5 over the ears, ear holes 4.3 mm on a 48.3 × 9.4 mm pitch; metal disc horn 20 mm across, plate
+2.5 mm thick, a 9 mm hub standing 1.9 mm proud (4.4 overall), 4 threaded M3 holes on a 13.8 mm
+circle. Three numbers were not measured, and the rig is drawn so they do not matter:
+
+- **Height** (`SERVO_FACE_TO_EARS`, `SERVO_HORN_GAP`). The disc lies on the floor and turns on the
+  pin, whatever the servo does: the servo's height only sets how far the shaft goes into the drive
+  hub. The shaft slides there with 3.5 mm to spare over its top, so the servo can be up to
+  `FEED_SERVO_TRAVEL_Z` (3 mm) lower than drawn and never push the disc down, or 3 mm higher and
+  still drive with 4 mm of hex engaged. The house under the plate clears the case and the hub
+  3 mm lower too.
+- **Along the servo** (`SERVO_SPLINE_OFFSET`). An error here puts the spline beside the disc axis.
+  The ear holes are 4.3 mm for M3 screws, so the servo slides 0.65 mm either way before the screws
+  are tight; past that, the shaft leans in its two loose hex sockets (it takes about 1.7° with
+  `FEED_HEX_TOLERANCE` at 0.3, and a 2 mm error needs 1°). The house clears the hub
+  `FEED_SERVO_TRAVEL_X` (2 mm) off along the servo, plus the play.
+
+Why not slots in the bracket: the ears lie flat on the plate, so a slot can only move the servo
+sideways, never up or down; height is the shaft's job. And along the servo, the ear holes sit only
+4.15 mm past the end of the case, which runs through the plate: a slot ±2 mm long would run into
+the case cut-out, and there is no room under it for a nut, nor a hand to hold one (the closed
+house is right below). The screws have to cut their thread in a fixed pilot hole, so the slide is
+the ear holes' own play.
 
 ### Print list
 
@@ -323,10 +352,15 @@ base cheeks); a piece of the inner barrel, its lower end chamfered inside (see t
 7. Drive hub: screw it to the horn first (4 × M3 × 6, put in through the hex socket and driven with
    a ball-end key at a slight angle). Push the horn onto the spline and drive the spline screw
    through the hub's centre hole.
-8. Servo upside down into the bracket, case through the plate, 4 ear screws.
+8. Servo upside down into the bracket, case through the plate, 4 ear screws snug but not tight:
+   the servo must still slide a little in its ear holes.
 9. Hopper into the cover's groove.
 10. Lower the bracket onto the hopper, corner tabs inside, turning the disc by hand until the shaft
     drops into the drive hub.
+11. Fit the servo loosely, slide it until the disc turns freely and is centred, then tighten: turn
+    the disc by hand through a full turn and let the servo find where the shaft hangs straight and
+    nothing rubs, then tighten the 4 ear screws there. Check that the shaft can still lift a little
+    in the drive hub (it must not sit on the hub's socket floor).
 
 To swap a cover: lift the bracket and the servo off (the hub slides off the shaft), empty and lift
 the hopper, undo the 4 cover screws, lift the cover over the shaft. The disc and the elbow stay.
@@ -385,8 +419,15 @@ the hopper, and the measured values for every `TODO: measure` below. Photos of a
   the sleeve all round, the hopper groove, and at least `FIT_TOLERANCE` (it is `FEED_RUN_GAP`) to
   the turning disc.
 - **The assembly:** no two parts overlap; the shaft, the disc and the drive hub keep at least
-  `FIT_TOLERANCE` from the cover, the bracket and the hopper; the disc clears the shroud all round;
-  the servo case clears the bracket; the shaft goes far enough into the drive hub.
+  `FIT_TOLERANCE` from the cover, the bracket and the hopper; the disc clears the shroud all round.
+- **The servo's travel:** the ear pilot holes sit on the measured pitch; the servo case and the
+  drive hub keep `FIT_TOLERANCE` from the bracket in every corner of their travel (the ear holes'
+  play both ways, `FEED_SERVO_TRAVEL_Z` lower, and for the hub `FEED_SERVO_TRAVEL_X` along the
+  servo); with the servo `FEED_SERVO_TRAVEL_Z` low the shaft still clears the hub's socket floor,
+  and high it still goes `FEED_SHAFT_MIN_ENGAGE` in; what the ear play leaves of
+  `FEED_SERVO_TRAVEL_X` is a lean the two hex sockets take at `FEED_HEX_TOLERANCE` (so calibrating
+  that tolerance tighter can fail here, and says what to change); the horn's hub fits in
+  `SERVO_HORN_GAP`.
 - **Each elbow:** radius at least `FEED_ELBOW_MIN_R`; the bore hollow just inside and solid just
   outside all along the run, the bend and the rise; at the mouth, every point a BB can occupy in
   the channel is open just inside the elbow even with the elbow `FIT_TOLERANCE` off in any direction
@@ -400,15 +441,11 @@ the hopper, and the measured values for every `TODO: measure` below. Photos of a
 
 All `TODO: measure` in `params.py`, sections "Servo" and "Feed mechanism":
 
-- The servo: `SERVO_BODY_L` and `SERVO_BODY_W` (40 × 20), `SERVO_SPLINE_OFFSET` (10.2, spline axis
-  to the near end of the body), `SERVO_EAR_PITCH_L` and `SERVO_EAR_PITCH_W` (48.6 × 9.9, ear hole
-  centres), `SERVO_EAR_SPAN` (54.5, overall over the ears), `SERVO_FACE_TO_EARS` (11, from the
-  output face of the case to the face of the ears on that side) and `SERVO_HORN_GAP` (2, from the
-  output face to the back of the horn once pushed on). The last two only move the drive hub; the
-  shaft takes ±2 mm.
-- The horn: `FEED_HORN_D` (20), `FEED_HORN_T` (3), `FEED_HORN_HOLE_CIRCLE` (14), whether its 4
-  holes are threaded M3 (if not, use screws from the horn side and nuts in the chamber), and
-  `FEED_HORN_SCREW_HEAD_D` (7, the head of the screw on the spline).
+- The servo and the horn are measured (see [Where the servo ends up](#where-the-servo-ends-up)).
+  Left as `TODO: measure`, and not needed: `SERVO_SPLINE_OFFSET` (10.2), `SERVO_FACE_TO_EARS` (11)
+  and `SERVO_HORN_GAP` (2). The rig takes ±2 mm of the first and ±3 mm of the other two; measure
+  them only if `check.py` or the rig says otherwise.
+- `FEED_HORN_SCREW_HEAD_D` (7, the head of the screw on the spline).
 - Calibrate with `feed_coupon`: `FEED_SLOT_H`, `FEED_PIN_CLEARANCE`, `FEED_HEX_TOLERANCE`; and
   `FIT_TOLERANCE` with `fit_coupon`, which sets the barrel socket.
 

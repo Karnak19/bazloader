@@ -202,15 +202,15 @@ FEED_DISC_OD = 49.5  # Disc diameter. The notches run out through the rim, so a 
 FEED_DISC_T = 3.7  # Disc thickness: under a BB, so the top ~2.3 mm of each BB sticks up for the tongue.
 FEED_NOTCH_W = 6.5  # Notch width (U-slot, round end on the BB circle side). BB_D + FIT_TOLERANCE must pass.
 FEED_MIN_LAND = 3.0  # Least land between two notches, measured on the BB circle.
-FEED_SLOT_H = 6.4  # TODO: calibrate with feed_coupon. Floor to cover underside: one layer of BBs, never two.
+FEED_SLOT_H = 6.4  # Calibrated with feed_coupon: a BB rolls freely even at -0.2; kept 6.4 for margin on the big cover. Floor to cover underside: one layer of BBs, never two.
 FEED_RUN_GAP = 0.4  # Running clearance between the turning parts (disc, hub) and the fixed ones. >= FIT_TOLERANCE.
 FEED_SHROUD_GAP = 0.4  # Shroud radius = BB circle + BB_D/2 + this: a BB in a notch cannot move out more than that.
 FEED_PIN_D = 5.0  # Centre pin on the base floor, the disc's bearing (the servo spline only drives).
 FEED_PIN_H = 4.0  # Pin height above the floor.
-FEED_PIN_CLEARANCE = 0.3  # TODO: calibrate with feed_coupon. Disc centre bore = FEED_PIN_D + this.
+FEED_PIN_CLEARANCE = 0.2  # Calibrated with feed_coupon: a 5 mm drill shank turns freely from +0.1; +0.2 for the rougher printed pin. Disc centre bore = FEED_PIN_D + this.
 FEED_HUB_R = 9.0  # Raised hub at the disc centre: the pin bore under, and a hex boss over it for the drive.
 FEED_HEX_AF = 12.0  # Hex boss on top of the disc hub, across flats.
-FEED_HEX_TOLERANCE = 0.3  # TODO: calibrate with feed_coupon. Hex socket in the drive piece = FEED_HEX_AF + this.
+FEED_HEX_TOLERANCE = 0.2  # Calibrated with feed_coupon: exact fit at +0.2, slight play at +0.3. Hex socket in the drive piece = FEED_HEX_AF + this.
 FEED_DRIVE_ENGAGE = 7.0  # How far the disc's hex boss goes into the drive piece's socket, as drawn.
 FEED_DRIVE_FLOAT = 3.5  # Room left over the boss in the socket: the servo can sit that much lower.
 FEED_DRIVE_MIN_ENGAGE = 4.0  # Least the boss goes in, with the servo FEED_SERVO_TRAVEL_Z high.

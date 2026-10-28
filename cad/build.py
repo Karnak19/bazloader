@@ -30,6 +30,7 @@ from build123d import (
     export_stl,
     extrude,
     fillet,
+    loft,
 )
 
 import params as p
@@ -471,45 +472,53 @@ def feed_layout() -> dict[str, float]:
 
     Rig frame: the table at Z=0, the disc axis on X=0, Y=0. The disc turns counter-clockwise
     seen from above. The strip point is on +X (angle 0): the exit channel leaves there along +Y,
-    its axis on X = FEED_BB_CIRCLE_R, and the elbow stands at the end of it. The window ends
-    FEED_CARRY_ARC before the strip point. The hopper stands on the cover, the servo bracket on
-    the hopper, the servo upside down on the bracket, and a hex shaft runs from the servo's hub
-    down to the disc inside a fixed sleeve.
+    its axis on X = FEED_BB_CIRCLE_R, and the elbow stands at the end of it, outside the hopper.
+    The servo hangs upside down over the disc, spline on the axis, body along +X, inside a closed
+    chimney; a short drive piece on its horn slides over the hex boss on the disc's hub. The window
+    ends FEED_CARRY_ARC before the strip point and wraps round the chimney's narrow -X end. The
+    pile fills the hopper round the chimney; the chimney's +X face sits against the hopper's +X wall.
     """
     floor = p.FEED_BASE_T + p.MIN_WALL  # The elbow stands on the base plate with MIN_WALL under its bore.
     block_top = floor + p.FEED_SLOT_H  # = cover underside.
     cover_top = block_top + p.FEED_COVER_T
     pin_bore_r = (p.FEED_PIN_D + p.FEED_PIN_CLEARANCE) / 2
     pin_bore_depth = p.FEED_PIN_H + p.FEED_RUN_GAP
-    hub_h = pin_bore_depth + pin_bore_r + p.MIN_WALL + p.FEED_HEX_DEPTH  # Pin bore, its 45 deg tip, wall, hex socket.
     hole_r = p.FEED_HUB_R + p.FEED_RUN_GAP  # Cover hole round the disc hub.
-    hop_out = p.FEED_BLOCK_HALF - p.MIN_WALL - p.FIT_TOLERANCE  # Hopper outer half side (cover rim outside it).
-    hop_in = hop_out - p.FEED_HOPPER_WALL
-    hop_top = cover_top + p.FEED_PILE_H
-    ears = hop_top + p.FEED_BRACKET_T  # Bracket plate top: the servo ears rest on it.
-    case_face = ears - p.SERVO_FACE_TO_EARS  # Output face of the servo case (facing down).
-    horn_back = case_face - p.SERVO_HORN_GAP  # Top of the drive hub: the horn sits in its recess.
-    dhub_r = (p.FEED_HORN_D + p.FIT_TOLERANCE) / 2 + p.MIN_WALL
-    chamber_h = p.M3_HEAD_H + 1.0
-    dhub_h = p.FEED_HORN_T + p.FEED_HUB_PLATE_T + chamber_h + p.FEED_SHAFT_ENGAGE
-    dhub_bottom = horn_back - dhub_h
-    shaft_bottom = floor + hub_h - p.FEED_HEX_DEPTH  # Rests on the floor of the disc's hex socket.
-    shaft_top = dhub_bottom + p.FEED_SHAFT_ENGAGE - p.FEED_SHAFT_FLOAT
-    sleeve_ri = hole_r
-    sleeve_ro = sleeve_ri + p.MIN_WALL
-    g = p.FEED_HOUSE_GAP
-    case_x0 = -p.SERVO_SPLINE_OFFSET  # Servo body along +X from the spline.
-    case_x1 = p.SERVO_BODY_L - p.SERVO_SPLINE_OFFSET
-    corner_r = math.hypot(max(-case_x0, case_x1) + g, p.SERVO_BODY_W / 2 + g)
+    # Drive: the piece's bottom clears the cover top even with the servo FEED_SERVO_TRAVEL_Z low.
+    drive_bottom = cover_top + p.FEED_SERVO_TRAVEL_Z + p.FEED_RUN_GAP
+    socket_depth = p.FEED_DRIVE_ENGAGE + p.FEED_DRIVE_FLOAT
+    chamber_h = p.M3_HEAD_H + 0.5
+    drive_h = socket_depth + chamber_h + p.FEED_HUB_PLATE_T + p.FEED_HORN_T
+    horn_back = drive_bottom + drive_h  # Top of the drive piece: the horn sits in its recess.
+    case_face = horn_back + p.SERVO_HORN_GAP  # Output face of the servo case (facing down).
+    ears = case_face + p.SERVO_FACE_TO_EARS  # Underside of the ears = top of the bracket's shelf.
     ear_play = (p.SERVO_EAR_HOLE_D - p.M3_D) / 2  # The servo slides this far on loose ear screws.
-    # The real spline can be FEED_SERVO_TRAVEL_X off along the servo, and the case and the hub
-    # FEED_SERVO_TRAVEL_Z lower: the house is drawn round the hub in all those places.
-    hub_room = dhub_r + g + p.FEED_SERVO_TRAVEL_X + ear_play  # Radius of the house round the hub.
-    tz = p.FEED_SERVO_TRAVEL_Z
-    # The house under the plate is closed by a 45 deg cone round the axis (printed upside down, it is a
-    # roof that needs no support). Its inside must clear the drive hub's bottom edge and the case.
-    z_ci = min(dhub_bottom - tz - g - hub_room, case_face - tz - corner_r)  # Apex of the inner cone.
-    z_co = z_ci - p.MIN_WALL * math.sqrt(2)  # Outer cone, MIN_WALL thick at 45 deg.
+    tol, tx = p.FIT_TOLERANCE, p.FEED_SERVO_TRAVEL_X
+    drive_r = (p.FEED_HORN_D + tol) / 2 + p.FEED_DRIVE_RIM
+    xc = p.SERVO_BODY_L / 2 - p.SERVO_SPLINE_OFFSET  # Middle of the servo body along X.
+    case_x0, case_x1 = -p.SERVO_SPLINE_OFFSET, p.SERVO_BODY_L - p.SERVO_SPLINE_OFFSET
+    ear_x0, ear_x1 = xc - p.SERVO_EAR_SPAN / 2, xc + p.SERVO_EAR_SPAN / 2
+    # Bracket: a shelf ring round the case under the ears (rails beside the case, pads under the
+    # ears), on one leg under the +X ears whose pegs key into the base. It slides tx along X.
+    case_gap = ear_play + tol  # Room round the case in the shelf (the servo moves only by the ear play on it).
+    shelf_bottom = ears - p.FEED_BRACKET_T
+    rail_y = p.SERVO_BODY_W / 2 + case_gap  # Inner face of the rails.
+    # Chimney, inside faces. Low down it hugs the case and the drive piece; from ch_z_b up it also
+    # takes the ears, the shelf and the rails, all of them anywhere in their travel.
+    in_y_low = p.SERVO_BODY_W / 2 + ear_play + tol  # Round the case; a round bulge takes the drive piece.
+    leg_hy = in_y_low - tol  # The leg stands in the narrow part.
+    in_y_up = rail_y + p.FEED_RAIL_W + tol
+    in_x0_low = case_x0 - tx - ear_play - tol
+    in_x0_up = ear_x0 - tx - ear_play - tol
+    in_x1 = ear_x1 + tx + ear_play + tol
+    ch_z_b = shelf_bottom - p.FEED_RAIL_H - tol
+    flare = max(in_x0_low - in_x0_up, in_y_up - in_y_low) * 1.1  # A bit steeper than 45 deg.
+    t = p.FEED_CHIMNEY_T
+    # Hopper: a closed ring on the cover; its +X wall right behind the chimney's +X face.
+    hop_out = p.FEED_BLOCK_HALF - p.MIN_WALL - tol  # Hopper outer half width on -X, -Y, +Y.
+    hop_in = hop_out - p.FEED_HOPPER_WALL
+    hop_x1_in = in_x1 + t + tol
+    hop_x1_out = hop_x1_in + p.FEED_HOPPER_WALL
     return {
         "floor": floor,
         "disc_top": floor + p.FEED_DISC_T,
@@ -521,10 +530,10 @@ def feed_layout() -> dict[str, float]:
         "shroud_r": p.FEED_BB_CIRCLE_R + p.BB_D / 2 + p.FEED_SHROUD_GAP,
         "pin_bore_r": pin_bore_r,
         "pin_bore_depth": pin_bore_depth,
-        "hub_h": hub_h,
-        "hub_top": floor + hub_h,
-        "hex_r": (p.FEED_SHAFT_AF + p.FEED_HEX_TOLERANCE) / math.sqrt(3),  # Corner radius of the hex sockets.
-        "shaft_r": p.FEED_SHAFT_AF / math.sqrt(3),
+        "hub_round_top": cover_top,  # The hub is round up to the cover top, hex above.
+        "boss_top": drive_bottom + p.FEED_DRIVE_ENGAGE,
+        "boss_r": p.FEED_HEX_AF / math.sqrt(3),  # Corner radius of the boss.
+        "hex_r": (p.FEED_HEX_AF + p.FEED_HEX_TOLERANCE) / math.sqrt(3),  # Corner radius of the hex sockets.
         "hole_r": hole_r,
         "cut": -p.FEED_CARRY_ARC,  # Cut-off edge angle.
         "start": -p.FEED_CARRY_ARC - p.FEED_WINDOW_ARC,  # Window start edge angle.
@@ -532,107 +541,118 @@ def feed_layout() -> dict[str, float]:
         "channel_x1": p.FEED_BB_CIRCLE_R + p.BB_GUIDE_D / 2,
         "axis_z": floor + p.BB_GUIDE_D / 2,  # Channel and elbow bore axis: bore bottom on the floor.
         "tongue_bottom": floor + p.FEED_DISC_T + p.FEED_RUN_GAP,
-        "hop_out": hop_out,
-        "hop_in": hop_in,
-        "hop_bottom": cover_top - p.FEED_HOPPER_SEAT,
-        "hop_top": hop_top,
-        "ears": ears,
+        "drive_bottom": drive_bottom,
+        "drive_r": drive_r,
+        "drive_h": drive_h,
+        "socket_depth": socket_depth,
+        "chamber_r": p.FEED_HORN_HOLE_CIRCLE / 2 + p.M3_HEAD_D / 2 + tol,
+        "chamber_h": chamber_h,
+        "horn_back": horn_back,
         "case_face": case_face,
+        "ears": ears,
+        "ear_play": ear_play,
         "case_x0": case_x0,
         "case_x1": case_x1,
-        "horn_back": horn_back,
-        "dhub_r": dhub_r,
-        "dhub_h": dhub_h,
-        "dhub_bottom": dhub_bottom,
-        "ear_play": ear_play,
-        "hub_room": hub_room,
-        "chamber_r": p.FEED_HORN_HOLE_CIRCLE / 2 + p.M3_HEAD_D / 2 + p.FIT_TOLERANCE,
-        "chamber_h": chamber_h,
-        "shaft_bottom": shaft_bottom,
-        "shaft_top": shaft_top,
-        "sleeve_ri": sleeve_ri,
-        "sleeve_ro": sleeve_ro,
-        "sleeve_bottom": cover_top + p.FEED_SLEEVE_GAP,
-        "z_ci": z_ci,
-        "z_co": z_co,
-        "house_hy": max(p.SERVO_BODY_W / 2 + g, hub_room) + p.MIN_WALL,  # Half width of the house.
+        "servo_xc": xc,
+        "case_gap": case_gap,
+        "shelf_x0": ear_x0,
+        "shelf_x1": ear_x1,
+        "shelf_bottom": shelf_bottom,
+        "rail_y": rail_y,
+        "leg_x0": case_x1 + case_gap,
+        "leg_x1": ear_x1,
+        "leg_hy": leg_hy,
+        "peg_x": (case_x1 + case_gap + ear_x1) / 2,
+        "peg_bottom": block_top - p.FEED_PEG_DEPTH,
+        "ch_in_x0_low": in_x0_low,
+        "ch_in_x0_up": in_x0_up,
+        "ch_in_x1": in_x1,
+        "ch_in_y_low": in_y_low,
+        "ch_in_y_up": in_y_up,
+        "ch_in_r_drive": drive_r + p.FEED_RUN_GAP,  # The bulge round the drive piece, up to ch_z_b.
+        "ch_bottom": cover_top - p.FEED_HOPPER_SEAT,
+        "ch_z_a": ch_z_b - flare,  # The flare runs from here...
+        "ch_z_b": ch_z_b,  # ...to here.
+        "ch_top": cover_top + p.FEED_PILE_H + p.FEED_CHIMNEY_ABOVE,
+        # The chimney's footprint on the cover, outside (corners rounded to t): the window stays out of it.
+        "ch_x0": in_x0_low - t,
+        "ch_x1": in_x1 + t,
+        "ch_hy": max(in_y_low, drive_r + p.FEED_RUN_GAP) + t,
+        "hop_out": hop_out,
+        "hop_in": hop_in,
+        "hop_x1_in": hop_x1_in,
+        "hop_x1_out": hop_x1_out,
+        "hop_bottom": cover_top - p.FEED_HOPPER_SEAT,
+        "hop_top": cover_top + p.FEED_PILE_H,
+        "block_x1": hop_x1_out + tol + p.MIN_WALL,  # Base block and cover, +X edge.
         "screw_xy": p.FEED_BLOCK_HALF - p.FEED_COVER_SCREW_INSET,  # Cover screws at (+-, +-) this.
     }
 
 
-def on_bed(part: Part, flip: bool = False, lying: bool = False) -> Part:
-    """Print orientation: optionally upside down (flip) or lying on its side (lying, Z axis -> X),
-    then centred on X/Y and set on Z=0."""
+def on_bed(part: Part, flip: bool = False) -> Part:
+    """Print orientation: optionally upside down (flip), then centred on X/Y and set on Z=0."""
     if flip:
         part = Rot(180, 0, 0) * part
-    if lying:
-        part = Rot(0, 90, 0) * part
     bb = part.bounding_box()
     return Pos(-bb.center().X, -bb.center().Y, -bb.min.Z) * part
 
 
 def _hex(r: float) -> Sketch:
-    """Hexagon of corner radius r, flats on +-X (the shaft then lies on a flat when printed)."""
+    """Hexagon of corner radius r, flats on +-X."""
     return RegularPolygon(r, 6, rotation=30)
 
 
 def feed_disc() -> Part:
     """Pocket disc: FEED_POCKETS U-notches open at the rim, lying on the base floor.
 
-    Raised hub in the middle: a bore underneath for the centre pin (its bearing) and a hex socket
-    on top for the drive shaft. Printed as it sits, flat on the bed: the notch walls are vertical,
-    the pin bore ends in a 45 deg cone, so no supports.
+    Raised hub in the middle: a bore underneath for the centre pin (its bearing), round up to the
+    cover top, then a hex boss the drive piece slides over. Printed as it sits, flat on the bed: the
+    notch walls and the boss are vertical, the pin bore ends in a 45 deg cone, so no supports.
     """
     k = feed_layout()
     z0, t = k["floor"], p.FEED_DISC_T
-    disc = Pos(0, 0, z0) * Cylinder(k["disc_r"], t, align=(Align.CENTER, Align.CENTER, Align.MIN))
-    disc += Pos(0, 0, z0) * Cylinder(p.FEED_HUB_R, k["hub_h"], align=(Align.CENTER, Align.CENTER, Align.MIN))
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    disc = Pos(0, 0, z0) * Cylinder(k["disc_r"], t, align=up)
+    disc += Pos(0, 0, z0) * Cylinder(p.FEED_HUB_R, k["hub_round_top"] - z0, align=up)
+    boss = Pos(0, 0, k["hub_round_top"] - 0.01) * extrude(_hex(k["boss_r"]), k["boss_top"] - k["hub_round_top"] + 0.01)
+    disc += chamfer(boss.faces().sort_by(Axis.Z)[-1].edges(), 0.5)  # Lead-in into the socket.
     R, w = p.FEED_BB_CIRCLE_R, p.FEED_NOTCH_W
     notch = Pos(R, 0) * Circle(w / 2) + Pos(R + 10, 0) * Rectangle(20, w)
     for i in range(p.FEED_POCKETS):
         disc -= Pos(0, 0, z0 - 1) * extrude(Rot(0, 0, i * 360 / p.FEED_POCKETS) * notch, t + 2)
     r, d = k["pin_bore_r"], k["pin_bore_depth"]
-    disc -= Pos(0, 0, z0 - 1) * Cylinder(r, d + 1, align=(Align.CENTER, Align.CENTER, Align.MIN))
-    disc -= Pos(0, 0, z0 + d) * Cone(r, 0, r, align=(Align.CENTER, Align.CENTER, Align.MIN))
-    disc -= Pos(0, 0, k["hub_top"] - p.FEED_HEX_DEPTH) * extrude(_hex(k["hex_r"]), p.FEED_HEX_DEPTH + 1)
+    disc -= Pos(0, 0, z0 - 1) * Cylinder(r, d + 1, align=up)
+    disc -= Pos(0, 0, z0 + d) * Cone(r, 0, r, align=up)
     return disc
 
 
-def feed_shaft() -> Part:
-    """Hex drive shaft from the disc hub up to the drive hub under the servo. Printed lying on a flat:
-    the layers run along it, so it is strong in torsion and comes out straight."""
-    k = feed_layout()
-    length = k["shaft_top"] - k["shaft_bottom"]
-    shaft = Pos(0, 0, k["shaft_bottom"]) * extrude(_hex(k["shaft_r"]), length)
-    ends = shaft.faces().sort_by(Axis.Z)
-    return chamfer(ends[0].edges() + ends[-1].edges(), 0.5)  # Lead-in for both sockets.
-
-
-def feed_drive_hub() -> Part:
-    """Hub screwed to the servo horn, with a hex socket the shaft slides up into.
+def feed_drive() -> Part:
+    """Drive piece screwed to the servo horn, sliding over the hex boss on the disc's hub.
 
     From the top: the recess the round horn sits in, a plate with the 4 horn holes and a hole for
-    the head of the spline screw, a chamber for the 4 screw heads, then the hex socket. The screws
-    go in through the socket, up into the horn's threads. Printed socket down, as it sits: the only
+    the head of the spline screw, a chamber for the 4 screw heads, then the hex socket, as deep as
+    FEED_DRIVE_ENGAGE + FEED_DRIVE_FLOAT so the servo height does not matter. The screws go in
+    through the socket, up into the horn's threads. Printed socket down, as it sits: the only
     overhang is the chamber ceiling, a short bridge (documented in the README).
     """
     k = feed_layout()
-    zb, zt = k["dhub_bottom"], k["horn_back"]
-    hub = Pos(0, 0, zb) * Cylinder(k["dhub_r"], k["dhub_h"], align=(Align.CENTER, Align.CENTER, Align.MIN))
-    hub -= Pos(0, 0, zb - 1) * extrude(_hex(k["hex_r"]), p.FEED_SHAFT_ENGAGE + 1)
-    z_ch = zb + p.FEED_SHAFT_ENGAGE
-    hub -= Pos(0, 0, z_ch) * Cylinder(k["chamber_r"], k["chamber_h"], align=(Align.CENTER, Align.CENTER, Align.MIN))
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    zb, zt = k["drive_bottom"], k["horn_back"]
+    piece = Pos(0, 0, zb) * Cylinder(k["drive_r"], k["drive_h"], align=up)
+    piece -= Pos(0, 0, zb - 1) * extrude(_hex(k["hex_r"]), k["socket_depth"] + 1)
+    z_ch = zb + k["socket_depth"]
+    piece -= Pos(0, 0, z_ch) * Cylinder(k["chamber_r"], k["chamber_h"], align=up)
     z_pl = z_ch + k["chamber_h"]
     holes = Circle(p.FEED_HORN_SCREW_HEAD_D / 2)
     for i in range(4):
         a = math.radians(45 + 90 * i)
         rr = p.FEED_HORN_HOLE_CIRCLE / 2
         holes += Pos(rr * math.cos(a), rr * math.sin(a)) * Circle(p.FEED_HORN_HOLE_D / 2)
-    hub -= Pos(0, 0, z_pl - 0.5) * extrude(holes, p.FEED_HUB_PLATE_T + 1)
-    hub -= Pos(0, 0, zt - p.FEED_HORN_T) * Cylinder(
-        (p.FEED_HORN_D + p.FIT_TOLERANCE) / 2, p.FEED_HORN_T + 1, align=(Align.CENTER, Align.CENTER, Align.MIN)
+    piece -= Pos(0, 0, z_pl - 0.5) * extrude(holes, p.FEED_HUB_PLATE_T + 1)
+    piece -= Pos(0, 0, zt - p.FEED_HORN_T) * Cylinder(
+        (p.FEED_HORN_D + p.FIT_TOLERANCE) / 2, p.FEED_HORN_T + 1, align=up
     )
-    return hub
+    return piece
 
 
 def feed_edge(theta: float, skew: float, side: int) -> list[tuple[float, float]]:
@@ -700,7 +720,28 @@ def feed_window(skew: float) -> Part:
         Cylinder(k["shroud_r"], z1 - z0, align=(Align.CENTER, Align.CENTER, Align.MIN))
         - Cylinder(p.FEED_WINDOW_R_IN, z1 - z0, align=(Align.CENTER, Align.CENTER, Align.MIN))
     )
-    return cut & ring
+    return cut & ring - feed_chimney_footprint(p.FIT_TOLERANCE, z0 - 1, z1 - z0 + 2)
+
+
+def feed_chimney_footprint(grow: float, z0: float, h: float) -> Part:
+    """The chimney's footprint on the cover (outside of its narrow part), grown by `grow`, from z0 up h."""
+    return Pos(0, 0, z0) * extrude(chimney_plan(p.FEED_CHIMNEY_T + grow), h)
+
+
+def chimney_plan(grow: float, up: bool = False, bulge: bool = True) -> Sketch:
+    """Plan of the chimney's inside grown by `grow` (its outside for grow=FEED_CHIMNEY_T), corners
+    rounded to `grow` when it is positive. Low part (up=False): round the case, plus a round bulge for
+    the drive piece; high part: round the ears and the shelf."""
+    k = feed_layout()
+    x0 = k["ch_in_x0_up"] if up else k["ch_in_x0_low"]
+    hy = k["ch_in_y_up"] if up else k["ch_in_y_low"]
+    x1 = k["ch_in_x1"]
+    w, h = x1 - x0 + 2 * grow, 2 * (hy + grow)
+    c = Pos((x0 + x1) / 2, 0)
+    plan = c * (RectangleRounded(w, h, grow) if grow > 0 else Rectangle(w, h))
+    if bulge and not up:
+        plan += Circle(k["ch_in_r_drive"] + grow)
+    return plan
 
 
 def feed_tongue_outline() -> Sketch:
@@ -724,28 +765,66 @@ def feed_cover(skew: float) -> Part:
     It lies on the base block, so its underside is FEED_SLOT_H over the floor: one layer of BBs in
     the notches, and a BB riding on the disc cannot follow them under it. Both window edges have a
     45 deg lifting chamfer underneath. The tongue hangs FEED_RUN_GAP over the disc and pushes each BB
-    out along the channel's inner wall. A groove in the top locates the hopper. Printed upside down
-    (the STL is), so the tongue and the chamfers point up.
+    out along the channel's inner wall. Grooves in the top locate the hopper and the chimney, two
+    slots inside the chimney let the bracket's pegs through to the base. Printed upside down (the STL
+    is), so the tongue and the chamfers point up.
     """
     k = feed_layout()
-    H, t = p.FEED_BLOCK_HALF, p.FEED_COVER_T
-    body = Pos(0, 0, k["block_top"]) * extrude(RectangleRounded(2 * H, 2 * H, 2.0), t)
-    body -= Pos(0, 0, k["block_top"] - 1) * Cylinder(k["hole_r"], t + 2, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    t = p.FEED_COVER_T
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    body = Pos(0, 0, k["block_top"]) * extrude(feed_block_outline(), t)
+    body -= Pos(0, 0, k["block_top"] - 1) * Cylinder(k["hole_r"], t + 2, align=up)
     body -= feed_window(skew)
     tongue_h = k["block_top"] - k["tongue_bottom"]
     body += Pos(0, 0, k["tongue_bottom"]) * extrude(feed_tongue_outline(), tongue_h + 0.01)
-    g0, g1 = k["hop_in"] - p.FIT_TOLERANCE, k["hop_out"] + p.FIT_TOLERANCE
-    groove = Rectangle(2 * g1, 2 * g1) - Rectangle(2 * g0, 2 * g0)
-    body -= Pos(0, 0, k["cover_top"] - p.FEED_HOPPER_SEAT) * extrude(groove, p.FEED_HOPPER_SEAT + 1)
+    body -= Pos(0, 0, k["cover_top"] - p.FEED_HOPPER_SEAT) * extrude(feed_grooves(), p.FEED_HOPPER_SEAT + 1)
+    body -= feed_peg_slots(k["block_top"] - 1, t + 2)
     s = k["screw_xy"]
     for x, y in ((s, s), (-s, s), (s, -s), (-s, -s)):
-        body -= Pos(x, y, k["block_top"] - 1) * Cylinder(
-            p.M3_CLEARANCE / 2, t + 2, align=(Align.CENTER, Align.CENTER, Align.MIN)
-        )
+        body -= Pos(x, y, k["block_top"] - 1) * Cylinder(p.M3_CLEARANCE / 2, t + 2, align=up)
     label = Text(f"CUT {skew:g}", p.FEED_TEXT_SIZE)
-    y_label = (k["shroud_r"] + p.FEED_LIFT_CHAMFER + k["hop_in"]) / 2
+    y_label = -(k["shroud_r"] + p.FEED_LIFT_CHAMFER + k["hop_in"]) / 2  # Between the window and the hopper.
     body -= Pos(0, y_label, k["cover_top"] - p.FEED_TEXT_DEPTH) * extrude(label, p.FEED_TEXT_DEPTH + 0.1)
     return body
+
+
+def feed_block_outline() -> Sketch:
+    """Plan of the base block and the cover: FEED_BLOCK_HALF on -X, -Y and +Y, block_x1 on +X."""
+    k = feed_layout()
+    H, x1 = p.FEED_BLOCK_HALF, k["block_x1"]
+    return Pos((x1 - H) / 2, 0) * RectangleRounded(x1 + H, 2 * H, 2.0)
+
+
+def feed_hopper_rects() -> tuple[tuple[float, float, float, float], tuple[float, float, float, float]]:
+    """Plan of the hopper ring (x0, y0, x1, y1): outside, then inside."""
+    k = feed_layout()
+    o, i = k["hop_out"], k["hop_in"]
+    return (-o, -o, k["hop_x1_out"], o), (-i, -i, k["hop_x1_in"], i)
+
+
+def _rect(x0: float, y0: float, x1: float, y1: float, grow: float = 0.0) -> Sketch:
+    return Pos((x0 + x1) / 2, (y0 + y1) / 2) * Rectangle(x1 - x0 + 2 * grow, y1 - y0 + 2 * grow)
+
+
+def feed_grooves() -> Sketch:
+    """The grooves in the cover top the hopper and the chimney stand in: each wall FIT_TOLERANCE
+    wider either side."""
+    g = p.FIT_TOLERANCE
+    (o, i) = feed_hopper_rects()
+    t = p.FEED_CHIMNEY_T
+    return (_rect(*o, g) - _rect(*i, -g)) + (chimney_plan(t + g) - chimney_plan(-g))
+
+
+def feed_peg_slots(z0: float, h: float) -> Part:
+    """The slots the bracket's pegs slide in, along X, from z0 up h (in the cover and the base)."""
+    k = feed_layout()
+    g = p.FIT_TOLERANCE
+    L, W = p.FEED_PEG_L + 2 * p.FEED_SERVO_TRAVEL_X + 2 * g, p.FEED_PEG_W + 2 * g
+    slots = None
+    for y in p.FEED_PEG_YS:
+        s = Pos(k["peg_x"], y, z0) * Box(L, W, h, align=(Align.CENTER, Align.CENTER, Align.MIN))
+        slots = s if slots is None else slots + s
+    return slots
 
 
 def elbow_layout(R: float) -> dict:
@@ -885,10 +964,9 @@ def feed_base() -> Part:
     H = p.FEED_BLOCK_HALF
     e = elbow_layout(max(p.FEED_ELBOW_RADII))
     y_end = H + e["ue"] + e["w"] + p.MIN_WALL
-    body = Pos(0, (y_end - H) / 2, 0) * extrude(RectangleRounded(2 * H, y_end + H, 2.0), p.FEED_BASE_T)
-    body += Pos(0, 0, p.FEED_BASE_T - 0.01) * extrude(
-        RectangleRounded(2 * H, 2 * H, 2.0), k["block_top"] - p.FEED_BASE_T + 0.01
-    )
+    bx1 = k["block_x1"]
+    body = Pos((bx1 - H) / 2, (y_end - H) / 2, 0) * extrude(RectangleRounded(bx1 + H, y_end + H, 2.0), p.FEED_BASE_T)
+    body += Pos(0, 0, p.FEED_BASE_T - 0.01) * extrude(feed_block_outline(), k["block_top"] - p.FEED_BASE_T + 0.01)
     up = (Align.CENTER, Align.CENTER, Align.MIN)
     body -= Pos(0, 0, k["floor"]) * Cylinder(k["shroud_r"], k["block_top"] - k["floor"] + 1, align=up)
     x0, x1 = k["channel_x0"], k["channel_x1"]
@@ -910,67 +988,77 @@ def feed_base() -> Part:
         )
     span = 2 * (inner + p.FEED_DOCK_T) + 2
     body -= Pos(e["x"], H + e["u1"], k["axis_z"] + e["off_b"]) * Rot(0, 90, 0) * Cylinder(p.M3_CLEARANCE / 2, span)
+    # Slots the servo bracket's pegs key into: it slides along the servo, never sideways or round.
+    body -= feed_peg_slots(k["peg_bottom"] - p.FEED_RUN_GAP, k["block_top"])
     return body
 
 
 def feed_hopper() -> Part:
-    """Open square tube standing in the cover's groove: holds a ~10 cm pile of BBs over the window.
-    Printed as it stands."""
+    """A closed ring round the cover holding the pile round the chimney, standing in the cover's
+    groove. The chimney's +X face sits against the inside of its +X wall. Printed as it stands."""
     k = feed_layout()
-    ring = Rectangle(2 * k["hop_out"], 2 * k["hop_out"]) - Rectangle(2 * k["hop_in"], 2 * k["hop_in"])
-    return Pos(0, 0, k["hop_bottom"]) * extrude(ring, k["hop_top"] - k["hop_bottom"])
+    o, i = feed_hopper_rects()
+    return Pos(0, 0, k["hop_bottom"]) * extrude(_rect(*o) - _rect(*i), k["hop_top"] - k["hop_bottom"])
 
 
-def _house_outline(grow: float) -> Sketch:
-    """Plan of the house round the servo case and the drive hub, grown by `grow`."""
+def _chimney_solid(grow: float) -> Part:
+    """The chimney's volume (inside if grow=0, outside if grow=FEED_CHIMNEY_T), bottom to top: the
+    narrow part, a 45 deg flare, the wide part."""
     k = feed_layout()
-    g = p.FEED_HOUSE_GAP + grow
-    xc = (k["case_x0"] + k["case_x1"]) / 2
-    return Pos(xc, 0) * Rectangle(p.SERVO_BODY_L + 2 * g, p.SERVO_BODY_W + 2 * g) + Circle(k["hub_room"] + grow)
+    low, high = chimney_plan(grow, bulge=False), chimney_plan(grow, up=True)
+    za, zb = k["ch_z_a"], k["ch_z_b"]
+    z0, z1 = k["ch_bottom"] - 1, k["ch_top"] + 1
+    body = Pos(0, 0, z0) * extrude(low, za - z0)
+    body += loft([Plane.XY.offset(za) * low, Plane.XY.offset(zb) * high])
+    body += Pos(0, 0, zb) * extrude(high, z1 - zb)
+    body += Pos(0, 0, z0) * Cylinder(k["ch_in_r_drive"] + grow, zb - z0, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    return body
+
+
+def feed_chimney() -> Part:
+    """Closed tube round the servo and its bracket, open at the top. It stands in a groove in the
+    cover, so no BB gets in at its foot; narrow low down (round the case and the drive piece, so the
+    window can wrap round its -X end), it flares out at 45 deg to take the ears and the shelf. A
+    notch at the top, above the pile, lets the cables out sideways. Printed as it stands: the flare
+    is the only overhang, just steeper than 45 deg."""
+    k = feed_layout()
+    t = p.FEED_CHIMNEY_T
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    body = _chimney_solid(t) - _chimney_solid(0)
+    body &= Pos(0, 0, k["ch_bottom"]) * Box(500, 500, k["ch_top"] - k["ch_bottom"], align=up)
+    body -= Pos(k["ch_in_x1"] + t / 2, 0, k["hop_top"]) * Box(t + 2, p.FEED_CABLE_W, 100, align=up)
+    return body
 
 
 def feed_servo_bracket() -> Part:
-    """Bench bracket: a plate on top of the hopper holding the servo upside down over the disc axis.
+    """Servo bracket, inside the chimney: a shelf ring round the case the ears are screwed to (side
+    rails beside the case, pads under the ears), on one leg under the +X ears whose two pegs key into
+    slots in the base.
 
-    Under the plate, a closed house round the servo case and the drive hub, and a sleeve from it down
-    to the cover round the shaft, so the BBs pile round them and never reach a turning part. The
-    house closes on the sleeve with a 45 deg cone. Corner tabs locate the plate in the hopper and
-    stop it turning. Printed upside down (the STL is): plate on the bed, every overhang 45 deg.
+    The slots run along the servo, so the bracket slides FEED_SERVO_TRAVEL_X either way: the hex
+    pulls the spline onto the disc axis whatever SERVO_SPLINE_OFFSET really is. The pegs and the
+    chimney's walls stop it turning with the servo's torque. Ear screws cut their thread in pilot
+    holes. Printed upside down (the STL is): shelf on the bed, nothing overhangs.
     """
     k = feed_layout()
-    ho, hi, z = k["hop_out"], k["hop_in"], k["hop_top"]
     up = (Align.CENTER, Align.CENTER, Align.MIN)
-    body = Pos(0, 0, z) * extrude(Rectangle(2 * ho, 2 * ho), p.FEED_BRACKET_T)
-    # Corner tabs inside the hopper.
-    lip, a = p.FEED_BRACKET_LIP, hi - p.FIT_TOLERANCE
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            tab = Pos(sx * (a - lip), sy * (a - p.MIN_WALL / 2)) * Rectangle(2 * lip, p.MIN_WALL)
-            tab += Pos(sx * (a - p.MIN_WALL / 2), sy * (a - lip)) * Rectangle(p.MIN_WALL, 2 * lip)
-            body += Pos(0, 0, z - lip) * extrude(tab, lip + 0.01)
-    # House: the outline, cut by a 45 deg cone round the axis; same inside, MIN_WALL in. Then the
-    # sleeve down to the cover.
-    zo, zi, zs = k["z_co"] + k["sleeve_ro"], k["z_ci"] + k["sleeve_ri"], k["sleeve_bottom"]
-    cone_o = Pos(0, 0, zo) * Cone(k["sleeve_ro"], k["sleeve_ro"] + z + 5 - zo, z + 5 - zo, align=up)
-    cone_i = Pos(0, 0, zi) * Cone(k["sleeve_ri"], k["sleeve_ri"] + z + 5 - zi, z + 5 - zi, align=up)
-    body += Pos(0, 0, zo) * extrude(_house_outline(p.MIN_WALL), z - zo + 0.01) & cone_o
-    body += Pos(0, 0, zs) * Cylinder(k["sleeve_ro"], zo - zs + 1, align=up)
-    body -= Pos(0, 0, zi) * extrude(_house_outline(0), z - zi) & cone_i
-    body -= Pos(0, 0, zs - 1) * Cylinder(k["sleeve_ri"], zi - zs + 2, align=up)
-    # Servo: the case drops through the plate, the ears screw into it. The cut-out leaves the case
-    # the play of the ear holes, so the servo can slide that far before the screws are tight.
-    xc = (k["case_x0"] + k["case_x1"]) / 2
-    ft = p.FIT_TOLERANCE + k["ear_play"]
-    body -= Pos(xc, 0, z - 1) * Box(p.SERVO_BODY_L + 2 * ft, p.SERVO_BODY_W + 2 * ft, p.FEED_BRACKET_T + 2, align=up)
+    x0, x1, zs = k["shelf_x0"], k["shelf_x1"], k["shelf_bottom"]
+    ry, rw = k["rail_y"], p.FEED_RAIL_W
+    g = k["case_gap"]
+    ring = _rect(x0, -ry - rw, x1, ry + rw) - _rect(k["case_x0"] - g, -ry, k["case_x1"] + g, ry)
+    body = Pos(0, 0, zs) * extrude(ring, p.FEED_BRACKET_T)
+    rails = _rect(x0, -ry - rw, x1, ry + rw) - _rect(x0 - 1, -ry, x1 + 1, ry)
+    body += Pos(0, 0, zs - p.FEED_RAIL_H) * extrude(rails, p.FEED_RAIL_H + 0.01)
+    zc = k["cover_top"]
+    body += Pos(0, 0, zc) * extrude(_rect(k["leg_x0"], -k["leg_hy"], k["leg_x1"], k["leg_hy"]), zs - zc + 0.01)
+    for y in p.FEED_PEG_YS:
+        body += Pos(k["peg_x"], y, k["peg_bottom"]) * Box(p.FEED_PEG_L, p.FEED_PEG_W, zc - k["peg_bottom"] + 0.01, align=up)
     xe = p.SERVO_EAR_PITCH_L / 2
-    for ex in (xc - xe, xc + xe):
+    for ex in (k["servo_xc"] - xe, k["servo_xc"] + xe):
         for ey in (-p.SERVO_EAR_PITCH_W / 2, p.SERVO_EAR_PITCH_W / 2):
-            # Through the plate only: the short-end pair sits over the house wall (use M3 x 6 there).
-            body -= Pos(ex, ey, z) * Cylinder(p.FEED_SELF_TAP_D / 2, p.FEED_BRACKET_T + 1, align=up)
-    # Pour openings either side of the house.
-    y0, y1, xo = k["house_hy"] + 2, hi - 2, hi - 2 * lip
-    for sy in (-1, 1):
-        body -= Pos(0, sy * (y0 + y1) / 2, z - 1) * Box(2 * xo, y1 - y0, p.FEED_BRACKET_T + 2, align=up)
+            body -= Pos(ex, ey, k["ears"] - p.FEED_SELF_TAP_DEPTH) * Cylinder(
+                p.FEED_SELF_TAP_D / 2, p.FEED_SELF_TAP_DEPTH + 1, align=up
+            )
     return body
 
 
@@ -980,7 +1068,7 @@ def feed_coupon_layout() -> dict:
     gap, text = p.COUPON_GAP, p.COUPON_TEXT_SIZE
     pocket_w, pocket_l = p.BB_D + 2, 20.0
     pin_r = (p.FEED_PIN_D + max(p.FEED_COUPON_PIN_OFFSETS)) / 2
-    hex_r = (p.FEED_SHAFT_AF + max(p.FEED_COUPON_HEX_OFFSETS)) / math.sqrt(3)
+    hex_r = (p.FEED_HEX_AF + max(p.FEED_COUPON_HEX_OFFSETS)) / math.sqrt(3)
     y_pocket = 0.0
     y_pl = -pocket_l / 2 - gap / 2 - text / 2
     y_pin = y_pl - text / 2 - gap / 2 - pin_r
@@ -1009,8 +1097,8 @@ def feed_coupon() -> Part:
     Slot pockets FEED_SLOT_H + offset deep: lay a straight edge over one, a BB must roll along under
     it freely in the 0 one (and, of course, never two BBs one on the other). Pin bores FEED_PIN_D +
     offset: the base's pin (or a 5 mm drill shank) turns freely without wobble in the right one:
-    FEED_PIN_CLEARANCE. Hex sockets FEED_SHAFT_AF + offset: the printed shaft slides in without
-    turning play in the right one: FEED_HEX_TOLERANCE. Printed flat, everything vertical.
+    FEED_PIN_CLEARANCE. Hex sockets FEED_HEX_AF + offset: the printed disc's hex boss slides in
+    without turning play in the right one: FEED_HEX_TOLERANCE. Printed flat, everything vertical.
     """
     k = feed_coupon_layout()
     T, text, W = p.FEED_COUPON_T, p.COUPON_TEXT_SIZE, k["width"]
@@ -1036,7 +1124,7 @@ def feed_coupon() -> Part:
         part -= Pos(x, k["y_pin"], T / 2) * Cylinder((p.FEED_PIN_D + o) / 2, T + 1)
         part -= engrave(label(o), x, k["y_pin_label"])
     for x, o in zip(xs(len(p.FEED_COUPON_HEX_OFFSETS)), p.FEED_COUPON_HEX_OFFSETS):
-        part -= Pos(x, k["y_hex"], -0.5) * extrude(_hex((p.FEED_SHAFT_AF + o) / math.sqrt(3)), T + 1)
+        part -= Pos(x, k["y_hex"], -0.5) * extrude(_hex((p.FEED_HEX_AF + o) / math.sqrt(3)), T + 1)
         part -= engrave(label(o), x, k["y_hex_label"])
     return part
 
@@ -1047,12 +1135,12 @@ def feed_assembly(skew: float = 0.0, R: float | None = None) -> dict[str, Part]:
     return {
         "base": feed_base(),
         "disc": feed_disc(),
-        "shaft": feed_shaft(),
-        "drive_hub": feed_drive_hub(),
+        "drive": feed_drive(),
         "cover": feed_cover(skew),
         "elbow_a": feed_elbow_half(R, "a"),
         "elbow_b": feed_elbow_half(R, "b"),
         "hopper": feed_hopper(),
+        "chimney": feed_chimney(),
         "bracket": feed_servo_bracket(),
     }
 
@@ -1081,11 +1169,11 @@ PARTS = {
     "feed_coupon": feed_coupon,
     "feed_base": feed_base,
     "feed_disc": lambda: on_bed(feed_disc()),
-    "feed_shaft": lambda: on_bed(feed_shaft(), lying=True),
-    "feed_drive_hub": lambda: on_bed(feed_drive_hub()),
+    "feed_drive": lambda: on_bed(feed_drive()),
     **{f"feed_cover_{n}": (lambda a=a: on_bed(feed_cover(a), flip=True)) for n, a in COVER_VARIANTS.items()},
     **{f"feed_elbow_r{r:g}_{h}": (lambda r=r, h=h: elbow_on_bed(h, r)) for r in p.FEED_ELBOW_RADII for h in ("a", "b")},
     "feed_hopper": lambda: on_bed(feed_hopper()),
+    "feed_chimney": lambda: on_bed(feed_chimney()),
     "feed_servo_bracket": lambda: on_bed(feed_servo_bracket(), flip=True),
 }
 

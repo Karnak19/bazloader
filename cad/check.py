@@ -8,7 +8,7 @@ its axis fail loudly.
 
 import math
 
-from build123d import Align, Box, GeomType, Pos, Vector
+from build123d import Align, Box, Cylinder, GeomType, Pos, Vector, extrude
 
 import build
 import params as p
@@ -446,12 +446,12 @@ def feed_bridges(name: str) -> tuple:
     nut_d = p.M3_NUT_THICKNESS + p.NUT_TOLERANCE
     if name == "feed_base":
         return (nut_d,)  # Nut trap ceilings.
-    if name == "feed_drive_hub":
-        return (p.FEED_SHAFT_ENGAGE + k["chamber_h"],)  # Ceiling of the screw-head chamber.
+    if name == "feed_drive":
+        return (k["socket_depth"] + k["chamber_h"],)  # Ceiling of the screw-head chamber.
     if name.startswith("feed_cover_"):
-        return (p.FEED_HOPPER_SEAT, p.FEED_TEXT_DEPTH)  # Hopper groove and label, on the bed side.
+        return (p.FEED_HOPPER_SEAT, p.FEED_TEXT_DEPTH)  # Hopper and chimney grooves, label, on the bed side.
     if name == "feed_servo_bracket":
-        return (p.FEED_BRACKET_T,)  # Ends of the 2.5 mm ear holes where they meet the house wall.
+        return (p.FEED_SELF_TAP_DEPTH,)  # Ends of the 2.5 mm pilot holes in the leg.
     if name.startswith("feed_elbow_") and name.endswith("_b"):
         return (nut_d,)  # Nut trap ceilings.
     return ()
@@ -505,7 +505,6 @@ def check_feed_numbers() -> None:
     free = (k["start"] + 360) - p.FEED_TONGUE_ARC
     assert free >= 2 * 360 / N, f"only {free:.0f} deg of full slot before the window, a reverse meets the tongue"
     assert abs(p.FEED_WINDOW_ARC + p.FEED_CARRY_ARC + free + p.FEED_TONGUE_ARC - 360) < 1e-9
-    assert p.FEED_WINDOW_R_IN > k["sleeve_ro"] + p.MIN_WALL / 2, "the sleeve does not stand over solid cover"
     assert p.FEED_WINDOW_R_IN < k["notch_end_r"], "window does not open the notches down to their end"
     print(
         f"feed numbers: OK  {N} notches w={w} on R{R:g}, pitch {pitch:.2f}, land {land:.2f}  "
@@ -546,19 +545,22 @@ def check_feed_disc() -> None:
         # Notch walls vertical: through from just over the floor to just under the top.
         for zz in (k["floor"] + EPS, k["disc_top"] - EPS):
             assert not solid_at(part, R * c, R * s, zz), f"notch {i} not through at z={zz:.2f}"
-    # Hub: pin bore underneath, hex socket on top, solid between.
+    # Hub: pin bore underneath, solid over it, round up to the cover top, then the hex boss.
     pr = k["pin_bore_r"]
     zp = k["floor"] + 1
     assert not solid_at(part, pr - EPS, 0, zp) and solid_at(part, pr + EPS, 0, zp), "pin bore size"
-    assert solid_at(part, 0, 0, k["floor"] + k["pin_bore_depth"] + pr + EPS), "no wall between pin bore and hex socket"
-    zh = k["hub_top"] - p.FEED_HEX_DEPTH / 2
-    af = (p.FEED_SHAFT_AF + p.FEED_HEX_TOLERANCE) / 2
-    assert not solid_at(part, af - EPS, 0, zh) and solid_at(part, af + EPS, 0, zh), "hex socket across flats"
+    assert solid_at(part, 0, 0, k["floor"] + k["pin_bore_depth"] + pr + EPS), "no solid over the pin bore"
+    zr = k["hub_round_top"] - 1
+    assert solid_at(part, p.FEED_HUB_R - EPS, 0, zr) and not solid_at(part, p.FEED_HUB_R + EPS, 0, zr), "hub radius"
+    zh = (k["hub_round_top"] + k["boss_top"]) / 2
+    af = p.FEED_HEX_AF / 2
+    assert solid_at(part, af - EPS, 0, zh) and not solid_at(part, af + EPS, 0, zh), "hex boss across flats"
+    assert solid_at(part, 0, 0, k["boss_top"] - EPS) and not solid_at(part, 0, 0, k["boss_top"] + EPS), "boss top"
     bb = part.bounding_box()
     assert abs(max(bb.size.X, bb.size.Y) - p.FEED_DISC_OD) < 0.01, f"disc OD {bb.size}"
     print(
         f"feed_disc: OK  {N} notches every {360 / N:.2f} deg, OD {p.FEED_DISC_OD}, t {p.FEED_DISC_T}, "
-        f"hub {k['hub_h']:.1f} tall"
+        f"hex boss AF{p.FEED_HEX_AF:g} up to {k['boss_top'] - k['cover_top']:.1f} over the cover"
     )
 
 
@@ -575,25 +577,42 @@ def check_feed_cover(skew: float, assembly: dict) -> None:
     x, y = pt(k["cut"] + 20)
     assert solid_at(base, x, y, k["floor"] - EPS) and not solid_at(base, x, y, k["floor"] + EPS), "floor height"
     assert solid_at(cover, x, y, zu + EPS) and not solid_at(cover, x, y, zu - EPS), "cover underside height"
-    # Window: open through the cover over the whole notch band, at its middle.
-    mid = k["cut"] - p.FEED_WINDOW_ARC / 2
-    for r in (p.FEED_WINDOW_R_IN + EPS, k["notch_end_r"], R, k["shroud_r"] - EPS):
-        for zz in (zu + EPS, k["cover_top"] - EPS):
-            assert not solid_at(cover, *pt(mid, r), zz), f"window closed at r={r:.2f}"
+    # Window: open through the cover over the whole notch band, all along, except where the chimney
+    # stands; and the BB circle itself never under the chimney.
+    foot = build.feed_chimney_footprint(p.FIT_TOLERANCE, zu - 1, p.FEED_COVER_T + 2)
+    a = k["start"] + 12  # Clear of the skewed edges, which lean into the window at the rim.
+    while a <= k["cut"] - 12:
+        assert not foot.is_inside(Vector(*pt(a), zu + 1)), f"the BB circle runs under the chimney at {a:.0f} deg"
+        for r in (k["notch_end_r"] + EPS, R, k["shroud_r"] - EPS):
+            if foot.is_inside(Vector(*pt(a, r), zu + 1)):
+                continue
+            for zz in (zu + EPS, k["cover_top"] - EPS):
+                assert not solid_at(cover, *pt(a, r), zz), f"window closed at {a:.0f} deg, r={r:.2f}"
+        a += 3
     # Edges through the BB circle at their angles, at the underside (where the chamfer is nil).
     for a, inside in ((k["cut"], -1), (k["start"], 1)):
         assert not solid_at(cover, *pt(a + inside * 1.0), zu + EPS), f"window short of its edge at {a}"
         assert solid_at(cover, *pt(a - inside * 1.0), zu + EPS), f"window past its edge at {a}"
-    # Lift chamfer: half way in, solid low down, cut away higher up. And the tilt of each edge.
+    # Lift chamfer: half way in, solid low down, cut away higher up. And the tilt of each edge. The
+    # cut-off edge keeps its whole chamfer over the notches, clear of the wall; the start edge only
+    # matters on a reverse, and the wall's line takes its inner corner.
     c = p.FEED_LIFT_CHAMFER
     for a, side in ((k["cut"], 1), (k["start"], -1)):
         e = build.feed_edge(a, skew, side)
         d = (e[2][0] - e[1][0], e[2][1] - e[1][1])
         L = math.hypot(*d)
         n = (-side * d[1] / L, side * d[0] / L)
+        rs = (k["shroud_r"] - 1,) if side < 0 else (k["notch_end_r"] + EPS, R, k["shroud_r"] - 1)
+        jx, jy = e[1]
+        for r in rs:
+            # Point of the edge at radius r: from the joint, along it.
+            ju = (jx * d[0] + jy * d[1]) / L
+            t = -ju + math.sqrt(ju * ju - jx * jx - jy * jy + r * r)
+            x, y = jx + d[0] / L * t, jy + d[1] / L * t
+            qx, qy = x + n[0] * c / 2, y + n[1] * c / 2
+            assert solid_at(cover, qx, qy, zu + c / 4), f"chamfer too big at {a}, r={r:.1f}"
+            assert not solid_at(cover, qx, qy, zu + 3 * c / 4), f"no lift chamfer at {a}, r={r:.1f}"
         x, y = pt(a)
-        assert solid_at(cover, x + n[0] * c / 2, y + n[1] * c / 2, zu + c / 4), f"chamfer too big at {a}"
-        assert not solid_at(cover, x + n[0] * c / 2, y + n[1] * c / 2, zu + 3 * c / 4), f"no lift chamfer at {a}"
         tilt = math.degrees(math.atan2(abs(d[0] * y - d[1] * x), d[0] * x + d[1] * y))
         assert abs(tilt - skew) < 1e-6, f"edge tilt {tilt:.2f}, want {skew}"
         # Tilted the right way: the outer end set back toward the window.
@@ -604,13 +623,18 @@ def check_feed_cover(skew: float, assembly: dict) -> None:
     assert solid_at(cover, x0 - EPS, 5, zt + EPS) and not solid_at(cover, x0 + EPS, 5, zt + EPS), "tongue edge"
     assert not solid_at(cover, x0 - 1, 5, zt - EPS), "tongue too low"
     assert not solid_at(cover, *pt(p.FEED_TONGUE_ARC + 5), zt + EPS), "tongue runs past FEED_TONGUE_ARC"
-    # The sleeve stands over solid cover all round; the hopper wall sits in its groove.
-    rs = (k["sleeve_ri"] + k["sleeve_ro"]) / 2
-    for a in range(0, 360, 10):
-        assert solid_at(cover, *pt(a, rs), k["cover_top"] - EPS), f"no cover under the sleeve at {a} deg"
+    # The hopper and the chimney sit in their grooves; the bracket's pegs go through.
     gm = (k["hop_in"] + k["hop_out"]) / 2
-    assert not solid_at(cover, gm, 0, k["cover_top"] - EPS), "no hopper groove"
-    assert solid_at(cover, gm, 0, k["hop_bottom"] - EPS), "hopper groove too deep"
+    t = p.FEED_CHIMNEY_T
+    probes = ((0, -gm, "hopper"), ((k["hop_x1_in"] + k["hop_x1_out"]) / 2, 30, "hopper +X"),
+              (k["ch_x0"] + t / 2, 0, "chimney nose"), (25, k["ch_in_y_low"] + t / 2, "chimney side"))
+    for x, y, what in probes:
+        assert not solid_at(cover, x, y, k["cover_top"] - EPS), f"no {what} groove"
+        assert solid_at(cover, x, y, k["hop_bottom"] - EPS), f"{what} groove too deep"
+    for y in p.FEED_PEG_YS:
+        for dx in (-1, 1):
+            xe = k["peg_x"] + dx * (p.FEED_PEG_L / 2 + p.FEED_SERVO_TRAVEL_X - EPS)
+            assert not solid_at(cover, xe, y, k["cover_top"] - 1), f"peg slot at y={y} too short"
     # Clear of the turning disc by FEED_RUN_GAP, never touching it.
     gap = cover.distance_to(disc)
     assert gap >= p.FIT_TOLERANCE - 1e-6, f"cover only {gap:.3f} from the disc"
@@ -621,40 +645,53 @@ def check_feed_cover(skew: float, assembly: dict) -> None:
     )
 
 
+def servo_model(k: dict, dz: float = 0.0) -> dict:
+    """The servo as boxes, in the rig frame: the case below the ears (it moves dz with the unmeasured
+    heights), the ears, and the case above them."""
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    xc, L, W = k["servo_xc"], p.SERVO_BODY_L, p.SERVO_BODY_W
+    face = k["case_face"] + dz
+    top = k["case_face"] + p.SERVO_BODY_H
+    e1 = k["ears"] + p.SERVO_EAR_T
+    return {
+        "case below the ears": Pos(xc, 0, face) * Box(L, W, k["ears"] - face, align=up),
+        "ears": Pos(xc, 0, k["ears"]) * Box(p.SERVO_EAR_SPAN, p.SERVO_EAR_W, p.SERVO_EAR_T, align=up),
+        "case above the ears": Pos(xc, 0, e1) * Box(L, W, top - e1, align=up),
+    }
+
+
+def outline_points(sketch, step: float = 1.0) -> list:
+    """Points every `step` mm along the edges of a sketch (its outline)."""
+    pts = []
+    for e in sketch.edges():
+        n = max(2, int(e.length / step))
+        pts += [e.position_at(i / n) for i in range(n)]
+    return pts
+
+
 def check_feed_assembly(assembly: dict) -> None:
     k = build.feed_layout()
     a = assembly
     for n, s in a.items():
         assert s.is_valid and len(s.solids()) == 1, f"{n} is not one valid solid"
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    tol = p.FIT_TOLERANCE
 
-    def overlap(m: str, n: str) -> None:
-        v = (a[m] & a[n]).volume
-        assert v < 1e-3, f"{m} and {n} overlap by {v:.3f} mm3"
+    def overlap(m, n, what: str) -> None:
+        v = (m & n).volume
+        assert v < 1e-3, f"{what} overlap by {v:.3f} mm3"
 
-    def clear(m: str, n: str, want: float) -> float:
-        d = a[m].distance_to(a[n])
-        assert d >= want - 1e-6, f"{m} only {d:.3f} from {n}, want {want}"
+    def clear(m, n, want: float, what: str) -> float:
+        d = m.distance_to(n)
+        assert d >= want - 1e-6, f"{what}: only {d:.3f} apart, want {want}"
         return d
 
-    pairs = (
-        ("disc", "base"),
-        ("shaft", "disc"),
-        ("shaft", "drive_hub"),
-        ("hopper", "cover"),
-        ("hopper", "bracket"),
-        ("elbow_a", "base"),
-        ("elbow_b", "base"),
-        ("elbow_a", "elbow_b"),
-        ("elbow_a", "cover"),
-        ("elbow_b", "cover"),
-    )
-    for m, n in pairs:
-        overlap(m, n)
-    clear("shaft", "cover", p.FIT_TOLERANCE)
-    clear("shaft", "bracket", p.FIT_TOLERANCE)
-    clear("disc", "bracket", p.FIT_TOLERANCE)
-    clear("drive_hub", "bracket", p.FIT_TOLERANCE)
-    clear("disc", "hopper", p.FIT_TOLERANCE)
+    names = list(a)
+    for i, m in enumerate(names):
+        for n in names[i + 1 :]:
+            overlap(a[m], a[n], f"{m} and {n}")
+    for n in ("cover", "chimney", "hopper", "bracket"):  # It lies on the base.
+        clear(a["disc"], a[n], tol, f"disc and {n}")
     # The disc's rim clears the shroud all round (outside the exit, where the shroud opens).
     r = k["shroud_r"]
     for deg in range(0, 360, 5):
@@ -662,61 +699,161 @@ def check_feed_assembly(assembly: dict) -> None:
         if not solid_at(a["base"], (r + EPS) * c, (r + EPS) * s, k["floor"] + 1):
             continue  # The channel.
         assert not solid_at(a["base"], (r - EPS) * c, (r - EPS) * s, k["floor"] + 1), f"shroud inside R{r} at {deg}"
-    # The servo, wherever the unmeasured numbers put it. The case slides the ear holes' play either
-    # way and sits up to FEED_SERVO_TRAVEL_Z low or high; the hub also moves FEED_SERVO_TRAVEL_X along
-    # the servo (the spline offset). In every corner of that box, nothing touches the bracket.
-    xc = (k["case_x0"] + k["case_x1"]) / 2
-    h = k["ears"] - k["case_face"]
-    up = (Align.CENTER, Align.CENTER, Align.MIN)
-    case = Pos(xc, 0, k["case_face"]) * Box(p.SERVO_BODY_L, p.SERVO_BODY_W, h, align=up)
-    play, tx, tz = k["ear_play"], p.FEED_SERVO_TRAVEL_X, p.FEED_SERVO_TRAVEL_Z
-    d = min(
-        (Pos(sx * play, sy * play, sz * tz) * case).distance_to(a["bracket"])
-        for sx in (-1, 0, 1)
-        for sy in (-1, 0, 1)
-        for sz in (-1, 0)  # Higher, the case only leaves the house; through the plate it is the same box.
-    )
-    assert d >= p.FIT_TOLERANCE - 1e-6, f"servo case {d:.2f} from the bracket somewhere in its travel"
-    dh = min(
-        (Pos(sx * (tx + play), sy * play, sz * tz) * a["drive_hub"]).distance_to(a["bracket"])
-        for sx in (-1, 1)
-        for sy in (-1, 1)
-        for sz in (-1, 1)
-    )
-    assert dh >= p.FIT_TOLERANCE - 1e-6, f"drive hub {dh:.2f} from the bracket somewhere in its travel"
-    # The ear pilot holes sit on the measured pitch, round the case cut-out's centre.
-    z = k["hop_top"] + p.FEED_BRACKET_T / 2
-    for ex in (xc - p.SERVO_EAR_PITCH_L / 2, xc + p.SERVO_EAR_PITCH_L / 2):
+
+    # Drive: the boss slides in the socket. Servo FEED_SERVO_TRAVEL_Z low, the boss still clears the
+    # socket's top (the screw-head chamber) and the piece clears the cover; high, it still goes
+    # FEED_DRIVE_MIN_ENGAGE in. The hex holds the piece on the disc axis: it only moves up and down.
+    tz, tx, play = p.FEED_SERVO_TRAVEL_Z, p.FEED_SERVO_TRAVEL_X, k["ear_play"]
+    engage = k["boss_top"] - k["drive_bottom"]
+    assert abs(engage - p.FEED_DRIVE_ENGAGE) < 1e-9
+    assert p.FEED_DRIVE_FLOAT > tz, f"servo {tz} low would bottom the boss in the socket (float {p.FEED_DRIVE_FLOAT})"
+    assert engage - tz >= p.FEED_DRIVE_MIN_ENGAGE, f"servo {tz} high, the boss is only {engage - tz:.1f} in"
+    assert p.SERVO_HORN_GAP >= p.FEED_HORN_HUB_H, "the horn's hub does not fit between the case and the drive piece"
+    drive_min = {}
+    for dz in (-tz, 0, tz):
+        d = Pos(0, 0, dz) * a["drive"]
+        overlap(d, a["disc"], f"drive {dz:+g} high and disc")
+        for n in ("cover", "chimney"):
+            drive_min[n] = min(drive_min.get(n, 1e9), clear(d, a[n], p.FEED_RUN_GAP, f"drive {dz:+g} high and {n}"))
+        for bx in (-tx, 0, tx):
+            g = clear(d, Pos(bx, 0, 0) * a["bracket"], p.FEED_RUN_GAP, f"drive and bracket at {bx:+g}")
+            drive_min["bracket"] = min(drive_min.get("bracket", 1e9), g)
+
+    # The bracket slides FEED_SERVO_TRAVEL_X either way along its slots: its pegs stay in them, and
+    # it stays clear of the chimney.
+    bracket_min = 1e9
+    for bx in (-tx, tx):
+        b = Pos(bx, 0, 0) * a["bracket"]
+        overlap(b, a["base"], f"bracket at {bx:+g} and base")
+        overlap(b, a["cover"], f"bracket at {bx:+g} and cover")
+        for n in ("chimney", "hopper"):
+            bracket_min = min(bracket_min, clear(b, a[n], tol, f"bracket at {bx:+g} and {n}"))
+    # The servo, wherever the unmeasured numbers put it: along the servo with the bracket (the spline
+    # offset), the ear holes' play both ways on the bracket, and the case below the ears up or down.
+    servo_min = {}
+    for bx in (-tx, 0, tx):
+        b = Pos(bx, 0, 0) * a["bracket"]
+        for px in (-play, play):
+            for py in (-play, play):
+                for dz in (-tz, tz):
+                    for part, box in servo_model(k, dz).items():
+                        s = Pos(bx + px, py, 0) * box
+                        for n in ("chimney", "cover"):
+                            g = clear(s, a[n], tol, f"servo {part} ({bx + px:+.2f}, {py:+.2f}, {dz:+g}) and {n}")
+                            servo_min[n] = min(servo_min.get(n, 1e9), g)
+                        if part != "ears":  # The ears rest on the shelf.
+                            g = clear(s, b, tol, f"servo {part} and its bracket")
+                            servo_min["bracket"] = min(servo_min.get("bracket", 1e9), g)
+    # The ear pilot holes sit on the measured pitch.
+    z = k["ears"] - p.FEED_BRACKET_T / 2
+    for ex in (k["servo_xc"] - p.SERVO_EAR_PITCH_L / 2, k["servo_xc"] + p.SERVO_EAR_PITCH_L / 2):
         for ey in (-p.SERVO_EAR_PITCH_W / 2, p.SERVO_EAR_PITCH_W / 2):
             r = p.FEED_SELF_TAP_D / 2
             assert not solid_at(a["bracket"], ex, ey, z), f"no ear hole at ({ex:.2f}, {ey:.2f})"
             for q in ((r + EPS, 0), (-r - EPS, 0), (0, r + EPS), (0, -r - EPS)):
                 assert solid_at(a["bracket"], ex + q[0], ey + q[1], z), f"ear hole at ({ex:.2f}, {ey:.2f}) too big"
-    assert p.SERVO_HORN_GAP >= p.FEED_HORN_HUB_H, "the horn's hub does not fit between the case and the hub"
-    # Height: the shaft stands in the disc's socket and slides in the drive hub. Servo FEED_SERVO_TRAVEL_Z
-    # low, the shaft top still clears the hub's socket floor (so it never pushes the disc down); high,
-    # it still goes FEED_SHAFT_MIN_ENGAGE in.
-    engage = k["shaft_top"] - k["dhub_bottom"]
-    assert p.FEED_SHAFT_FLOAT > tz, f"servo {tz} low would bottom the shaft in the hub (float {p.FEED_SHAFT_FLOAT})"
-    assert engage - tz >= p.FEED_SHAFT_MIN_ENGAGE, f"servo {tz} high, the shaft is only {engage - tz:.1f} in the hub"
-    # Along the servo: the ear holes' play takes the first part of FEED_SERVO_TRAVEL_X, the shaft leans
-    # in its two hex sockets for the rest. A hex leans HEX_TOLERANCE / depth in a socket before it binds.
-    span = k["dhub_bottom"] - k["hub_top"]  # Between the two socket mouths.
-    lean = max(0.0, tx - play) / span
-    can = p.FEED_HEX_TOLERANCE / max(p.FEED_HEX_DEPTH, engage + tz)
-    assert lean <= can, (
-        f"a {tx} spline offset leans the shaft {math.degrees(lean):.2f} deg, its sockets take "
-        f"{math.degrees(can):.2f}: raise FEED_HEX_TOLERANCE or lower FEED_SERVO_TRAVEL_X"
+
+    # Seal: no BB (BB_MIN_D) gets from the pile to the inside of the chimney, nor to the elbow.
+    rb = p.BB_MIN_D / 2
+    t = p.FEED_CHIMNEY_T
+    foot = build.feed_chimney_footprint(tol, k["block_top"] - 1, p.FEED_COVER_T + 2)
+    (ho, hi) = build.feed_hopper_rects()
+    for skew in p.FEED_CUTOFF_SKEWS:
+        w = build.feed_window(skew)
+        v = (w & foot).volume
+        assert v < 1e-3, f"window {skew} runs under the chimney ({v:.2f} mm3)"
+        bb = w.bounding_box()
+        assert hi[0] < bb.min.X and bb.max.X < hi[2] and hi[1] < bb.min.Y and bb.max.Y < hi[3], "window outside the hopper"
+    assert k["hole_r"] + tol < k["ch_in_r_drive"], "the hub hole is not inside the chimney"
+    for y in p.FEED_PEG_YS:
+        assert abs(y) + p.FEED_PEG_W / 2 + tol < k["ch_in_y_low"], "a peg slot is outside the chimney"
+    for n in ("elbow_a", "elbow_b"):
+        assert a[n].bounding_box().min.Y > ho[3], f"{n} is in the hopper"
+    assert p.FEED_CABLE_W < p.BB_MIN_D - tol, "the cable notch lets a BB through"
+    barrier = a["chimney"] + a["hopper"] + a["cover"]
+
+    def blocked(q) -> bool:
+        return barrier.distance_to(Vector(q.X, q.Y, q.Z)) < rb
+
+    n_probe = 0
+    # (1) The walls are whole: the middle of the chimney's wall (narrow part, and wide part over the
+    # flare) and of the hopper's is solid on a 3 mm grid, from inside their grooves in the cover up to
+    # the pile top. Any hole a BB could pass holds a point of that grid.
+    assert k["ch_bottom"] < k["cover_top"] and k["hop_bottom"] < k["cover_top"], "a wall does not sit in a groove"
+    assert k["ch_top"] > k["hop_top"], "the pile can spill over the chimney"
+    step = 3.0
+    z0 = k["cover_top"] - p.FEED_HOPPER_SEAT / 2
+
+    def zs(lo: float, hi_: float) -> list:
+        return [lo + step * j for j in range(int((hi_ - lo) / step) + 1)]
+
+    mid = build._rect((ho[0] + hi[0]) / 2, (ho[1] + hi[1]) / 2, (ho[2] + hi[2]) / 2, (ho[3] + hi[3]) / 2)
+    walls = (
+        ("chimney", build.chimney_plan(t / 2), zs(z0, k["ch_z_a"])),
+        ("chimney", build.chimney_plan(t / 2, up=True), zs(k["ch_z_b"], k["hop_top"])),
+        ("hopper", mid, zs(z0, k["hop_top"])),
     )
-    assert 0 < p.FEED_SLEEVE_GAP < p.BB_MIN_D / 2, "a BB gets under the sleeve"
+    for n, plan, heights in walls:
+        for q in outline_points(plan, step):
+            for zz in heights:
+                assert a[n].is_inside(Vector(q.X, q.Y, zz)), f"hole in the {n} at ({q.X:.1f}, {q.Y:.1f}, {zz:.1f})"
+                n_probe += 1
+    # The flare: the middle of the wall moves out linearly from the narrow part to the wide one
+    # (sampled on its flat faces).
+    za, zb = k["ch_z_a"], k["ch_z_b"]
+    for zz in zs(za + 0.5, zb - 0.5):
+        f = (zz - za) / (zb - za)
+        x0 = k["ch_in_x0_low"] + f * (k["ch_in_x0_up"] - k["ch_in_x0_low"]) - t / 2
+        y1 = k["ch_in_y_low"] + f * (k["ch_in_y_up"] - k["ch_in_y_low"]) + t / 2
+        x1 = k["ch_in_x1"] + t / 2
+        pts = [(x0, y) for y in zs(-y1 + t, y1 - t)] + [(x, s * y1) for x in zs(x0 + t, x1 - t) for s in (-1, 1)]
+        pts += [(x1, y) for y in zs(-y1 + t, y1 - t)]
+        for x, y in pts:
+            assert a["chimney"].is_inside(Vector(x, y, zz)), f"hole in the chimney's flare at ({x:.1f}, {y:.1f}, {zz:.1f})"
+            n_probe += 1
+    # (2) Where the chimney's +X face meets the hopper's +X wall, top to bottom: a BB centred anywhere
+    # in that joint touches one or the other.
+    xj = (k["ch_x1"] + k["hop_x1_in"]) / 2
+    hy = k["ch_in_y_up"] + t + 3
+    for i in range(int(2 * hy) + 1):
+        for zz in zs(k["cover_top"] + 0.3, k["hop_top"] - rb):
+            assert blocked(Vector(xj, -hy + i, zz)), f"a BB gets between the chimney and the hopper at y={-hy + i:.0f}, z={zz:.0f}"
+            n_probe += 1
+    # (4) Inside the chimney, the cover is solid but for the hub hole (0.4 round the hub) and the peg
+    # slots, which end in solid base.
+    inside = build.chimney_plan(-tol)
+    inner = Pos(0, 0, k["hop_bottom"] - 2) * extrude(inside, 0.1)
+    bbi = inner.bounding_box()
+    slot_x = p.FEED_PEG_L / 2 + tx + tol
+    for ix in range(int(bbi.min.X) - 1, int(bbi.max.X) + 2):
+        for iy in range(int(bbi.min.Y) - 1, int(bbi.max.Y) + 2):
+            x, y, zc = float(ix), float(iy), k["hop_bottom"] - 1.95
+            if not inner.is_inside(Vector(x, y, zc)) or solid_at(a["cover"], x, y, zc):
+                continue
+            hole = math.hypot(x, y) < k["hole_r"] + EPS
+            peg = abs(x - k["peg_x"]) < slot_x + EPS and any(abs(y - py) < p.FEED_PEG_W / 2 + tol + EPS for py in p.FEED_PEG_YS)
+            assert hole or peg, f"the cover is open inside the chimney at ({x}, {y})"
+    for py in p.FEED_PEG_YS:
+        assert solid_at(a["base"], k["peg_x"], py, k["peg_bottom"] - p.FEED_RUN_GAP - EPS), "peg slot through the base"
+    assert k["hole_r"] - p.FEED_HUB_R < p.BB_MIN_D, "a BB fits round the hub"
     assert k["hop_top"] - k["cover_top"] >= 100, "hopper under 10 cm"
+    # How many BBs the pile side holds at 10 cm: the hopper's inside less the chimney's outside, at
+    # 64 % packing (random close packing of spheres).
+    h10 = 100.0
+    area = (hi[2] - hi[0]) * (hi[3] - hi[1]) - build.chimney_plan(t, up=True).area
+    bbs = area * h10 * 0.64 / (math.pi / 6 * p.BB_D**3)
+    corner_r = math.hypot(k["ch_x0"] + t, k["ch_in_y_low"]) + t + tol
     print(
-        f"feed assembly: OK  no overlaps  shaft {k['shaft_top'] - k['shaft_bottom']:.1f} long, "
-        f"{engage:.1f} into the drive hub (float {p.FEED_SHAFT_FLOAT})  servo travel: height +-{tz:g} "
-        f"(shaft {engage - tz:.1f} to {engage + tz:.1f} in), along +-{tx:g} (ear play +-{play:.2f}, "
-        f"shaft leans {math.degrees(lean):.2f} of {math.degrees(can):.2f} deg)  min gap to the bracket: "
-        f"case {d:.2f}, hub {dh:.2f}  "
-        f"hopper {k['hop_top'] - k['cover_top']:.0f} over the cover"
+        f"feed assembly: OK  no overlaps  drive: boss {engage:.1f} into the socket (float {p.FEED_DRIVE_FLOAT}), "
+        f"{engage - tz:.1f} to {engage + tz:.1f} over servo height +-{tz:g}; bracket slides +-{tx:g} along the servo  "
+        f"min gaps: drive to cover {drive_min['cover']:.2f}, chimney {drive_min['chimney']:.2f}, bracket {drive_min['bracket']:.2f}; "
+        f"servo to chimney {servo_min['chimney']:.2f}, bracket {servo_min['bracket']:.2f}; bracket to chimney {bracket_min:.2f}"
+    )
+    print(
+        f"feed seal: OK  window {p.FEED_WINDOW_ARC:g} deg, clear of the chimney (its narrow end's corners "
+        f"{corner_r:.1f} from the axis)  {n_probe} probes: chimney and hopper walls whole on a 3 mm grid, "
+        f"no BB through their joint  cable notch {p.FEED_CABLE_W:g}, hub gap {k['hole_r'] - p.FEED_HUB_R:.1f}  "
+        f"pile {k['hop_top'] - k['cover_top']:.0f} over the cover (~{bbs:.0f} BBs at 10 cm), inlet {k['inlet']:.1f}"
     )
 
 
@@ -810,12 +947,12 @@ def check_feed_coupon() -> None:
         y = k["y_pin"]
         assert not solid_at(part, x + r - EPS, y, T / 2) and solid_at(part, x + r + EPS, y, T / 2), f"pin bore {o}"
     for x, o in zip(xs(len(p.FEED_COUPON_HEX_OFFSETS)), p.FEED_COUPON_HEX_OFFSETS):
-        af, y = (p.FEED_SHAFT_AF + o) / 2, k["y_hex"]
+        af, y = (p.FEED_HEX_AF + o) / 2, k["y_hex"]
         assert not solid_at(part, x + af - EPS, y, T / 2) and solid_at(part, x + af + EPS, y, T / 2), f"hex {o}"
     print(
         f"feed_coupon: OK  slot pockets {[round(p.FEED_SLOT_H + o, 2) for o in p.FEED_COUPON_SLOT_OFFSETS]}  "
         f"pin bores {[round(p.FEED_PIN_D + o, 2) for o in p.FEED_COUPON_PIN_OFFSETS]}  "
-        f"hex {[round(p.FEED_SHAFT_AF + o, 2) for o in p.FEED_COUPON_HEX_OFFSETS]}"
+        f"hex {[round(p.FEED_HEX_AF + o, 2) for o in p.FEED_COUPON_HEX_OFFSETS]}"
     )
 
 

@@ -222,28 +222,28 @@ BBs:
 
 The servo sits the way it will in the final unit: upside down, right over the disc, its spline on
 the disc axis, driving the disc through a short piece screwed to its horn. No long shaft, no gears,
-nothing turning inside the pile. A wall stands across the cover just in front of the servo and runs
-up as high as the pile. On one side of it is the pile, over the window; on the other a dry side with
-no BBs, where the servo and its cables live (and, in the final unit, the barrel riser, the IR collar
-and the wiring). The disc runs under the wall. In the final box the same wall runs across the full
-96.5 mm width, at the same distance from the disc axis (`FEED_WALL_OFFSET`).
+nothing turning inside the pile. It stands in a **chimney**: a closed tube round the servo and its
+bracket, sealed to the cover at its foot and open at the top for the cables. The pile fills the
+hopper all round the chimney. The chimney is narrow low down, so the window can wrap round its end
+and stay 150° long; it flares out above to take the servo's ears. In the final box the chimney's
++X face butts against the end wall of the box; on the rig it sits against the hopper's +X wall.
 
 The rig does **not** test the fit in the box, nor how the parts of the final interior slot together;
-only that the wall, the hopper and the bracket are separate parts that do, as they will there.
+only that the chimney, the hopper and the bracket are separate parts that do, as they will there.
 
 ### How it fits together
 
 Frame used in the code (`feed_layout()` in `build.py`): table at Z = 0, disc axis at the origin.
-The disc turns **counter-clockwise seen from above**. The exit channel leaves on +X along +Y. The
-wall runs along X at Y = −12.7 (its dry face): the pile is on −Y, the dry side on +Y. The window is
-round −Y, on the pile side; the servo, the bracket, the exit channel and the elbow are all on the
-dry side.
+The disc turns **counter-clockwise seen from above**. The strip point is on +X and the exit channel
+leaves there along +Y. The servo's body points to +X, inside the chimney. The window runs from 150°
+to 300° (counter-clockwise from +X), round the chimney's narrow −X end.
 
 - **`feed_base`** stands on the table. Its block has a round pocket the disc turns in (the pocket
   wall is the shroud that keeps each BB in its notch), a 5 mm pin in the middle the disc turns on,
   the start of the exit channel (`BB_GUIDE_D` wide, as tall as the slot), nut traps underneath for
-  the cover screws, two cheeks that hold the elbow on the channel exit, and two slots behind the disc
-  the servo bracket's pegs key into.
+  the cover screws, two cheeks that hold the elbow on the channel exit, and two slots under the
+  chimney the servo bracket's pegs key into. The block reaches 46.3 mm on +X (40 elsewhere), to
+  carry the chimney and the hopper's +X wall.
 - **`feed_disc`**: 14 U-shaped notches, 6.5 mm wide, open at the rim, on a 22 mm radius (9.9 mm
   apart, 3.35 mm of land between two). 49.5 mm across and 3.7 mm thick: thinner than a BB, so the
   top 2.3 mm of each BB sticks up for the tongue. A raised hub in the middle has the pin bore
@@ -251,22 +251,24 @@ dry side.
   drive piece slides over. It lies on the floor; the BBs roll on the floor too, pushed by the notch
   walls at their middle.
 - **`feed_cover_radial`, `feed_cover_skew30`, `feed_cover_skew45`**: the same cover with three
-  shapes of the cut-off edge (engraved `CUT 0`, `CUT 30`, `CUT 45` on top, on the dry side). It lies
-  on the base block, so there is 6.4 mm (`FEED_SLOT_H`) between the floor and its underside: room for
-  one layer of BBs in the notches, and a BB lying on the disc (3.7 + 5.95 mm) can never follow them
-  under it. Its top is still 10.4 mm over the floor (the inlet). The window spans 70° on the BB
-  circle and stops at the wall's groove: it also opens the land between that line and the notches.
-  On the skewed covers the edge is tilted from radial with its outer end set back toward the window,
-  so a BB caught on it is pushed inward onto the land, where it is free, rather than out against the
-  shroud. Inside 18 mm (no notches there) the edge turns radial. Both window edges have a 45° chamfer
-  underneath (`FEED_LIFT_CHAMFER`, 3 mm): a BB riding too high meets a slope that lifts it back into
-  the window instead of a square edge that shears it. The start edge is a mirror of the cut-off edge,
-  because on a reverse it becomes the cut-off. The tongue hangs from the cover 0.4 mm over the disc,
-  from the strip point for 90°; its edge is the channel's inner wall, so each BB is pushed out of its
-  notch along the channel. Between the end of the tongue and the window there are 135° (over 5
-  pockets) of full slot height, so a 1-2 pocket reverse carries BBs back under the cover without
-  meeting the tongue. A groove in the top takes the hopper and the wall; two slots let the bracket's
-  pegs through to the base.
+  shapes of the cut-off edge (engraved `CUT 0`, `CUT 30`, `CUT 45` on top, under the pile on −Y). It
+  lies on the base block, so there is 6.4 mm (`FEED_SLOT_H`) between the floor and its underside:
+  room for one layer of BBs in the notches, and a BB lying on the disc (3.7 + 5.95 mm) can never
+  follow them under it. Its top is 10.4 mm over the floor (the inlet). The window spans 150° on the
+  BB circle and also opens the land between the notches and a 12 mm radius, except where the
+  chimney stands. On the skewed covers the edge is tilted from radial with its outer end set back
+  toward the window, so a BB caught on it is pushed inward onto the land, where it is free, rather
+  than out against the shroud. Inside 18 mm (no notches there) the edge turns radial. Both window
+  edges have a 45° chamfer underneath (`FEED_LIFT_CHAMFER`, 3 mm): a BB riding too high meets a slope
+  that lifts it back into the window instead of a square edge that shears it. The start edge is a
+  mirror of the cut-off edge, because on a reverse it becomes the cut-off. The cut-off edge is 60°
+  before the strip point (`FEED_CARRY_ARC`, it was 45°), so all of it and its chamfer stay clear of
+  the chimney on every cover. The tongue hangs from the cover 0.4 mm over the disc, from the strip
+  point for 90°; its edge is the channel's inner wall, so each BB is pushed out of its notch along
+  the channel. Between the end of the tongue and the window there are 60° (2.3 pockets) of full slot
+  height, so a 1-2 pocket reverse carries BBs back under the cover without meeting the tongue.
+  Grooves in the top take the hopper and the chimney; two slots inside the chimney let the
+  bracket's pegs through to the base.
 - **`feed_elbow_r25_*`, `_r30_*`, `_r40_*`**: three elbows, each in two halves (`a`, `b`) split on
   the plane of the bend. Bore `BB_GUIDE_D` (6.2 mm), its bottom level with the channel floor and
   as wide as the channel, with a 0.6 mm lead-in at the mouth so a 0.2 mm misfit between the elbow
@@ -274,29 +276,38 @@ dry side.
   grips the barrel (`BARREL_OD + FIT_TOLERANCE`, `GRIP_LENGTH` long) above a shoulder it butts on.
   Round the socket the split faces are set back 0.3 mm each, so the two screws there clamp the
   barrel. Barrel shoulder at 32.1 / 37.1 / 47.1 mm over the floor (36.7 / 41.7 / 51.7 over the
-  table), barrel axis 29 / 34 / 44 mm out from the base block, on the dry side.
+  table), barrel axis 29 / 34 / 44 mm out from the base block.
 - **`feed_drive`**: the drive piece, 21.8 mm across and 19.5 mm tall, screwed to the servo horn.
   From the top: the 20 × 2.5 mm recess the horn plate sits in (0.8 mm rim round it), a plate with
   the 4 horn holes (3.5 mm, on a 13.8 mm circle) and a hole for the spline screw head, a chamber for
   the 4 screw heads, then a hex socket 10.5 mm deep the disc's boss slides into: 7 mm in as drawn,
   3.5 mm to spare over it. The horn's 9 mm hub stands 1.9 mm proud on the servo side, so it stays
   out of the drive piece.
-- **`feed_wall`**: the partition, a plain 72 × 111 × 2 mm plate. It stands 1 mm deep in the cover's
-  groove and its ends slide down into slots in the hopper. Its dry face is 12.7 mm from the disc
-  axis, 2 mm in front of the servo case. A notch at the top, 4 mm wide and 15 mm deep, is the cable
-  pass-through: narrower than any BB, so the wall stays BB-tight even with the pile over it. Nothing
-  on the rig has to cross the wall; it is there for the final unit's wiring.
-- **`feed_hopper`**: the other three sides of the pile, 110 mm tall over the cover, standing in the
-  cover's groove on the −Y side. Each side wall ends in a post with the vertical slot the wall slides
-  into. The cover screws on −Y are inside it, under the pile, as before.
-- **`feed_servo_bracket`**: on the dry side. A shelf the servo's ears are screwed to (4 pilot holes
-  on the measured 48.3 × 9.4 mm pitch; the screws cut their own thread, driven from above), open
-  toward the wall round the case, on a back wall behind the servo. Two pegs under the back wall go
-  through the cover into slots in the base: they stop the bracket turning with the servo's torque and
-  moving sideways, and let it slide 2 mm either way along the servo (see below). The ear screws sit
-  in the open, easy to reach from above.
+- **`feed_chimney`**: a closed tube, 2.4 mm walls, 121 mm tall, standing 1 mm deep in a groove in
+  the cover. Low down it hugs the servo case (with the bracket's slide and the ear holes' play) and
+  the drive piece: outside, it runs from 15.5 mm behind the axis to 42.3 mm in front, 26.5 mm wide
+  (27.4 round the drive piece), corners rounded, so the corners of its narrow end are only 19.6 mm
+  from the axis. From 33.7 to 41.7 mm over the table it flares out at 45° (a bit steeper) to 65 ×
+  31 mm, round the ears and the bracket's shelf. Its top is 10 mm over the pile; a 4 mm notch there,
+  on the +X face, lets the cables out over the hopper.
+- **`feed_hopper`**: a closed ring round the cover, 82.7 × 76.4 mm, 110 mm tall over the cover,
+  standing in the cover's groove. The pile fills it round the chimney (about 2,100 BBs at 10 cm).
+  The inside of its +X wall is 0.2 mm from the chimney's +X face. The cover screws are inside it,
+  under the pile.
+- **`feed_servo_bracket`**: inside the chimney. A shelf ring round the case that the ears are
+  screwed to (4 pilot holes on the measured 48.3 × 9.4 mm pitch; the screws cut their own thread),
+  with side rails 2 mm wide that reach 5 mm under it. One leg under the +X ears goes down to the
+  cover, and its two pegs go through the cover into slots in the base. The slots run along the
+  servo: the bracket slides 2 mm either way (see below), and the pegs and the chimney's walls
+  (0.2 mm away) stop it turning with the servo's torque.
 - **`feed_coupon`**: three slot pockets (`FEED_SLOT_H` −0.2, 0, +0.2), four pin bores
   (`FEED_PIN_D` +0.1 to +0.4) and four hex sockets (`FEED_HEX_AF` +0.1 to +0.4), labelled.
+
+**The exit.** The channel runs under the cover, beneath the chimney and the pile, and comes out at
+the block's +Y edge. The elbow and the barrel stand there, outside the hopper's +Y wall, so they
+are out of the pile with no extra duct. In the final box that wall is not there: the elbow and the
+barrel will need their own small closed duct beside the chimney (or the chimney grown to take
+them). That is not drawn yet.
 
 ### Where the servo ends up
 
@@ -305,11 +316,10 @@ The servo is a DIYmall TD-8135MG (35 kg, 360° continuous, standard size). Measu
 2.5 mm thick, a 9 mm hub standing 1.9 mm proud (4.4 overall), 4 threaded M3 holes on a 13.8 mm
 circle.
 
-It lies with its long side **along the wall**, body toward +X, not pointing away from it. Pointing
-away, the near ears (7.25 mm past the end of the case, so 17.5 mm from the spline) would cross a
-wall 12-13 mm from the axis, and moving the wall out past them would leave room for a window of
-only about two pockets. Along the wall, the case's side is 10 mm from the axis and the ears are no
-wider than the case.
+Its short end, 10.2 mm from the spline, points to −X, where the window wraps round. Its ears reach
+17.5 mm past the spline on that side, too far out for the window to pass under them, so the
+chimney is narrow only below the ears and flares out above. The pile still reaches the window from
+both sides of the narrow end.
 
 As drawn: drive piece from 18.4 to 37.9 mm over the table, horn on top of it, case output face at
 39.9, ears (and the shelf top) at 50.9. Three numbers were not measured, and the rig is drawn so they
@@ -322,24 +332,20 @@ do not matter:
   and still drive with 4 mm of hex engaged.
 - **Along the servo** (`SERVO_SPLINE_OFFSET`). An error here would put the spline beside the disc
   axis. The bracket's pegs slide 2 mm either way in their slots, so the whole bracket follows the
-  servo: fitted with the ear screws loose, the hex pulls the spline onto the axis, then you tighten.
-  On top of that the ear holes give 0.65 mm of play either way.
+  servo: the hex pulls the spline onto the axis. On top of that the ear holes give 0.65 mm of play
+  either way. The chimney is drawn round the case, the ears and the bracket anywhere in that travel.
 - **Across** the servo, the spline is in the middle of the body, and the ear holes' 0.65 mm of play
-  takes what is left. The pegs fix the bracket that way.
+  takes what is left. The pegs and the chimney fix the bracket that way.
 
 Why not slots under the ears, as people usually do: the ear holes sit only 4.15 mm past the end of
 the case, which goes through the shelf, so a slot 2 mm longer each way runs into the case cut-out.
 Sliding the whole bracket avoids that, and the ear screws can cut their own thread in fixed pilot
 holes.
 
-**What the wall costs.** Everything open in the cover has to be on the pile side, at least 14.9 mm
-from the axis (the wall's dry face at 12.7, its 2 mm, and the groove's 0.2). Only about 95° of the
-22 mm BB circle lies past that line, where the window had 150°. To keep the whole
-cut-off edge and its lift chamfer clear of the wall on all three covers (that edge is test 2), it
-moved 20° further from the strip point (`FEED_CARRY_ARC` 45 → 65), and the window is now 70°
-(`FEED_WINDOW_ARC`, about 2.7 pockets, was 150°). The start edge loses the inner corner of its
-chamfer to the wall's line; it only matters on a reverse. If test 1 shows the notches no longer fill
-well, the fix is a bigger disc (the window grows with the BB circle), not moving the servo.
+**The corners of the chimney's narrow end.** They are 19.6 mm from the axis, outside, groove
+included. A BB seated in a notch reaches in to 19 mm, so where the window passes them (around 140°
+from +X either way) the opening over a notch is about 5.8 mm wide radially instead of 6.7. The notch
+centre line is always open. If test 1 shows empty notches, watch whether they come from there.
 
 ### Print list
 
@@ -352,12 +358,12 @@ In this order:
 | `feed_coupon`                               | 1   | flat                                      | none                     |
 | `feed_disc`                                 | 1   | as it lies, hub up                        | none (the pin bore ends in a 45° cone) |
 | `feed_base`                                 | 1   | as it stands                              | nut trap ceilings        |
-| `feed_cover_radial`, `_skew30`, `_skew45`   | 1 each | upside down: top on the bed, tongue up | groove and label         |
+| `feed_cover_radial`, `_skew30`, `_skew45`   | 1 each | upside down: top on the bed, tongue up | grooves and label        |
 | `feed_elbow_r25_a/_b`, `r30`, `r40`         | 1 each | split face up                          | nut trap ceilings (`b`)  |
 | `feed_drive`                                | 1   | socket down                               | screw-head chamber ceiling (20 mm across) |
 | `feed_hopper`                               | 1   | as it stands                              | none                     |
-| `feed_wall`                                 | 1   | lying flat                                | none                     |
-| `feed_servo_bracket`                        | 1   | upside down: shelf on the bed             | none                     |
+| `feed_chimney`                              | 1   | as it stands                              | none (the flare is just steeper than 45°) |
+| `feed_servo_bracket`                        | 1   | upside down: shelf on the bed             | ends of the 2.5 mm pilot holes in the leg |
 
 Everything else that faces down is at 45° or steeper, and `check.py` fails if it is not.
 
@@ -382,25 +388,25 @@ the IR collar notes).
 5. Elbow: press the nuts into half `b`, put the halves together with the 4 screws loose, push the
    barrel into the socket down to the shoulder, stand the elbow between the cheeks with its mouth
    against the channel, put the M3 × 20 through the cheeks, then tighten everything.
-6. Hopper into the cover's groove, on the window side. Slide the wall down into the hopper's two
-   slots until it sits in the groove.
+6. Hopper into the cover's outer groove. Chimney into its groove, narrow end down, its +X face
+   against the hopper's +X wall.
 7. Drive piece: screw it to the horn first (4 × M3 × 6, put in through the hex socket and driven
    with a ball-end key at a slight angle). Push the horn onto the spline and drive the spline screw
    through the piece's centre hole.
-8. Servo upside down on the bracket's shelf, case through the cut-out, its spline end at the end
-   where the back wall runs right to the end of the shelf (the other end of the back wall stops
-   short). 4 ear screws snug but not tight: the servo must still slide a little in its ear holes.
-9. Lower the bracket and the servo onto the cover, pegs into their slots, turning the disc by hand
-   until the drive piece drops over the boss. Push the bracket along its slots until the disc turns
-   freely, then turn the disc by hand through a full turn and let the servo find where nothing
-   rubs, and tighten the 4 ear screws there. Check that the drive piece can still lift a little on
-   the boss (it must not sit on top of it).
-10. Run the servo lead on the dry side. Wires that ever have to reach the pile side go through the
-    notch at the top of the wall, one bundle at a time.
+8. Servo upside down on the bracket's shelf, case through the ring, its spline end at the end
+   without the leg. 4 ear screws snug but not tight: the servo must still slide a little in its ear
+   holes.
+9. Lower the bracket and the servo into the chimney from the top, leg first, turning the disc by
+   hand until the drive piece drops over the boss and the pegs drop into their slots. The bracket
+   finds its place along the slots by itself. Turn the disc by hand through a full turn: nothing
+   rubs. Then tighten the 4 ear screws from the top, with a long screwdriver past the ends of the
+   case. Check that the drive piece can still lift a little on the boss (it must not sit on top of
+   it).
+10. Run the servo lead up the chimney and out of the notch at its top.
 
-To swap a cover: lift the bracket and the servo off (the drive piece slides off the boss), empty the
-hopper, lift the wall and the hopper, undo the 4 cover screws, lift the cover over the boss. The
-disc and the elbow stay.
+To swap a cover: lift the bracket and the servo out of the chimney (the drive piece slides off the
+boss), empty the hopper, lift the chimney and the hopper, undo the 4 cover screws, lift the cover
+over the boss. The disc and the elbow stay.
 
 **Direction.** The rig is drawn for the disc turning counter-clockwise seen from above. If the
 servo's forward turns it the other way, say so: the rig will be mirrored in the code (do not mirror
@@ -413,18 +419,16 @@ speed the firmware uses). Count BBs by weight (a 0.20 g BB is 0.20 g, so 100 BBs
 the IR collar if it is on the barrel. Use a clean barrel and the R30 elbow unless the test says
 otherwise. Write down the BB brand and weight for every run.
 
-1. **Filling, full pile.** Hopper filled to about 10 cm (about 700 BBs: the pile side is a quarter
-   of the old square hopper). Run 100 pockets (about 7 turns). Count the BBs that came out, and
-   watch the notches as they leave the window: how many went under the cover empty? The window is
-   now 70°, so this is the test that says whether that is enough.
+1. **Filling, full pile.** Hopper filled to about 10 cm (about 2,100 BBs). Run 100 pockets (about 7
+   turns). Count the BBs that came out, and watch the notches as they leave the window: how many
+   went under the cover empty?
 2. **Filling, near-empty pile.** Same with only one layer of BBs left on the cover round the window.
    Same counts.
 3. **Cut-off edges.** For each cover (`CUT 0`, `CUT 30`, `CUT 45`): run 200 pockets, count jams
    (the servo stops or stalls) and crushed or chipped BBs. Then provoke the bad case 10 times: stop
    the disc with a notch half under the cut-off edge, push a BB so it sits half in that notch and
    half on the land, and run forward. Does it get lifted back into the window, pushed in onto the
-   land, or wedged? Also watch the corner where the cut-off edge meets the wall's line on the land.
-   Keep the cover that jams least for the next tests.
+   land, or wedged? Keep the cover that jams least for the next tests.
 4. **Elbow radii.** For R25, R30 and R40: fill the barrel (it stays full once primed), run 200 BBs,
    count jams. Note the lowest radius that never jams.
 5. **Reverse.** With the best cover and elbow: provoke a jam (a BB half in a notch at the cut-off
@@ -435,11 +439,11 @@ otherwise. Write down the BB brand and weight for every run.
    and elbow, no hand on the rig. Count jams and stops. Repeat once with a near-empty pile.
 
 **Report back**, for each test: cover and elbow used, BB brand and weight, pockets or BBs run,
-empty pockets, jams (and where: cut-off edge, tongue, channel, elbow, barrel), crushed BBs, and for
-the reverse whether 1 or 2 pockets cleared it and how many BBs fell back. Also: does the disc rub
-anywhere, does the drive piece slip on the horn or ride up off the boss, does any BB ever reach the
-dry side (round the wall, the hopper or the drive), how far the bracket ended up along its slots,
-and the measured values for every `TODO: measure` below. Photos of any jam help.
+empty pockets, jams (and where: cut-off edge, the chimney's corners, tongue, channel, elbow,
+barrel), crushed BBs, and for the reverse whether 1 or 2 pockets cleared it and how many BBs fell
+back. Also: does the disc rub anywhere, does the drive piece slip on the horn or ride up off the
+boss, does any BB ever get into the chimney, how far the bracket ended up along its slots, and the
+measured values for every `TODO: measure` below. Photos of any jam help.
 
 ### What `check.py` checks on the rig
 
@@ -447,38 +451,39 @@ and the measured values for every `TODO: measure` below. Photos of any jam help.
   largest BB plus `FIT_TOLERANCE` but under two small ones, nowhere for two BBs one behind the other
   in a notch, slot height over the largest BB even printed `FIT_TOLERANCE` low but under two smallest
   BBs even printed high, a BB lying on the disc too tall for the slot, the tongue catching at least
-  1 mm of the smallest BB, the channel and elbow bore over the largest BB even printed small, the
-  full-height stretch before the window at least 2 pockets long, and the wall close enough to the
-  axis that the window can open a notch to its end. It prints the inlet height (10.4 mm).
+  1 mm of the smallest BB, the channel and elbow bore over the largest BB even printed small, and the
+  full-height stretch before the window at least 2 pockets long. It prints the inlet height (10.4 mm).
 - **The disc:** counts the notches round the BB circle and checks they are evenly spaced, probes
   each one's width, its round end and that it goes straight through, the pin bore, the solid over
   it, the hub and the hex boss (across flats and height).
-- **Each cover:** the slot height between the base floor and the cover, the window open over the
-  whole notch band at its middle, both edges crossing the BB circle at their angle, the lift chamfer
-  along the whole cut-off edge over the notches (and at the outer end of the start edge), the tilt of
-  the edges (and that the outer end is set back toward the window), the tongue's edge on the
-  channel's inner wall and its height over the disc, where the tongue ends, the hopper and wall
-  groove, the peg slots, and at least `FIT_TOLERANCE` (it is `FEED_RUN_GAP`) to the turning disc.
-- **The assembly:** no two parts overlap; the disc keeps `FIT_TOLERANCE` from the cover, the wall,
-  the hopper and the bracket; the disc clears the shroud all round.
+- **Each cover:** the slot height between the base floor and the cover; the window open over the
+  whole notch band all along, except where the chimney stands, and the BB circle never under the
+  chimney; both edges crossing the BB circle at their angle; the lift chamfer along the whole
+  cut-off edge over the notches (and at the outer end of the start edge); the tilt of the edges (and
+  that the outer end is set back toward the window); the tongue's edge on the channel's inner wall
+  and its height over the disc, where the tongue ends; the hopper and chimney grooves, the peg slots,
+  and at least `FIT_TOLERANCE` (it is `FEED_RUN_GAP`) to the turning disc.
+- **The assembly:** no two parts overlap; the disc keeps `FIT_TOLERANCE` from the cover, the
+  chimney, the hopper and the bracket; the disc clears the shroud all round.
 - **The drive and the servo's travel:** the boss goes `FEED_DRIVE_ENGAGE` into the socket; with the
   servo `FEED_SERVO_TRAVEL_Z` low it still clears the socket's top and the drive piece clears the
   cover, and high it still goes `FEED_DRIVE_MIN_ENGAGE` in; the drive piece keeps `FEED_RUN_GAP` from
-  the cover, the wall, the hopper and the bracket at every height (and off the axis by the ear play,
-  to be safe). The bracket slid `FEED_SERVO_TRAVEL_X` either way still has its pegs in their slots
-  and keeps `FIT_TOLERANCE` from the wall, the hopper, the elbow and the cover screw heads. The servo
-  (case below and above the ears, and the ears) keeps `FIT_TOLERANCE` from the wall, the hopper, the
-  cover and the bracket in every corner of its travel: along the servo with the bracket, the ear
-  holes' play both ways, and the case `FEED_SERVO_TRAVEL_Z` up or down. The ear pilot holes sit on
-  the measured pitch; the horn's hub fits in `SERVO_HORN_GAP`.
-- **The seal:** a BB (`BB_MIN_D`) cannot get from the pile to the dry side. The window, on every
-  cover, ends on the pile side of the wall's groove and inside the hopper; the hub hole is entirely
-  on the dry side and its gap round the hub is under a BB; the cable notch is under a BB. A BB
-  centred anywhere in the wall's plane, from the cover up to the top and across the whole hopper
-  (so at the wall's bottom, in its slots, in the notch), always touches solid, and so does one at the
-  foot of every hopper wall. On the dry side the cover is solid except the hub hole, the screw holes
-  and the peg slots, and those slots end in solid base. (Run with a 7 mm hole in the wall, or the
-  wall lifted 8 mm, it fails.)
+  the cover, the chimney and the bracket at every height. The bracket slid `FEED_SERVO_TRAVEL_X`
+  either way still has its pegs in their slots and keeps `FIT_TOLERANCE` from the chimney and the
+  hopper. The servo (case below and above the ears, and the ears) keeps `FIT_TOLERANCE` from the
+  chimney, the cover and the bracket in every corner of its travel: along the servo with the
+  bracket, the ear holes' play both ways, and the case `FEED_SERVO_TRAVEL_Z` up or down. The ear
+  pilot holes sit on the measured pitch; the horn's hub fits in `SERVO_HORN_GAP`.
+- **The seal:** a BB (`BB_MIN_D`) cannot get from the pile into the chimney, nor to the elbow. The
+  window, on every cover, stays out of the chimney's footprint and inside the hopper; the hub hole
+  and the peg slots are inside the chimney; the elbow is outside the hopper; the chimney's top is
+  over the pile. The chimney and the hopper both stand in grooves, and the middle of their walls
+  (the chimney's narrow part, flare and wide part, and all four hopper walls) is solid on a 3 mm grid
+  from inside the groove to the pile top, so there is no hole a BB could pass. A BB centred anywhere
+  in the joint between the chimney's +X face and the hopper's +X wall touches one or the other.
+  Inside the chimney the cover is solid except the hub hole (0.4 mm round the hub) and the peg slots,
+  which end in solid base. Run with a 7 mm hole in the chimney (low on its side, or high on its
+  end) or the hopper lifted 8 mm, it fails.
 - **Each elbow:** radius at least `FEED_ELBOW_MIN_R`; the bore hollow just inside and solid just
   outside all along the run, the bend and the rise; at the mouth, every point a BB can occupy in
   the channel is open just inside the elbow even with the elbow `FIT_TOLERANCE` off in any direction
@@ -496,9 +501,9 @@ All `TODO: measure` in `params.py`, sections "Servo" and "Feed mechanism":
   Left as `TODO: measure`, and not needed: `SERVO_SPLINE_OFFSET` (10.2), `SERVO_FACE_TO_EARS` (11)
   and `SERVO_HORN_GAP` (2). The rig takes ±2 mm of the first and ±3 mm of the other two; measure
   them only if `check.py` or the rig says otherwise.
-- Only used to check clearances, worth a quick measure: `SERVO_EAR_W` (20, the ears' width across
-  the body: if they are wider than the case, the gap to the hopper posts, 0.25 mm today, goes),
-  `SERVO_EAR_T` (2.5) and `SERVO_BODY_H` (38).
+- Only used to check clearances, worth a quick measure before printing the chimney: `SERVO_EAR_W`
+  (20, the ears' width across the body; the chimney's wide part leaves them 2.4 mm each side, so
+  ears up to about 24 mm wide still fit), `SERVO_EAR_T` (2.5) and `SERVO_BODY_H` (38).
 - `FEED_HORN_SCREW_HEAD_D` (7, the head of the screw on the spline).
 - Calibrate with `feed_coupon`: `FEED_SLOT_H`, `FEED_PIN_CLEARANCE`, `FEED_HEX_TOLERANCE`; and
   `FIT_TOLERANCE` with `fit_coupon`, which sets the barrel socket.

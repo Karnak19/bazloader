@@ -1178,15 +1178,47 @@ PARTS = {
 }
 
 
+def meshable(part: Part) -> Part:
+    """The same solid without the face wires made only of INTERNAL edges.
+
+    A boolean can leave such a wire on a face: a seam that bounds nothing, e.g. a half circle
+    0.01 mm inside the end of the toroidal bore of feed_elbow_r30_b. The solid is still valid,
+    but OCC's mesher then triangulates that face wrong: the mesh stays closed, yet a third of
+    the bore groove is missing. Dropping the wire changes nothing else, so mesh this instead.
+    """
+    from OCP.BRep import BRep_Builder
+    from OCP.BRepTools import BRepTools_ReShape
+    from OCP.TopAbs import TopAbs_EDGE, TopAbs_INTERNAL, TopAbs_WIRE
+    from OCP.TopExp import TopExp_Explorer
+    from OCP.TopoDS import TopoDS
+
+    def children(shape, kind):  # Every sub-shape, INTERNAL ones included (build123d skips them).
+        found = TopExp_Explorer(shape, kind)
+        while found.More():
+            yield found.Current()
+            found.Next()
+
+    reshape = BRepTools_ReShape()
+    for face in part.faces():
+        wires = list(children(face.wrapped, TopAbs_WIRE))
+        keep = [w for w in wires if any(e.Orientation() != TopAbs_INTERNAL for e in children(w, TopAbs_EDGE))]
+        if len(keep) < len(wires):
+            new = TopoDS.Face(face.wrapped.EmptyCopied())
+            for w in keep:
+                BRep_Builder().Add(new, w)
+            reshape.Replace(face.wrapped, new)
+    return Part(reshape.Apply(part.wrapped))
+
+
 def main() -> None:
     OUT_DIR.mkdir(exist_ok=True)
     for name, build in PARTS.items():
         part = build()
-        for path, export in (
-            (OUT_DIR / f"{name}.stl", export_stl),
-            (OUT_DIR / f"{name}.step", export_step),
+        for path, export, shape in (
+            (OUT_DIR / f"{name}.stl", export_stl, meshable(part)),
+            (OUT_DIR / f"{name}.step", export_step, part),
         ):
-            if not export(part, str(path)) or path.stat().st_size == 0:
+            if not export(shape, str(path)) or path.stat().st_size == 0:
                 raise SystemExit(f"export failed: {path}")
             print(f"wrote out/{path.name}")
 

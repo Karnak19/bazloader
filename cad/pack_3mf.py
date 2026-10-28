@@ -48,7 +48,7 @@ NS_ID = uuid.UUID("6b1f4a52-3c0e-4b8e-9d55-0f3ed0a1b54e")  # Fixed, so the UUIDs
 
 def mesh(name: str) -> tuple[list[tuple[float, float, float]], list[tuple[int, int, int]]]:
     """Tessellate a part and weld the vertices that faces share, so the mesh is closed."""
-    verts, tris = build.PARTS[name]().tessellate(TOLERANCE)
+    verts, tris = build.meshable(build.PARTS[name]()).tessellate(TOLERANCE)
     index: dict[tuple[float, float, float], int] = {}
     welded: list[tuple[float, float, float]] = []
     remap = []
@@ -245,9 +245,35 @@ def pack() -> None:
     print(f"wrote out/{OUT.name}")
 
 
-def verify() -> None:
-    """Read the 3MF back: every object on its own plate, MARGIN clear of the edges and of each other."""
-    z = zipfile.ZipFile(OUT)
+def mesh_faults(name: str, verts, faces) -> list[str]:
+    """How a mesh read back from the file differs from the build123d solid it was made from."""
+    edges: dict[tuple[int, int], int] = {}
+    for a, b, c in faces:
+        for e in ((a, b), (b, c), (c, a)):
+            key = (min(e), max(e))
+            edges[key] = edges.get(key, 0) + 1
+    volume = 0.0
+    for a, b, c in faces:
+        (ax, ay, az), (bx, by, bz), (cx, cy, cz) = verts[a], verts[b], verts[c]
+        volume += (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6
+    solid = build.PARTS[name]()
+    size = solid.bounding_box().size
+    x0, y0, z0, x1, y1, z1 = bbox(verts)
+    faults = []
+    if any(n != 2 for n in edges.values()):
+        faults.append(f"not closed: {sum(n != 2 for n in edges.values())} edges not used exactly twice")
+    if abs(volume - solid.volume) > 0.005 * solid.volume:
+        faults.append(f"volume {volume:.1f}, the solid has {solid.volume:.1f}")
+    if max(abs(x1 - x0 - size.X), abs(y1 - y0 - size.Y), abs(z1 - z0 - size.Z)) > 0.05:
+        faults.append(f"size {x1 - x0:.2f} x {y1 - y0:.2f} x {z1 - z0:.2f}, the solid is {size.X:.2f} x {size.Y:.2f} x {size.Z:.2f}")
+    print(f"  {name:22s} volume {solid.volume:9.1f} solid, {volume:9.1f} mesh, {len(faces):6d} triangles")
+    return faults
+
+
+def verify(path: Path = OUT) -> None:
+    """Read the 3MF back: every mesh matches its solid (closed, same volume within 0.5 %, same size
+    within 0.05 mm), and every object sits on its own plate, MARGIN clear of the edges and of each other."""
+    z = zipfile.ZipFile(path)
     model = z.read("3D/3dmodel.model").decode()
     config = z.read("Metadata/model_settings.config").decode()
     names = dict(re.findall(r'<object id="(\d+)">\s*<metadata key="name" value="([^"]+)"', config))
@@ -256,25 +282,36 @@ def verify() -> None:
     plates = re.findall(r"<plate>(.*?)</plate>", config, re.S)
     if len(plates) != len(PLATES):
         raise SystemExit(f"{len(plates)} plates in the file, expected {len(PLATES)}")
+    faults = []
     for i, plate in enumerate(plates):
         ox, oy = plate_origin(i, len(plates))
         title = re.search(r'"plater_name" value="([^"]*)"', plate).group(1)
+        print(f"plate {i + 1} '{title}':")
         boxes = []
         for oid in re.findall(r'"object_id" value="(\d+)"', plate):
-            verts = [tuple(map(float, v)) for v in re.findall(r'<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"', z.read(paths[oid]).decode())]
+            text = z.read(paths[oid]).decode()
+            verts = [tuple(map(float, v)) for v in re.findall(r'<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"', text)]
+            faces = [tuple(map(int, t)) for t in re.findall(r'<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"', text)]
+            faults += [f"{names[oid]}: {f}" for f in mesh_faults(names[oid], verts, faces)]
             dx, dy, dz = moves[oid]
             x0, y0, z0, x1, y1, z1 = bbox(verts)
             box = (x0 + dx - ox, y0 + dy - oy, x1 + dx - ox, y1 + dy - oy)
             if min(box) < MARGIN - 1e-6 or max(box) > BED - MARGIN + 1e-6 or abs(z0 + dz) > 1e-6 or z1 + dz > BED:
-                raise SystemExit(f"{names[oid]} is not inside plate {i + 1}: {box}")
+                faults.append(f"{names[oid]} is not inside plate {i + 1}: {box}")
             for other, b in boxes:
                 if box[0] < b[2] + MARGIN and b[0] < box[2] + MARGIN and box[1] < b[3] + MARGIN and b[1] < box[3] + MARGIN:
-                    raise SystemExit(f"{names[oid]} is closer than {MARGIN:g} mm to {other} on plate {i + 1}")
+                    faults.append(f"{names[oid]} is closer than {MARGIN:g} mm to {other} on plate {i + 1}")
             boxes.append((names[oid], box))
-        print(f"plate {i + 1} '{title}': {', '.join(n for n, _ in boxes)}")
-    print(f"ok: every object inside its plate, {MARGIN:g} mm clear of the edges and of each other")
+    if faults:
+        raise SystemExit("FAILED:\n" + "\n".join(faults))
+    print(f"ok: every mesh matches its solid, every object inside its plate, {MARGIN:g} mm clear of the edges and of each other")
 
 
 if __name__ == "__main__":
-    pack()
-    verify()
+    import sys
+
+    if sys.argv[1:]:  # uv run python pack_3mf.py some.3mf: only check that file.
+        verify(Path(sys.argv[1]))
+    else:
+        pack()
+        verify()

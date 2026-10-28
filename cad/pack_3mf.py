@@ -34,13 +34,11 @@ TOLERANCE = 1e-3  # Same mesh tolerance as build.py's STL export.
 SETTINGS = {"layer_height": "0.2", "wall_loops": "4"}
 
 PLATES = [
-    (
-        "PETG lisse",
-        ["feed_disc", "feed_cover_radial", "feed_cover_skew30", "feed_cover_skew45"]
-        + [f"feed_elbow_r{r}_{h}" for r in (25, 30, 40) for h in ("a", "b")],
-    ),
+    ("Essentiel PETG", ["feed_disc", "feed_cover_skew30", "feed_elbow_r30_a", "feed_elbow_r30_b"]),
     ("Base", ["feed_base", "feed_drive", "feed_servo_bracket"]),
     ("Grandes pièces", ["feed_hopper", "feed_chimney"]),
+    ("Variantes couvercle (si besoin)", ["feed_cover_radial", "feed_cover_skew45"]),
+    ("Variantes coude (si besoin)", [f"feed_elbow_r{r}_{h}" for r in (25, 40) for h in ("a", "b")]),
 ]
 
 OUT = build.OUT_DIR / "feed_rig.3mf"

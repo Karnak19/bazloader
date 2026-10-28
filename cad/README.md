@@ -368,8 +368,10 @@ In this order:
 Everything else that faces down is at 45° or steeper, and `check.py` fails if it is not.
 
 On a Bambu printer, after `build.py`: `uv run python pack_3mf.py` writes `out/feed_rig.3mf` with one
-plate per group ("PETG lisse": disc, covers and elbows; "Base": base, drive piece and bracket;
-"Grandes pièces": hopper and chimney), 0.2 mm layers and 4 walls set on every part. The coupon is
+plate per group, essentials first: "Essentiel PETG" (disc, `skew30` cover, R30 elbow), "Base" (base,
+drive piece, bracket), "Grandes pièces" (hopper, chimney), then, only if the tests call for them,
+"Variantes couvercle" (`radial` and `skew45` covers) and "Variantes coude" (R25 and R40 elbows).
+0.2 mm layers and 4 walls are set on every part. The coupon is
 not in it: print it on its own first. Pick your filament per plate before printing (the project
 keeps the filament list from `bambu_project_settings.json`).
 

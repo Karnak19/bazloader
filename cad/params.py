@@ -166,20 +166,24 @@ BB_MIN_D = 5.95  # Smallest BB we expect (cheap 0.20 g). Checked so it can never
 
 # --- Servo (the existing BULLOADER 35 kg continuous servo, #54) ----------------
 # DIYmall TD-8135MG, 360 deg continuous, standard size. Measured with calipers except where
-# marked. Frame: output spline on the origin, body along +X, so the spline sits
+# marked. It hangs upside down right over the disc, spline on the disc axis, its long side along
+# the partition wall. Frame: output spline on the origin, body along +X, so the spline sits
 # SERVO_SPLINE_OFFSET from the -X end.
 SERVO_BODY_L = 40.0  # Body length, without the ears.
 SERVO_BODY_W = 20.0  # Body width.
+SERVO_BODY_H = 38.0  # TODO: measure. Output face of the case to its far end. Only used by the clearance checks.
 SERVO_SPLINE_OFFSET = 10.2  # TODO: measure. Output spline axis to the near end of the body. The rig takes
-# FEED_SERVO_TRAVEL_X of error here (the ear holes' play and the shaft's hex joints), see the feed rig notes.
+# FEED_SERVO_TRAVEL_X of error here: the whole bracket slides along the servo (see the feed rig notes).
 SERVO_EAR_PITCH_L = 48.3  # Ear holes, centre to centre, along the body (44 inner edge to inner edge + 4.3).
 SERVO_EAR_PITCH_W = 9.4  # Ear holes, centre to centre, across the body (5.1 inner edge to inner edge + 4.3).
 SERVO_EAR_HOLE_D = 4.3  # Ear holes. Wider than the M3 screws: the servo slides that play before they are tight.
 SERVO_EAR_SPAN = 54.5  # Overall length over the ears (only sizes the bracket).
+SERVO_EAR_W = 20.0  # TODO: measure. Width of the ears across the body, taken as the body's. Clearance checks only.
+SERVO_EAR_T = 2.5  # TODO: measure. Thickness of the ears. Clearance checks only.
 SERVO_FACE_TO_EARS = 11.0  # TODO: measure. From the output face of the case to the face of the ears on that
-# side. Only moves the drive hub up or down: the shaft's float takes FEED_SERVO_TRAVEL_Z of error.
+# side. Only moves the drive piece up or down: the float of its hex socket takes FEED_SERVO_TRAVEL_Z of error.
 SERVO_HORN_GAP = 2.0  # TODO: measure. From the output face of the case to the back of the horn, horn pushed
-# on. At least FEED_HORN_HUB_H, the hub being on the servo side. Same as above: the shaft's float takes it.
+# on. At least FEED_HORN_HUB_H, the hub being on the servo side. Same as above: the socket's float takes it.
 FEED_HORN_D = 20.0  # Round metal horn (disc) diameter.
 FEED_HORN_T = 2.5  # Horn plate thickness, without the hub.
 FEED_HORN_HUB_H = 1.9  # The horn's 9 mm hub, on the servo side over the spline, stands this proud of the plate
@@ -204,25 +208,25 @@ FEED_SHROUD_GAP = 0.4  # Shroud radius = BB circle + BB_D/2 + this: a BB in a no
 FEED_PIN_D = 5.0  # Centre pin on the base floor, the disc's bearing (the servo spline only drives).
 FEED_PIN_H = 4.0  # Pin height above the floor.
 FEED_PIN_CLEARANCE = 0.3  # TODO: calibrate with feed_coupon. Disc centre bore = FEED_PIN_D + this.
-FEED_HUB_R = 9.0  # Raised hub at the disc centre: holds the pin bore under and the hex socket for the shaft over.
-FEED_SHAFT_AF = 12.0  # Hex drive shaft, across flats. Printed lying: strong in torsion, straight.
-FEED_HEX_TOLERANCE = 0.3  # TODO: calibrate with feed_coupon. Hex sockets = FEED_SHAFT_AF + this.
-FEED_HEX_DEPTH = 6.0  # Depth of the hex socket in the disc hub.
-FEED_SHAFT_ENGAGE = 10.5  # Depth of the hex socket in the drive hub.
-FEED_SHAFT_FLOAT = 3.5  # Gap left over the shaft top in the drive hub: the servo can sit that much lower.
-FEED_SHAFT_MIN_ENGAGE = 4.0  # Least the shaft goes into the drive hub, with the servo FEED_SERVO_TRAVEL_Z high.
+FEED_HUB_R = 9.0  # Raised hub at the disc centre: the pin bore under, and a hex boss over it for the drive.
+FEED_HEX_AF = 12.0  # Hex boss on top of the disc hub, across flats.
+FEED_HEX_TOLERANCE = 0.3  # TODO: calibrate with feed_coupon. Hex socket in the drive piece = FEED_HEX_AF + this.
+FEED_DRIVE_ENGAGE = 7.0  # How far the disc's hex boss goes into the drive piece's socket, as drawn.
+FEED_DRIVE_FLOAT = 3.5  # Room left over the boss in the socket: the servo can sit that much lower.
+FEED_DRIVE_MIN_ENGAGE = 4.0  # Least the boss goes in, with the servo FEED_SERVO_TRAVEL_Z high.
+FEED_DRIVE_RIM = 0.8  # Rim round the horn recess (2 perimeters). Sets the drive piece's radius, so the wall offset.
 FEED_SERVO_TRAVEL_Z = 3.0  # Servo height error the rig takes either way (SERVO_FACE_TO_EARS, SERVO_HORN_GAP):
-# the shaft slides in the drive hub, and the disc keeps lying on the floor whatever the servo height.
+# the boss slides in the drive piece, and the disc keeps lying on the floor whatever the servo height.
 FEED_SERVO_TRAVEL_X = 2.0  # Spline position error the rig takes either way, along the servo (SERVO_SPLINE_OFFSET):
-# the ear holes' play, then the shaft leaning in its two loose hex sockets. The house clears the hub that far.
-FEED_HUB_PLATE_T = 3.0  # Plate of the drive hub the horn screws go through.
+# the bracket's pegs slide this far in their slots in the base, so the hex pulls the spline onto the axis.
+FEED_HUB_PLATE_T = 3.0  # Plate of the drive piece the horn screws go through.
 
 # Cover and window. Angles in degrees, counter-clockwise from +X (the exit channel's side).
 FEED_COVER_T = 4.0  # Cover thickness: its top is the inlet, FEED_SLOT_H + this above the floor (10.4).
-FEED_WINDOW_ARC = 150.0  # Window over the notches, measured on the BB circle.
-FEED_CARRY_ARC = 45.0  # From the cut-off edge to the strip point: the BB rides under the cover this far.
-FEED_WINDOW_R_IN = 12.0  # Window inner radius: it also opens the land, so a BB pushed in along a skewed edge has
-# somewhere to go. Leaves a solid ring round the hub hole for the hopper sleeve to stand over.
+FEED_WINDOW_ARC = 70.0  # Window over the notches, measured on the BB circle. All of it must stay on the pile
+# side of the wall, FEED_WALL_OFFSET + FEED_WALL_T from the axis: that is what limits it (it was 150).
+FEED_CARRY_ARC = 65.0  # From the cut-off edge to the strip point: the BB rides under the cover this far. Chosen
+# so the whole cut-off edge and its lift chamfer, over the notches, stand clear of the wall on every cover.
 FEED_CUTOFF_SKEWS = (0.0, 30.0, 45.0)  # One cover per value: the cut-off edge, tilted from radial, inner end ahead.
 FEED_EDGE_JOINT_R = 18.0  # Inside this radius (the land, no notch) the skewed edges turn radial.
 FEED_LIFT_CHAMFER = 3.0  # 45 deg chamfer under both window edges: a BB riding high is lifted back into the window.
@@ -234,16 +238,28 @@ FEED_COVER_SCREW_INSET = 8.0  # Corner M3 screws holding the cover, this far in 
 FEED_TEXT_SIZE = 5.0  # Engraved variant label on the cover.
 FEED_TEXT_DEPTH = 0.6  # Its depth.
 
-# Hopper and servo bracket: the bench stand-in for the tower. The servo sits on top, the shaft
-# runs down to the disc inside a fixed sleeve, and the BBs pile round the sleeve.
-FEED_PILE_H = 110.0  # Hopper wall height over the cover: room for a ~10 cm pile.
+# Partition wall, hopper and servo bracket. The wall stands across the cover in front of the servo.
+# On its -Y side, the pile: a three-sided hopper over the window. On its +Y side, the dry side: the
+# servo and its cables (in the final unit also the barrel riser, the IR collar and the wiring). The
+# disc runs under it. Wall, hopper and bracket are separate parts that slot together.
+FEED_WALL_OFFSET = 12.7  # Disc axis to the wall's dry face (the final box uses the same offset). Set by the
+# drive piece (radius + ear play + run gap) and by the hopper's slot cheek between the servo case and the wall.
+FEED_WALL_T = 2.0  # Wall thickness.
+FEED_WALL_SLOT = 2.0  # Depth of the vertical slots in the hopper the wall's ends slide into.
+FEED_CABLE_W = 4.0  # Cable notch at the top of the wall: narrower than any BB, so it stays BB-tight.
+FEED_CABLE_DEPTH = 15.0  # Its depth from the top of the wall.
+FEED_PILE_H = 110.0  # Hopper and wall height over the cover: room for a ~10 cm pile.
 FEED_HOPPER_WALL = 2.0  # Hopper wall thickness (stiff enough at 110 mm).
-FEED_HOPPER_SEAT = 1.0  # Depth of the groove in the cover top the hopper wall stands in.
-FEED_SLEEVE_GAP = 0.5  # Gap under the sleeve, over the cover top. Far under a BB.
-FEED_BRACKET_T = 4.0  # Servo plate thickness.
-FEED_HOUSE_GAP = 1.0  # Clearance inside the bracket's house, round the servo case and the drive hub.
+FEED_HOPPER_SEAT = 1.0  # Depth of the groove in the cover top the hopper and the wall stand in.
+FEED_BRACKET_T = 4.0  # Thickness of the bracket's shelf the servo ears rest on.
+FEED_BRACKET_BACK_Y = 27.0  # Front face of the bracket's back wall, behind the servo and past the shroud.
+FEED_BRACKET_BACK_T = 4.0  # Back wall thickness.
+FEED_BRACKET_BACK_X1 = 27.0  # +X end of the back wall: clear of the cover screw head at (32, 32) at full travel.
+FEED_PEG_XS = (-10.0, 10.0)  # X of the two pegs under the back wall, which key into slots in the base.
+FEED_PEG_L = 6.0  # Peg length along X. Its slot is FEED_SERVO_TRAVEL_X longer each way.
+FEED_PEG_W = 3.0  # Peg width along Y.
+FEED_PEG_DEPTH = 4.0  # How far the pegs go into the base block, under the cover.
 FEED_SELF_TAP_D = 2.5  # Pilot hole for an M3 screw cutting its own thread in the plastic (servo ears).
-FEED_BRACKET_LIP = 6.0  # Corner tabs under the plate that locate it in the hopper (and stop it turning).
 
 # Exit channel and elbow (in two halves split on the plane of the bend).
 FEED_ELBOW_RADII = (25.0, 30.0, 40.0)  # One elbow per value, radius at the BB path.
@@ -259,7 +275,7 @@ FEED_DOCK_T = 3.0  # Cheeks on the base either side of the elbow, holding it to 
 # Feed coupon (print it with the first parts, then update the FEED_ tolerances above).
 FEED_COUPON_SLOT_OFFSETS = (-0.2, 0.0, 0.2)  # Groove depth = FEED_SLOT_H + offset.
 FEED_COUPON_PIN_OFFSETS = (0.1, 0.2, 0.3, 0.4)  # Bore = FEED_PIN_D + offset. Best fit gives FEED_PIN_CLEARANCE.
-FEED_COUPON_HEX_OFFSETS = (0.1, 0.2, 0.3, 0.4)  # Hex = FEED_SHAFT_AF + offset. Best fit gives FEED_HEX_TOLERANCE.
+FEED_COUPON_HEX_OFFSETS = (0.1, 0.2, 0.3, 0.4)  # Hex = FEED_HEX_AF + offset. Best fit gives FEED_HEX_TOLERANCE.
 FEED_COUPON_T = 8.5  # Coupon thickness: the deepest slot groove plus MIN_WALL under it; the bores go through.
 
 # --- Smoke-test ring (M0 only, proves the build pipeline) --------------------

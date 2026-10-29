@@ -281,8 +281,11 @@ to 300° (counter-clockwise from +X), round the chimney's narrow −X end.
   From the top: the 20 × 2.5 mm recess the horn plate sits in (0.8 mm rim round it), a plate with
   the 4 horn holes (3.5 mm, on a 13.8 mm circle) and a hole for the spline screw head, a chamber for
   the 4 screw heads, then a hex socket 10.5 mm deep the disc's boss slides into: 7 mm in as drawn,
-  3.5 mm to spare over it. The horn's 9 mm hub stands 1.9 mm proud on the servo side, so it stays
-  out of the drive piece.
+  3.5 mm to spare over it. The horn screws sit just outside the socket, so each has its own
+  straight 5.7 mm well from the bottom face up to the chamber (1.15 mm of wall left outside). The
+  screws sit at 0/90/180/270°: the two wells on the ±X flats miss the corners, the two on ±Y take
+  one corner each, so 4 of the 6 socket corners, where the boss bears, stay whole. The horn's 9 mm
+  hub stands 1.9 mm proud on the servo side, so it stays out of the drive piece.
 - **`feed_chimney`**: a closed tube, 2.4 mm walls, 121 mm tall, standing 1 mm deep in a groove in
   the cover. Low down it hugs the servo case (with the bracket's slide and the ear holes' play) and
   the drive piece: outside, it runs from 15.5 mm behind the axis to 42.3 mm in front, 26.5 mm wide
@@ -376,7 +379,9 @@ not in it: print it on its own first. Pick your filament per plate before printi
 keeps the filament list from `bambu_project_settings.json`).
 
 Hardware, all M3: 4 × M3 × 14 and nuts (cover to base, nuts pressed into the base from under);
-4 × M3 × 6 (drive piece to horn, into the horn's threads); 4 × M3 × 8 (servo ears, cutting their own
+4 × M3 × 6 socket or button head (drive piece to horn, from below into the horn's threads: 3 mm
+of plate and the 2.5 mm horn, so the full horn thickness is threaded and 0.5 mm sticks out on the
+servo side, well inside the 2 mm gap; an M3 × 8 would stick out 2.5 and hit the case); 4 × M3 × 8 (servo ears, cutting their own
 thread in the shelf); per elbow 4 × M3 × 12 and nuts (nuts pressed into half `b`) and 1 × M3 × 20
 and a nut (through the base cheeks); a piece of the inner barrel, its lower end chamfered inside (see
 the IR collar notes).
@@ -398,9 +403,10 @@ the IR collar notes).
    against the channel, put the M3 × 20 through the cheeks, then tighten everything.
 6. Hopper into the cover's outer groove. Chimney into its groove, narrow end down, its +X face
    against the hopper's +X wall.
-7. Drive piece: screw it to the horn first (4 × M3 × 6, put in through the hex socket and driven
-   with a ball-end key at a slight angle). Push the horn onto the spline and drive the spline screw
-   through the piece's centre hole.
+7. Drive piece, off the servo: sit the horn in its recess, holes over the plate's holes, then
+   drop the 4 × M3 × 6 up the wells from below and tighten them straight with a 2.5 mm key. Then
+   push horn and drive piece together onto the spline and drive the spline screw through the hex
+   socket and the piece's centre hole.
 8. Servo upside down on the bracket's shelf, case through the ring, its spline end at the end
    without the leg. 4 ear screws snug but not tight: the servo must still slide a little in its ear
    holes.
@@ -471,6 +477,8 @@ measured values for every `TODO: measure` below. Photos of any jam help.
   that the outer end is set back toward the window); the tongue's edge on the channel's inner wall
   and its height over the disc, where the tongue ends; the hopper and chimney grooves, the peg slots,
   and at least `FIT_TOLERANCE` (it is `FEED_RUN_GAP`) to the turning disc.
+- **The drive piece:** an M3 head passes straight up each screw well from the bottom face to the
+  plate, each plate hole is open, and the wells leave at least 2 perimeters to the outside.
 - **The assembly:** no two parts overlap; the disc keeps `FIT_TOLERANCE` from the cover, the
   chimney, the hopper and the bracket; the disc clears the shroud all round.
 - **The drive and the servo's travel:** the boss goes `FEED_DRIVE_ENGAGE` into the socket; with the

@@ -956,6 +956,26 @@ def check_feed_coupon() -> None:
     )
 
 
+def check_feed_drive() -> None:
+    """The 4 horn screws reach the horn straight from the bottom face: head and key fit up each well."""
+    k = build.feed_layout()
+    part = build.feed_drive()
+    assert part.is_valid and len(part.solids()) == 1, "feed drive is not one valid solid"
+    up = (Align.CENTER, Align.CENTER, Align.MIN)
+    zb, rr = k["drive_bottom"], p.FEED_HORN_HOLE_CIRCLE / 2
+    z_pl = zb + k["socket_depth"] + k["chamber_h"]  # Plate underside: the heads seat here.
+    for i in range(4):
+        a = math.radians(90 * i)
+        x, y = rr * math.cos(a), rr * math.sin(a)
+        head = Pos(x, y, zb - 1) * Cylinder(p.M3_HEAD_D / 2, z_pl - zb + 1 - EPS, align=up)
+        v = (part & head).volume
+        assert v < 1e-3, f"horn screw {i}: the head does not pass from below ({v:.3f} mm3 in the way)"
+        assert not solid_at(part, x, y, z_pl + p.FEED_HUB_PLATE_T / 2), f"horn screw {i}: no hole in the plate"
+    wall = k["drive_r"] - rr - k["well_r"]
+    assert wall >= 0.8 - 1e-9, f"screw wells leave {wall:.2f} to the outside, under 2 perimeters"
+    print(f"feed_drive: OK  4 screw wells d={2 * k['well_r']:.2f}, head d={p.M3_HEAD_D} passes from below, wall {wall:.2f}")
+
+
 def check_feed_print() -> None:
     """Every feed part, as exported: fits the bed, sits on it, and nothing needs supports."""
     for name, make in build.PARTS.items():
@@ -987,6 +1007,7 @@ if __name__ == "__main__":
     check_feed_numbers()
     check_feed_disc()
     check_feed_coupon()
+    check_feed_drive()
     for skew in p.FEED_CUTOFF_SKEWS:
         assembly = build.feed_assembly(skew=skew)
         check_feed_cover(skew, assembly)

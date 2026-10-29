@@ -547,6 +547,7 @@ def feed_layout() -> dict[str, float]:
         "socket_depth": socket_depth,
         "chamber_r": p.FEED_HORN_HOLE_CIRCLE / 2 + p.M3_HEAD_D / 2 + tol,
         "chamber_h": chamber_h,
+        "well_r": (p.M3_HEAD_D + p.FIT_TOLERANCE) / 2,  # Straight well under each horn screw: head and key.
         "horn_back": horn_back,
         "case_face": case_face,
         "ears": ears,
@@ -634,8 +635,13 @@ def feed_drive() -> Part:
     From the top: the recess the round horn sits in, a plate with the 4 horn holes and a hole for
     the head of the spline screw, a chamber for the 4 screw heads, then the hex socket, as deep as
     FEED_DRIVE_ENGAGE + FEED_DRIVE_FLOAT so the servo height does not matter. The screws go in
-    through the socket, up into the horn's threads. Printed socket down, as it sits: the only
-    overhang is the chamber ceiling, a short bridge (documented in the README).
+    from below, up into the horn's threads: their axes lie just outside the socket, so each gets a
+    straight well from the bottom face up to the chamber, wide enough for the head and the key.
+    The wells notch the socket. The boss bears on the socket near its corners, so the pattern
+    sits at 0/90/180/270 deg: the wells on +-X land in the middle of a flat and miss both its
+    corners, those on +-Y take one corner each, and 4 of the 6 corners keep their contact (any
+    other rotation loses 4). Printed socket down, as it sits: the only overhang is the chamber
+    ceiling, a short bridge (documented in the README).
     """
     k = feed_layout()
     up = (Align.CENTER, Align.CENTER, Align.MIN)
@@ -647,11 +653,14 @@ def feed_drive() -> Part:
     z_ch = zb + k["socket_depth"]
     piece -= Pos(0, 0, z_ch) * Cylinder(k["chamber_r"], k["chamber_h"], align=up)
     z_pl = z_ch + k["chamber_h"]
+    rr, rw = p.FEED_HORN_HOLE_CIRCLE / 2, k["well_r"]
     holes = Circle(p.FEED_HORN_SCREW_HEAD_D / 2)
     for i in range(4):
-        a = math.radians(45 + 90 * i)
-        rr = p.FEED_HORN_HOLE_CIRCLE / 2
-        holes += Pos(rr * math.cos(a), rr * math.sin(a)) * Circle(p.FEED_HORN_HOLE_D / 2)
+        a = math.radians(90 * i)
+        x, y = rr * math.cos(a), rr * math.sin(a)
+        holes += Pos(x, y) * Circle(p.FEED_HORN_HOLE_D / 2)
+        piece -= Pos(x, y, zb - 1) * Cylinder(rw, k["socket_depth"] + 1.5, align=up)  # Screw access well.
+        piece -= Pos(x, y, zb - 0.01) * Cone(rw + c + 0.01, rw, c + 0.01, align=up)  # Its lead-in.
     piece -= Pos(0, 0, z_pl - 0.5) * extrude(holes, p.FEED_HUB_PLATE_T + 1)
     piece -= Pos(0, 0, zt - p.FEED_HORN_T) * Cylinder(
         (p.FEED_HORN_D + p.FIT_TOLERANCE) / 2, p.FEED_HORN_T + 1, align=up

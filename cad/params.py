@@ -210,7 +210,7 @@ FEED_RUN_GAP = 0.4  # Running clearance between the turning parts (disc, hub) an
 FEED_SHROUD_GAP = 0.4  # Shroud radius = BB circle + BB_D/2 + this: a BB in a notch cannot move out more than that.
 FEED_PIN_D = 5.0  # Centre pin on the base floor, the disc's bearing (the servo spline only drives).
 FEED_PIN_H = 4.0  # Pin height above the floor.
-FEED_PIN_CLEARANCE = 0.2  # Calibrated with feed_coupon: a 5 mm drill shank turns freely from +0.1; +0.2 for the rougher printed pin. Disc centre bore = FEED_PIN_D + this.
+FEED_PIN_CLEARANCE = 0.4  # The coupon passed a 5 mm drill at +0.1, but the real disc bore (blind, PETG) printed 4.8 for 5.2 and rubbed on the 4.8 printed pin; +0.4 leaves ~0.2 play. Disc centre bore = FEED_PIN_D + this.
 FEED_HUB_R = 9.0  # Raised hub at the disc centre: the pin bore under, and a hex boss over it for the drive.
 BED_HOLE_CHAMFER = 0.6  # 45 deg chamfer on a hole opening on the bed face: eats the first layer's elephant's foot (the disc's pin bore printed 0.4 under).
 FEED_HEX_AF = 12.0  # Hex boss on top of the disc hub, across flats.

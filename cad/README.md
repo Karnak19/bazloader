@@ -302,7 +302,10 @@ to 300° (counter-clockwise from +X), round the chimney's narrow −X end.
   with side rails 2 mm wide that reach 5 mm under it. One leg under the +X ears goes down to the
   cover, and its two pegs go through the cover into slots in the base. The slots run along the
   servo: the bracket slides 2 mm either way (see below), and the pegs and the chimney's walls
-  (0.2 mm away) stop it turning with the servo's torque.
+  (0.2 mm away) stop it turning with the servo's torque. Under each ear the servo has a stiffening
+  rib (1.4 mm wide, 2 mm tall, from the case to the ear tip, between the two holes): a groove
+  3.1 × 2.4 mm runs the whole length of the shelf top for it, open at both ends, wide enough for the
+  ear play both ways, so the ears sit flat. 1.6 mm of shelf is left under the groove.
 - **`feed_coupon`**: three slot pockets (`FEED_SLOT_H` −0.2, 0, +0.2), four pin bores
   (`FEED_PIN_D` +0.1 to +0.4) and four hex sockets (`FEED_HEX_AF` +0.1 to +0.4), labelled.
 
@@ -317,7 +320,7 @@ them). That is not drawn yet.
 The servo is a DIYmall TD-8135MG (35 kg, 360° continuous, standard size). Measured: body 40 × 20,
 54.5 over the ears, ear holes 4.3 mm on a 48.3 × 9.4 mm pitch; metal disc horn 20 mm across, plate
 2.5 mm thick, a 9 mm hub standing 1.9 mm proud (4.4 overall), 4 threaded M3 holes on a 13.8 mm
-circle.
+circle; a rib 1.4 mm wide and 2 mm tall under each ear, between its holes.
 
 Its short end, 10.2 mm from the spline, points to −X, where the window wraps round. Its ears reach
 17.5 mm past the spline on that side, too far out for the window to pass under them, so the
@@ -366,7 +369,7 @@ In this order:
 | `feed_drive`                                | 1   | socket down                               | screw-head chamber ceiling (20 mm across) |
 | `feed_hopper`                               | 1   | as it stands                              | none                     |
 | `feed_chimney`                              | 1   | as it stands                              | none (the flare is just steeper than 45°) |
-| `feed_servo_bracket`                        | 1   | upside down: shelf on the bed             | ends of the 2.5 mm pilot holes in the leg |
+| `feed_servo_bracket`                        | 1   | upside down: shelf on the bed             | ends of the 2.5 mm pilot holes in the leg, floor of the 3.1 mm ear rib groove |
 
 Everything else that faces down is at 45° or steeper, and `check.py` fails if it is not.
 
@@ -407,7 +410,7 @@ the IR collar notes).
    drop the 4 × M3 × 6 up the wells from below and tighten them straight with a 2.5 mm key. Then
    push horn and drive piece together onto the spline and drive the spline screw through the hex
    socket and the piece's centre hole.
-8. Servo upside down on the bracket's shelf, case through the ring, its spline end at the end
+8. Servo upside down on the bracket's shelf, case through the ring, ear ribs in the groove, its spline end at the end
    without the leg. 4 ear screws snug but not tight: the servo must still slide a little in its ear
    holes.
 9. Lower the bracket and the servo into the chimney from the top, leg first, turning the disc by
@@ -486,9 +489,9 @@ measured values for every `TODO: measure` below. Photos of any jam help.
   cover, and high it still goes `FEED_DRIVE_MIN_ENGAGE` in; the drive piece keeps `FEED_RUN_GAP` from
   the cover, the chimney and the bracket at every height. The bracket slid `FEED_SERVO_TRAVEL_X`
   either way still has its pegs in their slots and keeps `FIT_TOLERANCE` from the chimney and the
-  hopper. The servo (case below and above the ears, and the ears) keeps `FIT_TOLERANCE` from the
-  chimney, the cover and the bracket in every corner of its travel: along the servo with the
-  bracket, the ear holes' play both ways, and the case `FEED_SERVO_TRAVEL_Z` up or down. The ear
+  hopper. The servo (case below and above the ears, the ears, and the ribs under them, in their
+  groove) keeps `FIT_TOLERANCE` from the chimney, the cover and the bracket in every corner of its
+  travel: along the servo with the bracket, the ear holes' play both ways, and the case `FEED_SERVO_TRAVEL_Z` up or down. The ear
   pilot holes sit on the measured pitch; the horn's hub fits in `SERVO_HORN_GAP`.
 - **The seal:** a BB (`BB_MIN_D`) cannot get from the pile into the chimney, nor to the elbow. The
   window, on every cover, stays out of the chimney's footprint and inside the hopper; the hub hole

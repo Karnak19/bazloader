@@ -180,6 +180,9 @@ SERVO_EAR_HOLE_D = 4.3  # Ear holes. Wider than the M3 screws: the servo slides 
 SERVO_EAR_SPAN = 54.5  # Overall length over the ears (only sizes the bracket).
 SERVO_EAR_W = 20.0  # TODO: measure. Width of the ears across the body, taken as the body's. Clearance checks only.
 SERVO_EAR_T = 2.5  # TODO: measure. Thickness of the ears. Clearance checks only.
+SERVO_EAR_RIB_W = 1.4  # Measured. Stiffening rib under each ear, centred between its two holes, from the
+# case out to the ear tip (along X). It rests on the shelf: the shelf has a groove for it.
+SERVO_EAR_RIB_H = 2.0  # Measured. How far the rib stands proud of the ear face.
 SERVO_FACE_TO_EARS = 11.0  # TODO: measure. From the output face of the case to the face of the ears on that
 # side. Only moves the drive piece up or down: the float of its hex socket takes FEED_SERVO_TRAVEL_Z of error.
 SERVO_HORN_GAP = 2.0  # TODO: measure. From the output face of the case to the back of the horn, horn pushed

@@ -559,6 +559,9 @@ def feed_layout() -> dict[str, float]:
         "shelf_x0": ear_x0,
         "shelf_x1": ear_x1,
         "shelf_bottom": shelf_bottom,
+        # Groove for the ear rib: the rib, the ear play both ways and FIT_TOLERANCE each side.
+        "rib_groove_w": p.SERVO_EAR_RIB_W + 2 * (ear_play + tol),
+        "rib_groove_d": p.SERVO_EAR_RIB_H + 2 * tol,
         "rail_y": rail_y,
         "leg_x0": case_x1 + case_gap,
         "leg_x1": ear_x1,
@@ -1051,7 +1054,8 @@ def feed_servo_bracket() -> Part:
     The slots run along the servo, so the bracket slides FEED_SERVO_TRAVEL_X either way: the hex
     pulls the spline onto the disc axis whatever SERVO_SPLINE_OFFSET really is. The pegs and the
     chimney's walls stop it turning with the servo's torque. Ear screws cut their thread in pilot
-    holes. Printed upside down (the STL is): shelf on the bed, nothing overhangs.
+    holes. A groove along the shelf top takes the stiffening rib under each ear, so the ears sit
+    flat. Printed upside down (the STL is): shelf on the bed; only the groove's floor bridges.
     """
     k = feed_layout()
     up = (Align.CENTER, Align.CENTER, Align.MIN)
@@ -1066,6 +1070,8 @@ def feed_servo_bracket() -> Part:
     body += Pos(0, 0, zc) * extrude(_rect(k["leg_x0"], -k["leg_hy"], k["leg_x1"], k["leg_hy"]), zs - zc + 0.01)
     for y in p.FEED_PEG_YS:
         body += Pos(k["peg_x"], y, k["peg_bottom"]) * Box(p.FEED_PEG_L, p.FEED_PEG_W, zc - k["peg_bottom"] + 0.01, align=up)
+    gw = k["rib_groove_w"]  # Groove for the ear ribs, through the whole shelf along X: open at both ends.
+    body -= Pos(0, 0, k["ears"] - k["rib_groove_d"]) * extrude(_rect(x0 - 1, -gw / 2, x1 + 1, gw / 2), k["rib_groove_d"] + 1)
     xe = p.SERVO_EAR_PITCH_L / 2
     for ex in (k["servo_xc"] - xe, k["servo_xc"] + xe):
         for ey in (-p.SERVO_EAR_PITCH_W / 2, p.SERVO_EAR_PITCH_W / 2):

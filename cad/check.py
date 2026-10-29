@@ -451,7 +451,7 @@ def feed_bridges(name: str) -> tuple:
     if name.startswith("feed_cover_"):
         return (p.FEED_HOPPER_SEAT, p.FEED_TEXT_DEPTH)  # Hopper and chimney grooves, label, on the bed side.
     if name == "feed_servo_bracket":
-        return (p.FEED_SELF_TAP_DEPTH,)  # Ends of the 2.5 mm pilot holes in the leg.
+        return (p.FEED_SELF_TAP_DEPTH, k["rib_groove_d"])  # Ends of the pilot holes in the leg, ear rib groove.
     if name.startswith("feed_elbow_") and name.endswith("_b"):
         return (nut_d,)  # Nut trap ceilings.
     return ()
@@ -647,13 +647,16 @@ def check_feed_cover(skew: float, assembly: dict) -> None:
 
 def servo_model(k: dict, dz: float = 0.0) -> dict:
     """The servo as boxes, in the rig frame: the case below the ears (it moves dz with the unmeasured
-    heights), the ears, and the case above them."""
+    heights), the ears, the ribs under them, and the case above them."""
     up = (Align.CENTER, Align.CENTER, Align.MIN)
     xc, L, W = k["servo_xc"], p.SERVO_BODY_L, p.SERVO_BODY_W
     face = k["case_face"] + dz
     top = k["case_face"] + p.SERVO_BODY_H
     e1 = k["ears"] + p.SERVO_EAR_T
+    rib_l = (p.SERVO_EAR_SPAN - L) / 2
+    ribs = [Pos(xc + s * (L + rib_l) / 2, 0, k["ears"] - p.SERVO_EAR_RIB_H) * Box(rib_l, p.SERVO_EAR_RIB_W, p.SERVO_EAR_RIB_H, align=up) for s in (-1, 1)]
     return {
+        "ear ribs": ribs[0] + ribs[1],
         "case below the ears": Pos(xc, 0, face) * Box(L, W, k["ears"] - face, align=up),
         "ears": Pos(xc, 0, k["ears"]) * Box(p.SERVO_EAR_SPAN, p.SERVO_EAR_W, p.SERVO_EAR_T, align=up),
         "case above the ears": Pos(xc, 0, e1) * Box(L, W, top - e1, align=up),

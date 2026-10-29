@@ -209,6 +209,7 @@ FEED_PIN_D = 5.0  # Centre pin on the base floor, the disc's bearing (the servo 
 FEED_PIN_H = 4.0  # Pin height above the floor.
 FEED_PIN_CLEARANCE = 0.2  # Calibrated with feed_coupon: a 5 mm drill shank turns freely from +0.1; +0.2 for the rougher printed pin. Disc centre bore = FEED_PIN_D + this.
 FEED_HUB_R = 9.0  # Raised hub at the disc centre: the pin bore under, and a hex boss over it for the drive.
+BED_HOLE_CHAMFER = 0.6  # 45 deg chamfer on a hole opening on the bed face: eats the first layer's elephant's foot (the disc's pin bore printed 0.4 under).
 FEED_HEX_AF = 12.0  # Hex boss on top of the disc hub, across flats.
 FEED_HEX_TOLERANCE = 0.2  # Calibrated with feed_coupon: exact fit at +0.2, slight play at +0.3. Hex socket in the drive piece = FEED_HEX_AF + this.
 FEED_DRIVE_ENGAGE = 7.0  # How far the disc's hex boss goes into the drive piece's socket, as drawn.

@@ -623,6 +623,8 @@ def feed_disc() -> Part:
     r, d = k["pin_bore_r"], k["pin_bore_depth"]
     disc -= Pos(0, 0, z0 - 1) * Cylinder(r, d + 1, align=up)
     disc -= Pos(0, 0, z0 + d) * Cone(r, 0, r, align=up)
+    c = p.BED_HOLE_CHAMFER
+    disc -= Pos(0, 0, z0 - 0.01) * Cone(r + c + 0.01, r, c + 0.01, align=up)  # Lead-in, eats elephant's foot.
     return disc
 
 
@@ -640,6 +642,8 @@ def feed_drive() -> Part:
     zb, zt = k["drive_bottom"], k["horn_back"]
     piece = Pos(0, 0, zb) * Cylinder(k["drive_r"], k["drive_h"], align=up)
     piece -= Pos(0, 0, zb - 1) * extrude(_hex(k["hex_r"]), k["socket_depth"] + 1)
+    c = p.BED_HOLE_CHAMFER  # Lead-in on the socket mouth, on the bed: eats elephant's foot.
+    piece -= Pos(0, 0, zb - 0.01) * extrude(_hex(k["hex_r"] + c / math.cos(math.pi / 6)), c + 0.01, taper=45)
     z_ch = zb + k["socket_depth"]
     piece -= Pos(0, 0, z_ch) * Cylinder(k["chamber_r"], k["chamber_h"], align=up)
     z_pl = z_ch + k["chamber_h"]

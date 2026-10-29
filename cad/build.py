@@ -547,6 +547,7 @@ def feed_layout() -> dict[str, float]:
         "socket_depth": socket_depth,
         "chamber_r": p.FEED_HORN_HOLE_CIRCLE / 2 + p.M3_HEAD_D / 2 + tol,
         "chamber_h": chamber_h,
+        "well_r": (p.M3_HEAD_D + p.FIT_TOLERANCE) / 2,  # Straight well under each horn screw: head and key.
         "horn_back": horn_back,
         "case_face": case_face,
         "ears": ears,
@@ -558,6 +559,9 @@ def feed_layout() -> dict[str, float]:
         "shelf_x0": ear_x0,
         "shelf_x1": ear_x1,
         "shelf_bottom": shelf_bottom,
+        # Groove for the ear rib: the rib, the ear play both ways and FIT_TOLERANCE each side.
+        "rib_groove_w": p.SERVO_EAR_RIB_W + 2 * (ear_play + tol),
+        "rib_groove_d": p.SERVO_EAR_RIB_H + 2 * tol,
         "rail_y": rail_y,
         "leg_x0": case_x1 + case_gap,
         "leg_x1": ear_x1,
@@ -623,6 +627,8 @@ def feed_disc() -> Part:
     r, d = k["pin_bore_r"], k["pin_bore_depth"]
     disc -= Pos(0, 0, z0 - 1) * Cylinder(r, d + 1, align=up)
     disc -= Pos(0, 0, z0 + d) * Cone(r, 0, r, align=up)
+    c = p.BED_HOLE_CHAMFER
+    disc -= Pos(0, 0, z0 - 0.01) * Cone(r + c + 0.01, r, c + 0.01, align=up)  # Lead-in, eats elephant's foot.
     return disc
 
 
@@ -632,22 +638,32 @@ def feed_drive() -> Part:
     From the top: the recess the round horn sits in, a plate with the 4 horn holes and a hole for
     the head of the spline screw, a chamber for the 4 screw heads, then the hex socket, as deep as
     FEED_DRIVE_ENGAGE + FEED_DRIVE_FLOAT so the servo height does not matter. The screws go in
-    through the socket, up into the horn's threads. Printed socket down, as it sits: the only
-    overhang is the chamber ceiling, a short bridge (documented in the README).
+    from below, up into the horn's threads: their axes lie just outside the socket, so each gets a
+    straight well from the bottom face up to the chamber, wide enough for the head and the key.
+    The wells notch the socket. The boss bears on the socket near its corners, so the pattern
+    sits at 0/90/180/270 deg: the wells on +-X land in the middle of a flat and miss both its
+    corners, those on +-Y take one corner each, and 4 of the 6 corners keep their contact (any
+    other rotation loses 4). Printed socket down, as it sits: the only overhang is the chamber
+    ceiling, a short bridge (documented in the README).
     """
     k = feed_layout()
     up = (Align.CENTER, Align.CENTER, Align.MIN)
     zb, zt = k["drive_bottom"], k["horn_back"]
     piece = Pos(0, 0, zb) * Cylinder(k["drive_r"], k["drive_h"], align=up)
     piece -= Pos(0, 0, zb - 1) * extrude(_hex(k["hex_r"]), k["socket_depth"] + 1)
+    c = p.BED_HOLE_CHAMFER  # Lead-in on the socket mouth, on the bed: eats elephant's foot.
+    piece -= Pos(0, 0, zb - 0.01) * extrude(_hex(k["hex_r"] + c / math.cos(math.pi / 6)), c + 0.01, taper=45)
     z_ch = zb + k["socket_depth"]
     piece -= Pos(0, 0, z_ch) * Cylinder(k["chamber_r"], k["chamber_h"], align=up)
     z_pl = z_ch + k["chamber_h"]
+    rr, rw = p.FEED_HORN_HOLE_CIRCLE / 2, k["well_r"]
     holes = Circle(p.FEED_HORN_SCREW_HEAD_D / 2)
     for i in range(4):
-        a = math.radians(45 + 90 * i)
-        rr = p.FEED_HORN_HOLE_CIRCLE / 2
-        holes += Pos(rr * math.cos(a), rr * math.sin(a)) * Circle(p.FEED_HORN_HOLE_D / 2)
+        a = math.radians(90 * i)
+        x, y = rr * math.cos(a), rr * math.sin(a)
+        holes += Pos(x, y) * Circle(p.FEED_HORN_HOLE_D / 2)
+        piece -= Pos(x, y, zb - 1) * Cylinder(rw, k["socket_depth"] + 1.5, align=up)  # Screw access well.
+        piece -= Pos(x, y, zb - 0.01) * Cone(rw + c + 0.01, rw, c + 0.01, align=up)  # Its lead-in.
     piece -= Pos(0, 0, z_pl - 0.5) * extrude(holes, p.FEED_HUB_PLATE_T + 1)
     piece -= Pos(0, 0, zt - p.FEED_HORN_T) * Cylinder(
         (p.FEED_HORN_D + p.FIT_TOLERANCE) / 2, p.FEED_HORN_T + 1, align=up
@@ -1038,7 +1054,8 @@ def feed_servo_bracket() -> Part:
     The slots run along the servo, so the bracket slides FEED_SERVO_TRAVEL_X either way: the hex
     pulls the spline onto the disc axis whatever SERVO_SPLINE_OFFSET really is. The pegs and the
     chimney's walls stop it turning with the servo's torque. Ear screws cut their thread in pilot
-    holes. Printed upside down (the STL is): shelf on the bed, nothing overhangs.
+    holes. A groove along the shelf top takes the stiffening rib under each ear, so the ears sit
+    flat. Printed upside down (the STL is): shelf on the bed; only the groove's floor bridges.
     """
     k = feed_layout()
     up = (Align.CENTER, Align.CENTER, Align.MIN)
@@ -1053,6 +1070,8 @@ def feed_servo_bracket() -> Part:
     body += Pos(0, 0, zc) * extrude(_rect(k["leg_x0"], -k["leg_hy"], k["leg_x1"], k["leg_hy"]), zs - zc + 0.01)
     for y in p.FEED_PEG_YS:
         body += Pos(k["peg_x"], y, k["peg_bottom"]) * Box(p.FEED_PEG_L, p.FEED_PEG_W, zc - k["peg_bottom"] + 0.01, align=up)
+    gw = k["rib_groove_w"]  # Groove for the ear ribs, through the whole shelf along X: open at both ends.
+    body -= Pos(0, 0, k["ears"] - k["rib_groove_d"]) * extrude(_rect(x0 - 1, -gw / 2, x1 + 1, gw / 2), k["rib_groove_d"] + 1)
     xe = p.SERVO_EAR_PITCH_L / 2
     for ex in (k["servo_xc"] - xe, k["servo_xc"] + xe):
         for ey in (-p.SERVO_EAR_PITCH_W / 2, p.SERVO_EAR_PITCH_W / 2):
@@ -1178,15 +1197,47 @@ PARTS = {
 }
 
 
+def meshable(part: Part) -> Part:
+    """The same solid without the face wires made only of INTERNAL edges.
+
+    A boolean can leave such a wire on a face: a seam that bounds nothing, e.g. a half circle
+    0.01 mm inside the end of the toroidal bore of feed_elbow_r30_b. The solid is still valid,
+    but OCC's mesher then triangulates that face wrong: the mesh stays closed, yet a third of
+    the bore groove is missing. Dropping the wire changes nothing else, so mesh this instead.
+    """
+    from OCP.BRep import BRep_Builder
+    from OCP.BRepTools import BRepTools_ReShape
+    from OCP.TopAbs import TopAbs_EDGE, TopAbs_INTERNAL, TopAbs_WIRE
+    from OCP.TopExp import TopExp_Explorer
+    from OCP.TopoDS import TopoDS
+
+    def children(shape, kind):  # Every sub-shape, INTERNAL ones included (build123d skips them).
+        found = TopExp_Explorer(shape, kind)
+        while found.More():
+            yield found.Current()
+            found.Next()
+
+    reshape = BRepTools_ReShape()
+    for face in part.faces():
+        wires = list(children(face.wrapped, TopAbs_WIRE))
+        keep = [w for w in wires if any(e.Orientation() != TopAbs_INTERNAL for e in children(w, TopAbs_EDGE))]
+        if len(keep) < len(wires):
+            new = TopoDS.Face(face.wrapped.EmptyCopied())
+            for w in keep:
+                BRep_Builder().Add(new, w)
+            reshape.Replace(face.wrapped, new)
+    return Part(reshape.Apply(part.wrapped))
+
+
 def main() -> None:
     OUT_DIR.mkdir(exist_ok=True)
     for name, build in PARTS.items():
         part = build()
-        for path, export in (
-            (OUT_DIR / f"{name}.stl", export_stl),
-            (OUT_DIR / f"{name}.step", export_step),
+        for path, export, shape in (
+            (OUT_DIR / f"{name}.stl", export_stl, meshable(part)),
+            (OUT_DIR / f"{name}.step", export_step, part),
         ):
-            if not export(part, str(path)) or path.stat().st_size == 0:
+            if not export(shape, str(path)) or path.stat().st_size == 0:
                 raise SystemExit(f"export failed: {path}")
             print(f"wrote out/{path.name}")
 

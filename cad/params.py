@@ -180,6 +180,9 @@ SERVO_EAR_HOLE_D = 4.3  # Ear holes. Wider than the M3 screws: the servo slides 
 SERVO_EAR_SPAN = 54.5  # Overall length over the ears (only sizes the bracket).
 SERVO_EAR_W = 20.0  # TODO: measure. Width of the ears across the body, taken as the body's. Clearance checks only.
 SERVO_EAR_T = 2.5  # TODO: measure. Thickness of the ears. Clearance checks only.
+SERVO_EAR_RIB_W = 1.4  # Measured. Stiffening rib under each ear, centred between its two holes, from the
+# case out to the ear tip (along X). It rests on the shelf: the shelf has a groove for it.
+SERVO_EAR_RIB_H = 2.0  # Measured. How far the rib stands proud of the ear face.
 SERVO_FACE_TO_EARS = 11.0  # TODO: measure. From the output face of the case to the face of the ears on that
 # side. Only moves the drive piece up or down: the float of its hex socket takes FEED_SERVO_TRAVEL_Z of error.
 SERVO_HORN_GAP = 2.0  # TODO: measure. From the output face of the case to the back of the horn, horn pushed
@@ -209,6 +212,7 @@ FEED_PIN_D = 5.0  # Centre pin on the base floor, the disc's bearing (the servo 
 FEED_PIN_H = 4.0  # Pin height above the floor.
 FEED_PIN_CLEARANCE = 0.2  # Calibrated with feed_coupon: a 5 mm drill shank turns freely from +0.1; +0.2 for the rougher printed pin. Disc centre bore = FEED_PIN_D + this.
 FEED_HUB_R = 9.0  # Raised hub at the disc centre: the pin bore under, and a hex boss over it for the drive.
+BED_HOLE_CHAMFER = 0.6  # 45 deg chamfer on a hole opening on the bed face: eats the first layer's elephant's foot (the disc's pin bore printed 0.4 under).
 FEED_HEX_AF = 12.0  # Hex boss on top of the disc hub, across flats.
 FEED_HEX_TOLERANCE = 0.2  # Calibrated with feed_coupon: exact fit at +0.2, slight play at +0.3. Hex socket in the drive piece = FEED_HEX_AF + this.
 FEED_DRIVE_ENGAGE = 7.0  # How far the disc's hex boss goes into the drive piece's socket, as drawn.
